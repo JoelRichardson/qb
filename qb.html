@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <link type="text/css" rel="stylesheet" href="./resources/style.css">
+    <script type="text/javascript" src="./resources/d3.js"></script>
+    <script type="text/javascript" src="./resources/d3.layout.js"></script>
+    <style type="text/css">
+
+
+.constraint-text {
+    color : red;
+}
+
+.node circle {
+  cursor: pointer;
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.node text {
+  font-size: 11px;
+}
+
+.node .dialog rect {
+    fill: #ccc;
+}
+
+#dialog {
+    position: absolute;
+    background-color: #ccc;
+    padding: 16px;
+    display: none;
+}
+#dialog span.closeButton {
+    color: white;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+}
+#dialog span.closeButton:hover {
+    color: blue;
+}
+
+#dialog table.attributes {
+    padding: 0;
+    border: 1px solid #aaa;
+}
+
+
+#dialog table.attributes td {
+    padding: 6px;
+}
+
+#dialog table.attributes tr:hover {
+    background-color: #ddd;
+}
+
+#dialog table.attributes td.select {
+    color: white;
+    background-color: green;
+    cursor: pointer;
+}
+
+#dialog table.attributes td.constraint {
+    color: white;
+    background-color: purple;
+    cursor: pointer;
+}
+
+button {
+    cursor: pointer;
+}
+
+button.removeButton {
+    color: red;
+}
+
+path.link {
+  fill: none;
+}
+
+    </style>
+</head>
+<body>
+    <div id="body">
+
+        <select id="mlist">
+        </select>
+
+        <select id="tlist">
+        </select>
+
+        <select id="layoutstyle">
+            <option>tree</option>
+            <option>dendrogram</option>
+        </select>
+
+        <div id="dialog">
+            <span class="clsName">ClassName</span>
+            <button class="removeButton">Remove</button>
+            <button class="closeButton">Close</button>
+            <table class="attributes"></table>
+        </div>
+
+        <script type="text/javascript" src="qb.js"> </script>
+    </div>  
+    <div>Hi there</div>
+</body>
+</html>
