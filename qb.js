@@ -466,13 +466,25 @@ function update(source) {
       .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
       ;
 
-  // Add the circle for the node
-  nodeEnter.append("svg:circle")
-      .attr("r", 1e-6) // start off invisibly small
+  // Add glyph for the node
+  //nodeEnter.append("svg:circle")
+  nodeEnter.append(function(d){
+      var shape = (d.pcomp.kind == "attribute" ? "rect" : "circle");
+      return document.createElementNS("http://www.w3.org/2000/svg", shape);
+      })
       .style("fill", function(d) { return d.view ? "green" : "#fff"; })
       .style("stroke-width", function(d) { return d.constraint ? "2" : "1"})
       .style("stroke", function(d) { return d.constraint ? "purple" : "black"})
       .on("mouseover", function(d) { if (currNode !== d) showDialog(d, this); })
+      ;
+  nodeEnter.select("circle")
+      .attr("r", 1e-6) // start off invisibly small
+      ;
+  nodeEnter.select("rect")
+      .attr("x", -8.5)
+      .attr("y", -8.5)
+      .attr("width", 1e-6) // start off invisibly small
+      .attr("height", 1e-6) // start off invisibly small
       ;
 
   // Add text for node name
@@ -487,7 +499,7 @@ function update(source) {
   // Add text for constraints
   nodeEnter.append("svg:text")
        .attr("x", 0)
-       .attr("dy", "1.5em")
+       .attr("dy", "1.7em")
        .attr("text-anchor","start")
        .text(function(d){
            var c = d.constraint;
@@ -505,6 +517,10 @@ function update(source) {
   // Transition circles to full size
   nodeUpdate.select("circle")
       .attr("r", 8.5 )
+      ;
+  nodeUpdate.select("rect")
+      .attr("width", 17 )
+      .attr("height", 17 )
       ;
 
   // Transition text to fully opaque
