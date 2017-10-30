@@ -381,9 +381,13 @@ function showDialog(n){
 
 function hideDialog(){
   currNode = null;
-  var dialog = d3.select("#dialog")
-      .style("display","none")
+  var dialog = d3.select("#dialog");
+  dialog
+      .transition()
+      .duration(250)
+      .style("transform","scale(1e-6)")
       ;
+  //dialog .style("display","none") ;
 }
 
 function setLayout(style){
@@ -442,7 +446,7 @@ function update(source) {
       .append("svg:g")
       .attr("class", "node")
       .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
-      .on("mouseover", function(d) { d.expanded=true; update(d); showDialog(d); })
+      .on("mouseover", function(d) { if (currNode !== d) showDialog(d); })
       ;
 
   // Add the circle for the node
@@ -474,20 +478,6 @@ function update(source) {
        .attr("stroke","purple")
        ;
 
-  /*
-  // Add a group to hold the nodes' dialog boxes
-  var nds = nodeEnter.append("svg:g")
-      .attr("class","dialog")
-      .attr("transform","scale(1e-6)")
-      ;
-
-      nds.append("svg:rect")
-      .attr("width", 100)
-      .attr("height", 300)
-      .style("fill-opacity", 1e-6) // start off nearly transparent
-      ;
-      */
-
   // Transition nodes to their new position.
   var nodeUpdate = node.transition()
       .duration(duration)
@@ -504,14 +494,6 @@ function update(source) {
       .style("fill-opacity", 1)
       ;
 
-  /*
-  // Transition dialog boxes
-  nodeUpdate.select("g.dialog")
-      .style("transform", function(d){ return "scale(" + (d.expanded ? 1 : 1e-6) + ")" ; })
-  nodeUpdate.select("g.dialog").select("rect")
-      .style("fill-opacity", function(d){ return d.expanded ? 0.88 : 1e-6; })
-      ;
-      */
   //
   // Transition exiting nodes to the parent's new position.
   var nodeExit = node.exit().transition()
