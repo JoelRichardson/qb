@@ -247,7 +247,7 @@ function addPath(trees, path){
     return lastt
 }
 
-// Removes a node (and all descendants
+// Removes the current node and all its descendants.
 //
 function removeNode() {
     console.log(currNode);
@@ -262,26 +262,35 @@ function removeNode() {
     }
 }
 
+// Called when the user selects a template from the list.
+// Gets the template from the current mine and builds a set of nodes
+// for d3 tree display.
+//
 function selectedTemplate (tname) {
     var t = currMine.templates[tname];
-    //console.log(tname, t);
+    console.log(tname, t);
     if (!t) {
         return;
     }
-    var trees = []
+    var ti = d3.select("#tInfo");
+    ti.select(".title").text(t.title)
+    ti.select(".description").text(t.description)
+    ti.select(".comment").text(t.comment)
+
+    var roots = []
     t.select && t.select.forEach(function(p){
-        var n = addPath(trees, p);
+        var n = addPath(roots, p);
         n.view = true;
     })
     t.where && t.where.forEach(function(c){
-        var n = addPath(trees, c.path);
+        var n = addPath(roots, c.path);
         n.constraint = c;
     })
     t.joins && t.joins.forEach(function(j){
-        var n = addPath(trees, j);
+        var n = addPath(roots, j);
         n.join = "outer";
     })
-    draw(trees[0]);
+    draw(roots[0]);
 }
 
 function draw(json) {
@@ -304,14 +313,23 @@ function constraintText(c) {
    else if (c.values !== undefined){
        t = c.op + " " + c.values
    }
-   return t;
+   return (c.code ? "("+c.code+") " : "") + t;
 }
 
-function showDialog(n){
+function showDialog(n, elt){
   currNode = n;
-  var dialog = d3.select("#dialog")
-      .style("top", 40+n.x+"px")
-      .style("left", 120+n.y+"px")
+  var dialog = d3.select("#dialog");
+  //
+  var dbb = dialog[0][0].getBoundingClientRect();
+  var ebb = elt.getBoundingClientRect();
+  var bbb = d3.select("body")[0][0].getBoundingClientRect();
+  var t = (ebb.top - bbb.top) + ebb.width/2;
+  var l = (ebb.left - bbb.left) + ebb.height/2;
+
+  //
+  dialog
+      .style("top", t+"px")
+      .style("left", l+"px")
       .style("display","block")
       .style("transform", "scale(1e-6)")
       .style("transform-origin", "0% 0%")
@@ -446,7 +464,6 @@ function update(source) {
       .append("svg:g")
       .attr("class", "node")
       .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
-      .on("mouseover", function(d) { if (currNode !== d) showDialog(d); })
       ;
 
   // Add the circle for the node
@@ -455,6 +472,7 @@ function update(source) {
       .style("fill", function(d) { return d.view ? "green" : "#fff"; })
       .style("stroke-width", function(d) { return d.constraint ? "2" : "1"})
       .style("stroke", function(d) { return d.constraint ? "purple" : "black"})
+      .on("mouseover", function(d) { if (currNode !== d) showDialog(d, this); })
       ;
 
   // Add text for node name
