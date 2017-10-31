@@ -284,7 +284,10 @@ function selectedTemplate (tname) {
     })
     t.where && t.where.forEach(function(c){
         var n = addPath(roots, c.path);
-        n.constraint = c;
+        if (n.constraints)
+            n.constraints.push(c)
+        else
+            n.constraints = [c];
     })
     t.joins && t.joins.forEach(function(j){
         var n = addPath(roots, j);
@@ -301,6 +304,8 @@ function draw(json) {
   update(root);
 }
 
+// Returns a text representation of a constraint
+//
 function constraintText(c) {
    var t = "";
    if (!c) return "";
@@ -316,6 +321,16 @@ function constraintText(c) {
    return (c.code ? "("+c.code+") " : "") + t;
 }
 
+// Opens a dialog on the specified node.
+// Also makes that node the current node.
+// Args:
+//   n    the node
+//   elt  the DOM element (e.g. a circle)
+// Returns
+//   string
+// Side effect:
+//   sets global currNode
+//
 function showDialog(n, elt){
   currNode = n;
   var dialog = d3.select("#dialog");
@@ -349,6 +364,7 @@ function showDialog(n, elt){
       // classes
       dialog.select("span.clsName")
           .text(n.pcomp.type.name || n.pcomp.type );
+      //
       var tbl = dialog.select("table.attributes");
       tbl.style("display","block");
       var rows = tbl.selectAll("tr")
@@ -397,6 +413,15 @@ function showDialog(n, elt){
   }
 }
 
+// Hides the dialog. Sets the current node to null.
+// Args:
+//   none
+// Returns
+//  nothing
+// Side effects:
+//  Hides the dialog.
+//  Sets currNode to null.
+//
 function hideDialog(){
   currNode = null;
   var dialog = d3.select("#dialog");
@@ -405,7 +430,6 @@ function hideDialog(){
       .duration(250)
       .style("transform","scale(1e-6)")
       ;
-  //dialog .style("display","none") ;
 }
 
 function setLayout(style){
@@ -473,8 +497,8 @@ function update(source) {
       return document.createElementNS("http://www.w3.org/2000/svg", shape);
       })
       .style("fill", function(d) { return d.view ? "green" : "#fff"; })
-      .style("stroke-width", function(d) { return d.constraint ? "2" : "1"})
-      .style("stroke", function(d) { return d.constraint ? "purple" : "black"})
+      .style("stroke-width", function(d) { return d.constraints ? "2" : "1"})
+      .style("stroke", function(d) { return d.constraints ? "purple" : "black"})
       .on("mouseover", function(d) { if (currNode !== d) showDialog(d, this); })
       ;
   nodeEnter.select("circle")
@@ -501,9 +525,9 @@ function update(source) {
        .attr("x", 0)
        .attr("dy", "1.7em")
        .attr("text-anchor","start")
-       .text(function(d){
-           var c = d.constraint;
-           return constraintText(c)
+       .html(function(d){
+           var strs = (d.constraints || []).map(constraintText);
+           return strs.join('<br>');
        })
        .attr("stroke","purple")
        ;
