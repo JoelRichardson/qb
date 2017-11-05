@@ -7,23 +7,28 @@
     <style type="text/css">
 
 
-.constraint-text {
-    color : red;
-}
 
-.node circle {
-  cursor: pointer;
-  fill: #fff;
-  stroke: steelblue;
-  stroke-width: 1.5px;
-}
-
-.node text {
+.nodegroup {
   font-size: 11px;
 }
-
-.node .dialog rect {
-    fill: #ccc;
+.nodeName {
+}
+.node {
+  cursor: pointer;
+  fill: white;
+  stroke: black;
+  stroke-width: 1.5px;
+}
+.constrained .node {
+    stroke: purple;
+    stroke-width: 2;
+}
+.selected .node {
+    fill: green;
+}
+.constraint {
+    stroke : purple;
+    fill: purple;
 }
 
 #dialog {
@@ -31,16 +36,6 @@
     background-color: #ccc;
     padding: 16px;
     display: none;
-}
-#dialog span.closeButton {
-    color: white;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    cursor: pointer;
-}
-#dialog span.closeButton:hover {
-    color: blue;
 }
 
 #dialog table.attributes {
@@ -77,6 +72,11 @@ button.removeButton {
     color: red;
 }
 
+#dialog .attrContainer {
+    max-height: 200px;
+    overflow: scroll;
+}
+
 path.link {
   fill: none;
 }
@@ -99,9 +99,12 @@ path.link {
 
         <div id="dialog">
             <span class="clsName">ClassName</span>
+            <select class="subclassConstraint"></select>
+            <div class="attrContainer">
+                <table class="attributes"></table>
+            </div>
             <button class="removeButton">Remove</button>
             <button class="closeButton">Close</button>
-            <table class="attributes"></table>
         </div>
 
         <div id="tInfo">

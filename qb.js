@@ -31,7 +31,19 @@ var mines = [{
 
 
 
-var mines, name2mine, currMine, m, w, h, i, root, layoutStyle, diagonal, vis, currNode;
+var mines;
+var name2mine;
+var currMine;
+var m;
+var w;
+var h;
+var i;
+var root;
+var layoutStyle;
+var diagonal;
+var vis;
+var currTemplate;
+var currNode;
 var layoutStyle = "tree";
 
 setup()
@@ -40,6 +52,7 @@ function setup(){
     name2mine = {};
     mines.forEach(function(m){ name2mine[m.name] = m; });
     currMine = mines[0];
+    currTemplate = null;
 
     m = [20, 120, 20, 120]
     w = 1280 - m[1] - m[3]
@@ -79,23 +92,12 @@ function setup(){
         .on("change", function () { setLayout(this.value); })
         ;
 
+    //
+    d3.select("#dialog select.subclassConstraint")
+        .on("change", function(){ setSubclassConstraint(currNode, this.value); });
+
     // start with the first mine by default.
     selectedMine(mines[0].name);
-}
-
-// Extends the path from currNode to p
-// Args:
-//   currNode (node) Node to extend from
-//   p (string) Name of an attribute, ref, or collection
-function selectedNext(currNode,p){
-    p = [ p ]
-    for(var n = currNode; n; n = n.parent){
-        p.unshift(n.name);
-    }
-    var n = addPath( [root], p.join(".") );
-    n.view = true;
-    hideDialog();
-    update(currNode);
 }
 
 // Called when user selects a mine from the option list
@@ -115,7 +117,7 @@ function selectedMine(mname){
             alert("Could not load model from resource: " + murl);
             return;
         }
-        createModelXrefs(model)
+        compileModel(model)
         currMine.model = model;
         // get the templates
         d3.json(turl, function(json) {
@@ -136,6 +138,21 @@ function selectedMine(mname){
     })
 }
 
+// Returns an array containing the item values from the given object.
+// The list is sorted by the item keys.
+// If nameAttr is specified, those keys are also added to each element
+// as an attribute (only works if those items are themselves objects).
+// Examples:
+//    states = {'ME':{name:'Maine'}, 'IA':{name:'Iowa'}}
+//    obj2array(states) =>
+//        [{name:'Iowa'}, {name:'Maine'}]
+//    obj2array(states, 'abbrev') =>
+//        [{name:'Iowa',abbrev'IA'}, {name:'Maine',abbrev'ME'}]
+// Args:
+//    o  (object) The object.
+//    nameAttr (string) If specified, adds the item key as an attribute to each list element.
+// Return:
+//    list containing the item values from o
 function obj2array(o, nameAttr){
     var ks = Object.keys(o);
     ks.sort();
@@ -143,20 +160,20 @@ function obj2array(o, nameAttr){
         if (nameAttr) o[k].name = k;
         return o[k];
     });
-}
+};
 
 // Add direct cross references to named types. (E.g., where the
 // model says that Gene.alleles is a collection whose referencedType
 // is the string "Allele", add a direct reference to the Allele class)
 // Also adds arrays for convenience for accessing all classes or all attributes of a class.
 //
-function createModelXrefs(model){
+function compileModel(model){
+    //
     model.model.allClasses = obj2array(model.model.classes)
     var cns = Object.keys(model.model.classes);
     cns.sort()
     cns.forEach(function(cn){
         var cls = model.model.classes[cn];
-        cls.type = cls;
         cls.allAttributes = obj2array(cls.attributes)
         cls.allReferences = obj2array(cls.references)
         cls.allCollections = obj2array(cls.collections)
@@ -168,7 +185,14 @@ function createModelXrefs(model){
         model.model.allClasses.push(cls);
         //
         cls["extends"] = cls["extends"].map(function(e){
-            return model.model.classes[e]
+            var bc = model.model.classes[e];
+            if (bc.extendedBy) {
+                bc.extendedBy.push(cls);
+            }
+            else {
+                bc.extendedBy = [cls];
+            }
+            return bc;
         });
         //
         Object.keys(cls.references).forEach(function(rn){
@@ -184,73 +208,218 @@ function createModelXrefs(model){
     console.log(model)
 }
 
-// Given a (string) path and a model, traces the path through the model and returns the
-// corresponding list of model components: the first item is the starting class, and
-// successive items are reference, collection, and attribute descriptors, 
-//
-function getPathComponents(path, model){
-    if (typeof(path) === "string") path = path.split(".");
-    var classes = model.model.classes;
-    var cls ;
-    var components = path.map(function(p, i){
-        if (i===0) {
-            // First component in a path is the starting class name
-            cls = classes[p];
-            if (!cls) throw RuntimeError("Could not find class: " + p);
-            return cls
+function getSuperclasses(cls){
+    if (!cls["extends"] || cls["extends"].length == 0) return [];
+    var anc = cls["extends"].map(function(sc){ return getSuperclasses(sc); });
+    var all = cls["extends"].concat(anc.reduce(function(acc, elt){ return acc.concat(elt); }, []));
+    var ans = all.reduce(function(acc,elt){ acc[elt.name] = elt; return acc; }, {});
+    return obj2array(ans);
+}
+
+// Returns a list of all the subclasses of the given class.
+// Args:
+//    cls (object)  A class from a compiled model
+// Returns:
+//    list of class objects, sorted by class name
+function getSubclasses(cls){
+    if (!cls.extendedBy || cls.extendedBy.length == 0) return [];
+    var desc = cls.extendedBy.map(function(sc){ return getSubclasses(sc); });
+    var all = cls.extendedBy.concat(desc.reduce(function(acc, elt){ return acc.concat(elt); }, []));
+    var ans = all.reduce(function(acc,elt){ acc[elt.name] = elt; return acc; }, {});
+    return obj2array(ans);
+}
+
+// Compiles a "raw" template - such as one returned by the /templates web service - against
+// a model. The model should have been previously compiled.
+// Args:
+//   template - a template query as a json object
+//   model - the mine's model, already compiled (see compileModel).
+// Returns:
+//   nothing
+// Side effects:
+//   Creates a tree of query nodes (suitable for drawing by d3, BTW).
+//   Turns each (string) path into a reference to a tree node corresponding to that path.
+function compileTemplate(template, model) {
+    var roots = []
+    var t = template;
+    // the tree of nodes representing the compiled query will go here
+    t.qtree = null;
+    // classify constraints
+    var subclassCs = []
+    t.where && t.where.forEach(function(c){
+        if (c.type) {
+            c.ctype = "subclass";
+            subclassCs.push(c);
         }
-        else {
-            // successive components name attributes, references, or collections
-            var x;
-            if (cls.attributes[p]) {
-                x = cls.attributes[p];
-                cls = x.type
-                return x
-            } 
-            else if (cls.references[p] || cls.collections[p]) {
-                x = cls.references[p] || cls.collections[p];
-                cls = classes[x.referencedType]
-                if (!cls) throw RuntimeError("Could not find class: " + p);
-                return x
-            }
-        }
-    });
-    return components;
+        else if (c.op === "LOOKUP")
+            c.ctype = "lookup";
+        else if (c.op === "IN" || c.op === "NOT IN")
+            c.ctype = "list";
+        else if (c.op === "IS NULL" || c.op === "IS NOT NULL")
+            c.ctype = "null"
+        else
+            c.ctype = "value";
+
+    })
+    // must process any subclass constraints first, from shortest to longest path
+    subclassCs
+        .sort(function(a,b){
+            return a.path.length - b.path.length;
+        })
+        .forEach(function(c){
+             var n = addPath(t, c.path, model);
+             var cls = model.model.classes[c.type];
+             if (!cls) throw RuntimeError("Could not find class " + c.type);
+             n.subclassConstraint = cls;
+        });
+    //
+    t.where && t.where.forEach(function(c){
+        var n = addPath(t, c.path, model);
+        if (n.constraints)
+            n.constraints.push(c)
+        else
+            n.constraints = [c];
+    })
+    t.select && t.select.forEach(function(p){
+        var n = addPath(t, p, model);
+        n.view = true;
+    })
+    t.joins && t.joins.forEach(function(j){
+        var n = addPath(t, j, model);
+        n.join = "outer";
+    })
+    return t;
+}
+
+function newNode(name, pcomp, ptype){
+    return {
+        name: name,     // display name
+        children: [],   // child nodes
+        parent: null,   // parent node
+        pcomp: pcomp,   // path component represented by the node. At root, this is
+                        // the starting class. Otherwise, points to an attribute (simple, 
+                        // reference, or collection).
+        ptype : ptype,  // path type. The type of the path at this node, i.e. the type of pcomp. 
+                        // For simple attributes, this is a string.
+                        // Points to a class in the model. May be overriden by subclass constraint.
+        subclassConstraint: null, // subclass constraint (if any). Points to a class in the model
+                        // 
+        constraints: [],// all constraints
+        view: false     // attribute to be returned. Note only simple attributes can have view == true.
+    };
 }
 
 // Adds a path to the current diagram. Path is specified as a dotted list of names.
 // Args:
-//   trees (list) the current list of roots of path trees. 
+//   template (object) the template
 //   path (string) the path to add. 
+//   model object Compiled data model.
 // Returns:
 //   last path component created. 
 // Side effects:
 //   The path is added, either to an existing trees or as a new tree..
 //
-function addPath(trees, path){
-    var cpath = getPathComponents(path, currMine.model);
+function addPath(template, path, model){
+    if (typeof(path) === "string")
+        path = path.split(".");
+    var classes = model.model.classes;
+    var lastt = null
+    var n = template.qtree;  // current node pointer
+
     function find(list, n){
          return list.filter(function(x){return x.name === n})[0]
     }
-    var parts = path.split(".");
-    var lastt = null
-    var lst = trees;
-    parts.forEach(function(p,j){ 
-        var t = find(lst, p);
-        if(!t){
-            t = { name: p, children: [], pcomp: cpath[j] }
-            lst.push(t)
+
+    path.forEach(function(p, i){
+        if (i === 0) {
+            if (template.qtree) {
+                // If root already exists, make sure new path has same root.
+                n = template.qtree;
+                if (p !== n.name)
+                    throw RuntimeError("Cannot add path from different root.");
+            }
+            else {
+                // First path to be added
+                cls = classes[p];
+                if (!cls)
+                   throw RuntimeError("Could not find class: " + p);
+                n = template.qtree = newNode( p, cls, cls );
+            }
         }
-        lastt = t
-        lst = t.children
-    });
-    return lastt
+        else {
+            // n is pointing to the parent, and p is the next name in the path.
+            var nn = find(n.children, p);
+            if (nn) {
+                // p is already a child
+                n = nn;
+            }
+            else {
+                // need to add a new node for p
+                // First, lookup p
+                var x;
+                var cls = n.subclassConstraint || n.ptype;
+                if (cls.attributes[p]) {
+                    x = cls.attributes[p];
+                    cls = x.type // <-- A string!
+                } 
+                else if (cls.references[p] || cls.collections[p]) {
+                    x = cls.references[p] || cls.collections[p];
+                    cls = classes[x.referencedType] // <--
+                    if (!cls) throw RuntimeError("Could not find class: " + p);
+                } 
+                else {
+                    throw RuntimeError("Could not find member named " + p + " in class " + cls.name + ".");
+                }
+                // create new node, add it to n's children
+                nn = newNode(p, x, cls);
+                n.children.push(nn);
+                n = nn;
+            }
+        }
+    })
+
+    // return the last node in the path
+    return n;
+}
+
+//
+function getPath(node){
+    return (node.parent ? getPath(node.parent) : "") + node.name;
+}
+
+// Args:
+//   n (node) The node having the constraint.
+//   scName (type) Name of subclass.
+function setSubclassConstraint(n, scName){
+    n.constraints = n.constraints.filter(function (c){ return c.ctype !== "subclass"; });
+    if (scName === ""){
+        n.subclassConstraint = null;
+    }
+    else {
+        let cls = currMine.model.model.classes[scName];
+        if(!cls) throw RuntimeError("Could not find class " + scName);
+        n.subclassConstraint = cls;
+        n.constraints.push({ ctype:"subclass", path:getPath(n), type:cls.name });
+    }
+    function check(node) {
+        var cls = n.subclassConstraint || node.ptype;
+        var c2 = [];
+        node.children.forEach(function(c){
+            if(c.name in cls.attributes || c.name in cls.references || c.name in cls.collections) {
+                c2.push(c);
+                check(c);
+            }
+        })
+        node.children = c2;
+    }
+    check(n);
+    hideDialog();
+    update(n);
 }
 
 // Removes the current node and all its descendants.
 //
 function removeNode() {
-    console.log(currNode);
     var p = currNode.parent;
     if (p) {
         p.children.splice(p.children.indexOf(currNode), 1);
@@ -272,36 +441,34 @@ function selectedTemplate (tname) {
     if (!t) {
         return;
     }
-    var ti = d3.select("#tInfo");
-    ti.select(".title").text(t.title)
-    ti.select(".description").text(t.description)
-    ti.select(".comment").text(t.comment)
+    // Make sure the editor works on a copy of the template.
+    //
+    currTemplate = JSON.parse(JSON.stringify(t));
 
-    var roots = []
-    t.select && t.select.forEach(function(p){
-        var n = addPath(roots, p);
-        n.view = true;
-    })
-    t.where && t.where.forEach(function(c){
-        var n = addPath(roots, c.path);
-        if (n.constraints)
-            n.constraints.push(c)
-        else
-            n.constraints = [c];
-    })
-    t.joins && t.joins.forEach(function(j){
-        var n = addPath(roots, j);
-        n.join = "outer";
-    })
-    draw(roots[0]);
+    var ti = d3.select("#tInfo");
+    ti.select(".title").text(currTemplate.title)
+    ti.select(".description").text(currTemplate.description)
+    ti.select(".comment").text(currTemplate.comment)
+
+    root = compileTemplate(currTemplate, currMine.model).qtree
+    root.x0 = h / 2;
+    root.y0 = 0;
+    update(root);
 }
 
-function draw(json) {
-  root = json;
-  root.x0 = h / 2;
-  root.y0 = 0;
-
-  update(root);
+// Extends the path from currNode to p
+// Args:
+//   currNode (node) Node to extend from
+//   p (string) Name of an attribute, ref, or collection
+function selectedNext(currNode,p){
+    p = [ p ]
+    for(var n = currNode; n; n = n.parent){
+        p.unshift(n.name);
+    }
+    var n = addPath(currTemplate, p.join("."), currMine.model );
+    n.view = true;
+    hideDialog();
+    update(currNode);
 }
 
 // Returns a text representation of a constraint
@@ -354,21 +521,45 @@ function showDialog(n, elt){
       .style("transform","scale(1.0)");
   var t = n.pcomp.type;
   if (typeof(t) === "string") {
-      // simple attributes.
+      // dialog for simple attributes.
       dialog.select("span.clsName")
           .text(n.pcomp.type.name || n.pcomp.type );
       dialog.select("table.attributes")
           .style("display","none");
+      dialog.select("select.subclassConstraint")
+          .style("display","none");
   }
   else {
-      // classes
+      // Dialog for classes
       dialog.select("span.clsName")
-          .text(n.pcomp.type.name || n.pcomp.type );
-      //
+          .text(n.pcomp.type ? n.pcomp.type.name : n.pcomp.name);
+      // Fill in the subclass constraint selection list.
+      // Note we want the subclass of the underlying
+      // path component, not the one stashed in the node
+      // (because a subclass constraint may have already been applied!)
+      var scs = getSubclasses(n.pcomp.kind ? n.pcomp.type : n.pcomp);
+      scs.unshift({name:(scs.length==0 ? "No subclasses." : "Constrain to subclass:")});
+      var scOpts = dialog
+          .select("select.subclassConstraint")
+          .style("display","block")
+          .attr("disabled", function(d){return scs.length === 1 ? "true" : null;})
+          .selectAll("option")
+          .data(scs) ;
+      scOpts.enter()
+          .append("option");
+      scOpts
+          .attr("value", function(d,i){ return i === 0 ? "" : d.name; })
+          .text(function(d){ return d.name; });
+      scOpts.filter(function(d){ return d.name === ((n.subclassConstraint || n.ptype).name || n.ptype); })
+          .attr("selected","true")
+          ;
+      scOpts.exit().remove();
+
+      // Fill in the table listing all the attributes/refs/collections.
       var tbl = dialog.select("table.attributes");
       tbl.style("display","block");
       var rows = tbl.selectAll("tr")
-          .data(n.pcomp.type.allParts)
+          .data((n.subclassConstraint || n.ptype).allParts)
           ;
       rows.enter().append("tr");
       rows.exit().remove();
@@ -479,14 +670,14 @@ function update(source) {
   var links = nl[1];
 
   // Update the nodes…
-  var node = vis.selectAll("g.node")
+  var nodeGrps = vis.selectAll("g.nodegroup")
       .data(nodes, function(d) { return d.id || (d.id = ++i); })
       ;
 
   // Create new nodes at the parent's previous position.
-  var nodeEnter = node.enter()
+  var nodeEnter = nodeGrps.enter()
       .append("svg:g")
-      .attr("class", "node")
+      .attr("class", "nodegroup")
       .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
       ;
 
@@ -496,9 +687,7 @@ function update(source) {
       var shape = (d.pcomp.kind == "attribute" ? "rect" : "circle");
       return document.createElementNS("http://www.w3.org/2000/svg", shape);
       })
-      .style("fill", function(d) { return d.view ? "green" : "#fff"; })
-      .style("stroke-width", function(d) { return d.constraints ? "2" : "1"})
-      .style("stroke", function(d) { return d.constraints ? "purple" : "black"})
+      .attr("class","node")
       .on("mouseover", function(d) { if (currNode !== d) showDialog(d, this); })
       ;
   nodeEnter.select("circle")
@@ -515,28 +704,33 @@ function update(source) {
   nodeEnter.append("svg:text")
       .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
       .attr("dy", ".35em")
-      .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
       .text(function(d) { return d.name; })
       .style("fill-opacity", 1e-6) // start off nearly transparent
+      .attr("class","nodeName")
       ;
 
+  // Transition nodes to their new position.
+  var nodeUpdate = nodeGrps
+      .classed("selected", function(d){ return d.view; })
+      .classed("constrained", function(d){ return d.constraints.length > 0; })
+      .transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+      ;
+
+  nodeGrps.selectAll("text.constraint").remove();
+
   // Add text for constraints
-  nodeEnter.append("svg:text")
+  nodeGrps.append("svg:text")
        .attr("x", 0)
        .attr("dy", "1.7em")
        .attr("text-anchor","start")
+       .attr("class","constraint")
        .html(function(d){
            var strs = (d.constraints || []).map(constraintText);
            return strs.join('<br>');
        })
-       .attr("stroke","purple")
        ;
-
-  // Transition nodes to their new position.
-  var nodeUpdate = node.transition()
-      .duration(duration)
-      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-      ;
 
   // Transition circles to full size
   nodeUpdate.select("circle")
@@ -554,7 +748,7 @@ function update(source) {
 
   //
   // Transition exiting nodes to the parent's new position.
-  var nodeExit = node.exit().transition()
+  var nodeExit = nodeGrps.exit().transition()
       .duration(duration)
       .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
       .remove()
