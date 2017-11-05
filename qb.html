@@ -12,6 +12,7 @@
   font-size: 11px;
 }
 .nodeName {
+    text-anchor: end;
 }
 .node {
   cursor: pointer;
@@ -35,7 +36,18 @@
     position: absolute;
     background-color: #ccc;
     padding: 16px;
+    display: block;
+}
+
+#dialog.hidden {
     display: none;
+}
+
+#dialog.simple .attributes {
+    display:none;
+}
+#dialog.simple .subclassConstraint {
+    display:none;
 }
 
 #dialog table.attributes {
@@ -98,7 +110,7 @@ path.link {
         </select>
 
         <div id="dialog">
-            <span class="clsName">ClassName</span>
+            <span class="clsName"></span>
             <select class="subclassConstraint"></select>
             <div class="attrContainer">
                 <table class="attributes"></table>

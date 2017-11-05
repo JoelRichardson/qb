@@ -82,7 +82,7 @@ function setup(){
         .on("change", function(){ selectedMine(this.value); });
     //
     var dg = d3.select("#dialog");
-    dg.style("display","none");
+    dg.classed("hidden",true)
     dg.select(".closeButton").on("click", hideDialog);
     dg.select(".removeButton").on("click", removeNode);
 
@@ -512,9 +512,9 @@ function showDialog(n, elt){
   dialog
       .style("top", t+"px")
       .style("left", l+"px")
-      .style("display","block")
       .style("transform", "scale(1e-6)")
       .style("transform-origin", "0% 0%")
+      .classed("hidden", false)
       ;
   dialog.transition()
       .duration(500)
@@ -522,15 +522,15 @@ function showDialog(n, elt){
   var t = n.pcomp.type;
   if (typeof(t) === "string") {
       // dialog for simple attributes.
+      dialog
+          .classed("simple",true);
       dialog.select("span.clsName")
           .text(n.pcomp.type.name || n.pcomp.type );
-      dialog.select("table.attributes")
-          .style("display","none");
-      dialog.select("select.subclassConstraint")
-          .style("display","none");
   }
   else {
       // Dialog for classes
+      dialog
+          .classed("simple",false);
       dialog.select("span.clsName")
           .text(n.pcomp.type ? n.pcomp.type.name : n.pcomp.name);
       // Fill in the subclass constraint selection list.
@@ -541,7 +541,6 @@ function showDialog(n, elt){
       scs.unshift({name:(scs.length==0 ? "No subclasses." : "Constrain to subclass:")});
       var scOpts = dialog
           .select("select.subclassConstraint")
-          .style("display","block")
           .attr("disabled", function(d){return scs.length === 1 ? "true" : null;})
           .selectAll("option")
           .data(scs) ;
@@ -557,7 +556,6 @@ function showDialog(n, elt){
 
       // Fill in the table listing all the attributes/refs/collections.
       var tbl = dialog.select("table.attributes");
-      tbl.style("display","block");
       var rows = tbl.selectAll("tr")
           .data((n.subclassConstraint || n.ptype).allParts)
           ;
@@ -617,6 +615,7 @@ function hideDialog(){
   currNode = null;
   var dialog = d3.select("#dialog");
   dialog
+      .classed("hidden", true)
       .transition()
       .duration(250)
       .style("transform","scale(1e-6)")
