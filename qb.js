@@ -93,7 +93,7 @@ function setup(){
         ;
 
     //
-    d3.select("#dialog select.subclassConstraint")
+    d3.select("#dialog .subclassConstraint select")
         .on("change", function(){ setSubclassConstraint(currNode, this.value); });
 
     // start with the first mine by default.
@@ -384,7 +384,7 @@ function addPath(template, path, model){
 
 //
 function getPath(node){
-    return (node.parent ? getPath(node.parent) : "") + node.name;
+    return (node.parent ? getPath(node.parent)+"." : "") + node.name;
 }
 
 // Args:
@@ -401,20 +401,26 @@ function setSubclassConstraint(n, scName){
         n.subclassConstraint = cls;
         n.constraints.push({ ctype:"subclass", path:getPath(n), type:cls.name });
     }
-    function check(node) {
+    function check(node, removed) {
         var cls = n.subclassConstraint || node.ptype;
         var c2 = [];
         node.children.forEach(function(c){
             if(c.name in cls.attributes || c.name in cls.references || c.name in cls.collections) {
                 c2.push(c);
-                check(c);
+                check(c, removed);
             }
+            else
+                removed.push(c);
         })
         node.children = c2;
+        return removed;
     }
-    check(n);
+    var removed = check(n,[]);
     hideDialog();
     update(n);
+    if(removed.length > 0)
+        console.log("Constraining to subclass " + scName 
+                + " caused the following paths to be removed:", removed.map(getPath)); 
 }
 
 // Removes the current node and all its descendants.
@@ -460,13 +466,14 @@ function selectedTemplate (tname) {
 // Args:
 //   currNode (node) Node to extend from
 //   p (string) Name of an attribute, ref, or collection
-function selectedNext(currNode,p){
+//   mode (string) one of "select", "constrain" or "open"
+//
+function selectedNext(currNode,p,mode){
     p = [ p ]
     for(var n = currNode; n; n = n.parent){
         p.unshift(n.name);
     }
     var n = addPath(currTemplate, p.join("."), currMine.model );
-    n.view = true;
     hideDialog();
     update(currNode);
 }
@@ -488,6 +495,14 @@ function constraintText(c) {
    return (c.code ? "("+c.code+") " : "") + t;
 }
 
+// Returns  the DOM element corresponding to the given data object.
+//
+function findDomByDataObj(d){
+    var x = d3.selectAll(".nodegroup").filter(function(dd){ return dd === d; });
+    return x[0][0];
+}
+
+
 // Opens a dialog on the specified node.
 // Also makes that node the current node.
 // Args:
@@ -499,6 +514,7 @@ function constraintText(c) {
 //   sets global currNode
 //
 function showDialog(n, elt){
+  if (!elt) elt = findDomByDataObj(n);
   currNode = n;
   var dialog = d3.select("#dialog");
   //
@@ -540,7 +556,7 @@ function showDialog(n, elt){
       var scs = getSubclasses(n.pcomp.kind ? n.pcomp.type : n.pcomp);
       scs.unshift({name:(scs.length==0 ? "No subclasses." : "Constrain to subclass:")});
       var scOpts = dialog
-          .select("select.subclassConstraint")
+          .select(".subclassConstraint select")
           .attr("disabled", function(d){return scs.length === 1 ? "true" : null;})
           .selectAll("option")
           .data(scs) ;
@@ -569,12 +585,12 @@ function showDialog(n, elt){
                   cls: ''
                   },{
                   name: "S",
-                  cls: 'select',
-                  click: function (){selectedNext(currNode,comp.name); }
+                  cls: 'selectsimple',
+                  click: function (){selectedNext(currNode,comp.name,"select"); }
                   },{
                   name: "C",
-                  cls: 'constraint',
-                  click: function (){selectedNext(currNode,comp.name); }
+                  cls: 'constrainsimple',
+                  click: function (){selectedNext(currNode,comp.name,"constrain"); }
                   }];
               }
               else {
@@ -583,8 +599,8 @@ function showDialog(n, elt){
                   cls: ''
                   },{
                   name: ">",
-                  cls: '',
-                  click: function (){selectedNext(currNode,comp.name); }
+                  cls: 'opennext',
+                  click: function (){selectedNext(currNode,comp.name,"open"); }
                   },{
                   name: "",
                   cls: ''

@@ -36,7 +36,8 @@
     position: absolute;
     background-color: #ccc;
     padding: 16px;
-    display: block;
+    display: flex;
+    flex-direction: column;
 }
 
 #dialog.hidden {
@@ -64,15 +65,21 @@
     background-color: #ddd;
 }
 
-#dialog table.attributes td.select {
+#dialog table.attributes td.selectsimple {
     color: white;
     background-color: green;
     cursor: pointer;
 }
 
-#dialog table.attributes td.constraint {
+#dialog table.attributes td.constrainsimple {
     color: white;
     background-color: purple;
+    cursor: pointer;
+}
+
+#dialog table.attributes td.opennext {
+    color: white;
+    background-color: steelblue;
     cursor: pointer;
 }
 
@@ -85,8 +92,19 @@ button.removeButton {
 }
 
 #dialog .attrContainer {
-    max-height: 200px;
+    border: thin solid white;
+    max-height: 150px;
     overflow: scroll;
+}
+
+#dialog .header {
+    display: flex;
+    flex-direction: column;
+}
+
+#dialog .footer {
+    display: flex;
+    flex-direction: row;
 }
 
 path.link {
@@ -110,13 +128,17 @@ path.link {
         </select>
 
         <div id="dialog">
-            <span class="clsName"></span>
-            <select class="subclassConstraint"></select>
+            <div class="header">
+                <div><label>Class: </label><span class="clsName"></span></div>
+                <div class="subclassConstraint"><label>Subclass<br/>constraint: </label><select></select></div>
+            </div>
             <div class="attrContainer">
                 <table class="attributes"></table>
             </div>
-            <button class="removeButton">Remove</button>
-            <button class="closeButton">Close</button>
+            <div class="footer">
+              <button class="removeButton">Remove</button>
+              <button class="closeButton">Close</button>
+            </div>  
         </div>
 
         <div id="tInfo">
