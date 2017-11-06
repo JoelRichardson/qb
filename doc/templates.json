@@ -1,0 +1,3143 @@
+{
+  "templates": {
+    "Coords_Features": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Coordinates --> Features",
+      "description": "Returns genome features contained within a specified coordinate range for the specified species. <br><strong>(See also the <a href=\"genomicRegionSearch.do\">Region Search</a> tab.)</strong>",
+      "select": [
+        "SequenceFeature.chromosomeLocation.locatedOn.primaryIdentifier",
+        "SequenceFeature.chromosomeLocation.start",
+        "SequenceFeature.chromosomeLocation.end",
+        "SequenceFeature.chromosomeLocation.strand",
+        "SequenceFeature.organism.shortName",
+        "SequenceFeature.primaryIdentifier",
+        "SequenceFeature.symbol",
+        "SequenceFeature.name",
+        "SequenceFeature.sequenceOntologyTerm.name"
+      ],
+      "constraintLogic": "A and C and D and E",
+      "name": "Coords_Features",
+      "comment": "",
+      "tags": [
+        "im:aspect:Genome",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "16",
+      "orderBy": [
+        {
+          "SequenceFeature.chromosomeLocation.start": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "SequenceFeature.chromosomeLocation.locatedOn",
+          "type": "Chromosome"
+        },
+        {
+          "path": "SequenceFeature.organism.shortName",
+          "op": "=",
+          "code": "E",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "M. musculus"
+        },
+        {
+          "path": "SequenceFeature.chromosomeLocation.locatedOn.primaryIdentifier",
+          "op": "=",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "12"
+        },
+        {
+          "path": "SequenceFeature.chromosomeLocation.start",
+          "op": ">=",
+          "code": "D",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10000000"
+        },
+        {
+          "path": "SequenceFeature.chromosomeLocation.end",
+          "op": "<=",
+          "code": "C",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "12000000"
+        }
+      ]
+    },
+    "Domain_Proteins_Genes": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Protein Domain --> Proteins and Genes",
+      "description": "For the specified InterPRO ID(s) or Protein Domain Name(s), returns the proteins and genes which have the specified domains or families. Results include both Swiss-Prot (reviewed entries known to have experimental evidence) and TrEMBL (additional submitted sequences some of which may be partial) sequences. Excludes proteins with no gene associations. (To see these, remove the gene symbol and id columns.)",
+      "select": [
+        "ProteinDomain.name",
+        "ProteinDomain.primaryIdentifier",
+        "ProteinDomain.type",
+        "ProteinDomain.proteinDomainRegions.protein.primaryAccession",
+        "ProteinDomain.proteinDomainRegions.protein.dataSets.name",
+        "ProteinDomain.proteinDomainRegions.protein.isFragment",
+        "ProteinDomain.proteinDomainRegions.protein.genes.primaryIdentifier",
+        "ProteinDomain.proteinDomainRegions.protein.genes.symbol"
+      ],
+      "constraintLogic": "B and C and A",
+      "name": "Domain_Proteins_Genes",
+      "comment": "",
+      "tags": [
+        "im:aspect:Proteins",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "48",
+      "orderBy": [
+        {
+          "ProteinDomain.proteinDomainRegions.protein.genes.symbol": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "ProteinDomain.proteinDomainRegions.protein.dataSets.name",
+          "op": "ONE OF",
+          "code": "C",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "values": [
+            "Swiss-Prot data set",
+            "TrEMBL data set"
+          ]
+        },
+        {
+          "path": "ProteinDomain.organism",
+          "op": "IS NULL",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "IS NULL"
+        },
+        {
+          "path": "ProteinDomain",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "kringle"
+        }
+      ]
+    },
+    "EMAPAInteraction_Genes": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Expression + Interacting Gene (protein-protein) --> Genes",
+      "description": "List all genes that are expressed in a given structure/stage and have been shown to interact (protein-protein) with a specific gene. ",
+      "select": [
+        "Gene.primaryIdentifier",
+        "Gene.symbol",
+        "Gene.expression.structure.name",
+        "Gene.expression.stage",
+        "Gene.expression.assayType",
+        "Gene.expression.publication.pubMedId",
+        "Gene.interactions.participant2.primaryIdentifier",
+        "Gene.interactions.participant2.symbol",
+        "Gene.interactions.details.type",
+        "Gene.interactions.details.experiment.interactionDetectionMethods.name",
+        "Gene.interactions.details.experiment.publication.pubMedId"
+      ],
+      "constraintLogic": "A and B and C and D and E",
+      "name": "EMAPAInteraction_Genes",
+      "comment": "",
+      "tags": [
+        "im:aspect:Expression",
+        "im:aspect:Interactions",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "25",
+      "orderBy": [
+        {
+          "Gene.symbol": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Gene.interactions.participant2",
+          "type": "Gene"
+        },
+        {
+          "path": "Gene.expression.structure.parents",
+          "type": "EMAPATerm"
+        },
+        {
+          "path": "Gene.expression.detected",
+          "op": "=",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "true"
+        },
+        {
+          "path": "Gene.interactions.participant2.organism.taxonId",
+          "op": "=",
+          "code": "D",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Gene.expression.structure.parents",
+          "op": "LOOKUP",
+          "code": "C",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "hippocampus"
+        },
+        {
+          "path": "Gene.interactions.participant2",
+          "op": "LOOKUP",
+          "code": "E",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pou5f1",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "Feature_crossrefs": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Features --> Cross References",
+      "description": "Returns database xrefs/links for the specified genome features.",
+      "select": [
+        "SequenceFeature.primaryIdentifier",
+        "SequenceFeature.symbol",
+        "SequenceFeature.crossReferences.identifier",
+        "SequenceFeature.crossReferences.source.name"
+      ],
+      "name": "Feature_crossrefs",
+      "comment": "",
+      "tags": [
+        "im:aspect:summary",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "45",
+      "orderBy": [
+        {
+          "SequenceFeature.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "SequenceFeature",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pax6",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "Feature_overlapping": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Features --> Overlapping features",
+      "description": "Returns genome features that overlap the specified features.",
+      "select": [
+        "SequenceFeature.primaryIdentifier",
+        "SequenceFeature.symbol",
+        "SequenceFeature.chromosomeLocation.locatedOn.primaryIdentifier",
+        "SequenceFeature.chromosomeLocation.start",
+        "SequenceFeature.chromosomeLocation.end",
+        "SequenceFeature.chromosomeLocation.strand",
+        "SequenceFeature.overlappingFeatures.primaryIdentifier",
+        "SequenceFeature.overlappingFeatures.symbol",
+        "SequenceFeature.overlappingFeatures.sequenceOntologyTerm.name",
+        "SequenceFeature.overlappingFeatures.chromosomeLocation.locatedOn.primaryIdentifier",
+        "SequenceFeature.overlappingFeatures.chromosomeLocation.start",
+        "SequenceFeature.overlappingFeatures.chromosomeLocation.end",
+        "SequenceFeature.overlappingFeatures.chromosomeLocation.strand"
+      ],
+      "name": "Feature_overlapping",
+      "comment": "",
+      "tags": [
+        "im:aspect:Genome",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "33",
+      "orderBy": [
+        {
+          "SequenceFeature.symbol": "ASC"
+        },
+        {
+          "SequenceFeature.overlappingFeatures.symbol": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "SequenceFeature",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Bmp2, Bmp4",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "GO_Interaction_Genes": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "GO term + Interacting gene (protein-protein) --> Genes.",
+      "description": "List all genes that are annotated with a given GO term and that have been shown to interact (protein-protein) with a specific gene.",
+      "select": [
+        "Gene.primaryIdentifier",
+        "Gene.symbol",
+        "Gene.goAnnotation.ontologyTerm.name",
+        "Gene.interactions.participant2.primaryIdentifier",
+        "Gene.interactions.participant2.symbol",
+        "Gene.interactions.details.type",
+        "Gene.interactions.details.experiment.interactionDetectionMethods.name",
+        "Gene.interactions.details.experiment.name",
+        "Gene.interactions.details.experiment.publication.pubMedId",
+        "Gene.interactions.details.dataSets.name"
+      ],
+      "constraintLogic": "A and B and C and D",
+      "name": "GO_Interaction_Genes",
+      "comment": "",
+      "tags": [
+        "im:aspect:Function",
+        "im:aspect:Interactions",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "42",
+      "orderBy": [
+        {
+          "Gene.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Gene.organism.taxonId",
+          "op": "=",
+          "code": "D",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Gene.interactions.participant2.organism.taxonId",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Gene.interactions.participant2",
+          "type": "Gene"
+        },
+        {
+          "path": "Gene.goAnnotation.ontologyTerm.parents",
+          "type": "GOTerm"
+        },
+        {
+          "path": "Gene.goAnnotation.ontologyTerm",
+          "type": "GOTerm"
+        },
+        {
+          "path": "Gene.goAnnotation.ontologyTerm.parents",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "transcription*"
+        },
+        {
+          "path": "Gene.interactions.participant2",
+          "op": "LOOKUP",
+          "code": "C",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pax6",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "GO_MFeatures": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Functions (GO terms and children) --> Mouse features",
+      "description": "Returns mouse features associated with specified GO terms (and any children of this GO term).",
+      "select": [
+        "SequenceFeature.ontologyAnnotations.ontologyTerm.namespace",
+        "SequenceFeature.ontologyAnnotations.ontologyTerm.identifier",
+        "SequenceFeature.ontologyAnnotations.ontologyTerm.name",
+        "SequenceFeature.ontologyAnnotations.qualifier",
+        "SequenceFeature.ontologyAnnotations.evidence.code.code",
+        "SequenceFeature.ontologyAnnotations.evidence.withText",
+        "SequenceFeature.primaryIdentifier",
+        "SequenceFeature.symbol",
+        "SequenceFeature.name",
+        "SequenceFeature.mgiType",
+        "SequenceFeature.ontologyAnnotations.evidence.publications.mgiJnum",
+        "SequenceFeature.ontologyAnnotations.evidence.publications.pubMedId",
+        "SequenceFeature.ontologyAnnotations.evidence.publications.citation",
+        "SequenceFeature.ontologyAnnotations.evidence.comments.type",
+        "SequenceFeature.ontologyAnnotations.evidence.comments.description"
+      ],
+      "constraintLogic": "A and D and C",
+      "name": "GO_MFeatures",
+      "comment": "",
+      "tags": [
+        "im:aspect:Function",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "9",
+      "orderBy": [
+        {
+          "SequenceFeature.mgiType": "ASC"
+        }
+      ],
+      "joins": [
+        "SequenceFeature.ontologyAnnotations.evidence.comments"
+      ],
+      "where": [
+        {
+          "path": "SequenceFeature.ontologyAnnotations.dataSets.name",
+          "op": "=",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "GOTerm to Mouse Feature Annotations from MGI"
+        },
+        {
+          "path": "SequenceFeature.ontologyAnnotations.ontologyTerm",
+          "type": "GOTerm"
+        },
+        {
+          "path": "SequenceFeature.organism.taxonId",
+          "op": "=",
+          "code": "D",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "SequenceFeature.ontologyAnnotations.ontologyTerm.parents",
+          "type": "GOTerm"
+        },
+        {
+          "path": "SequenceFeature.ontologyAnnotations.ontologyTerm.parents",
+          "op": "LOOKUP",
+          "code": "C",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "DNA repair"
+        }
+      ]
+    },
+    "GO_MFeatures_NoChildren": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Functions (GO terms) --> Mouse features",
+      "description": "Returns mouse features associated with specified GO terms.",
+      "select": [
+        "SequenceFeature.ontologyAnnotations.ontologyTerm.namespace",
+        "SequenceFeature.ontologyAnnotations.ontologyTerm.identifier",
+        "SequenceFeature.ontologyAnnotations.ontologyTerm.name",
+        "SequenceFeature.ontologyAnnotations.qualifier",
+        "SequenceFeature.ontologyAnnotations.evidence.code.code",
+        "SequenceFeature.ontologyAnnotations.evidence.withText",
+        "SequenceFeature.primaryIdentifier",
+        "SequenceFeature.symbol",
+        "SequenceFeature.name",
+        "SequenceFeature.mgiType",
+        "SequenceFeature.ontologyAnnotations.evidence.publications.mgiJnum",
+        "SequenceFeature.ontologyAnnotations.evidence.publications.pubMedId",
+        "SequenceFeature.ontologyAnnotations.evidence.publications.citation"
+      ],
+      "constraintLogic": "A and D and C",
+      "name": "GO_MFeatures_NoChildren",
+      "comment": "",
+      "tags": [
+        "im:aspect:Function",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "20",
+      "orderBy": [
+        {
+          "SequenceFeature.ontologyAnnotations.ontologyTerm.name": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "SequenceFeature.organism.taxonId",
+          "op": "=",
+          "code": "D",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "SequenceFeature.ontologyAnnotations.ontologyTerm",
+          "type": "GOTerm"
+        },
+        {
+          "path": "SequenceFeature.ontologyAnnotations.dataSets.name",
+          "op": "=",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "GOTerm to Mouse Feature Annotations from MGI"
+        },
+        {
+          "path": "SequenceFeature.ontologyAnnotations.ontologyTerm",
+          "op": "LOOKUP",
+          "code": "C",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "DNA repair"
+        }
+      ]
+    },
+    "GO_Publications": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Functions (GO terms and children) --> Publications",
+      "description": "Returns publications related to specified function (GO) terms, i.e., those cited by annotations involving those terms  (and any children of the GO terms).",
+      "select": [
+        "GOTerm.identifier",
+        "GOTerm.name",
+        "GOTerm.ontologyAnnotations.evidence.code.code",
+        "GOTerm.ontologyAnnotations.evidence.withText",
+        "GOTerm.ontologyAnnotations.evidence.publications.mgiJnum",
+        "GOTerm.ontologyAnnotations.evidence.publications.pubMedId",
+        "GOTerm.ontologyAnnotations.evidence.publications.firstAuthor",
+        "GOTerm.ontologyAnnotations.evidence.publications.journal",
+        "GOTerm.ontologyAnnotations.evidence.publications.title",
+        "GOTerm.ontologyAnnotations.evidence.publications.year",
+        "GOTerm.ontologyAnnotations.qualifier",
+        "GOTerm.ontologyAnnotations.evidence.comments.type",
+        "GOTerm.ontologyAnnotations.evidence.comments.description"
+      ],
+      "name": "GO_Publications",
+      "comment": "",
+      "tags": [
+        "im:aspect:Function",
+        "im:aspect:Literature",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "47",
+      "orderBy": [
+        {
+          "GOTerm.ontologyAnnotations.evidence.publications.year": "DESC"
+        }
+      ],
+      "joins": [
+        "GOTerm.ontologyAnnotations.evidence.comments"
+      ],
+      "where": [
+        {
+          "path": "GOTerm.parents",
+          "type": "GOTerm"
+        },
+        {
+          "path": "GOTerm.parents",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "homeostatic process"
+        }
+      ]
+    },
+    "GO_Publications_NoChildren": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Functions (GO terms) --> Publications",
+      "description": "Returns publications related to specified function (GO) terms, i.e., those cited by annotations involving those terms.",
+      "select": [
+        "GOTerm.identifier",
+        "GOTerm.name",
+        "GOTerm.ontologyAnnotations.evidence.code.code",
+        "GOTerm.ontologyAnnotations.evidence.withText",
+        "GOTerm.ontologyAnnotations.evidence.publications.mgiJnum",
+        "GOTerm.ontologyAnnotations.evidence.publications.pubMedId",
+        "GOTerm.ontologyAnnotations.evidence.publications.firstAuthor",
+        "GOTerm.ontologyAnnotations.evidence.publications.journal",
+        "GOTerm.ontologyAnnotations.evidence.publications.title",
+        "GOTerm.ontologyAnnotations.evidence.publications.year"
+      ],
+      "name": "GO_Publications_NoChildren",
+      "comment": "",
+      "tags": [
+        "im:aspect:Function",
+        "im:aspect:Literature",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "46",
+      "orderBy": [
+        {
+          "GOTerm.identifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "GOTerm",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "homeostatic process"
+        }
+      ]
+    },
+    "Gene_Domains": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Gene --> Domains",
+      "description": "Show protein domains of a specified mouse gene or genes.",
+      "select": [
+        "Gene.primaryIdentifier",
+        "Gene.symbol",
+        "Gene.proteins.proteinDomainRegions.proteinDomain.name",
+        "Gene.proteins.proteinDomainRegions.proteinDomain.type"
+      ],
+      "constraintLogic": "A and B",
+      "name": "Gene_Domains",
+      "comment": "",
+      "tags": [
+        "im:aspect:Proteins",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "44",
+      "orderBy": [
+        {
+          "Gene.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Gene.organism.taxonId",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Gene",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Tspan6",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "Gene_Expression": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Gene --> Expression annotations",
+      "description": "Returns expression annotations for the specified gene(s).",
+      "select": [
+        "GXDExpression.assayType",
+        "GXDExpression.feature.symbol",
+        "GXDExpression.feature.primaryIdentifier",
+        "GXDExpression.stage",
+        "GXDExpression.age",
+        "GXDExpression.structure.name",
+        "GXDExpression.strength",
+        "GXDExpression.pattern",
+        "GXDExpression.genotype.symbol",
+        "GXDExpression.sex",
+        "GXDExpression.assayId",
+        "GXDExpression.probe",
+        "GXDExpression.image",
+        "GXDExpression.publication.mgiJnum"
+      ],
+      "constraintLogic": "A and B",
+      "name": "Gene_Expression",
+      "comment": "",
+      "tags": [
+        "im:aspect:Expression",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "6",
+      "orderBy": [
+        {
+          "GXDExpression.assayId": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "GXDExpression.feature.organism.taxonId",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "GXDExpression.feature",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pax6"
+        }
+      ]
+    },
+    "Gene_Interactions": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Gene --> Protein-Protein Interactions",
+      "description": "Show protein-protein interaction data for specified gene(s).",
+      "select": [
+        "Gene.symbol",
+        "Gene.interactions.details.role1",
+        "Gene.interactions.participant2.symbol",
+        "Gene.interactions.details.role2",
+        "Gene.interactions.details.type",
+        "Gene.interactions.details.relationshipType",
+        "Gene.interactions.details.experiment.interactionDetectionMethods.name",
+        "Gene.interactions.details.experiment.publication.pubMedId",
+        "Gene.interactions.details.dataSets.name"
+      ],
+      "name": "Gene_Interactions",
+      "comment": "",
+      "tags": [
+        "im:aspect:Interactions",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "13",
+      "orderBy": [
+        {
+          "Gene.symbol": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Gene.interactions.participant2",
+          "type": "Gene"
+        },
+        {
+          "path": "Gene",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pou5f1",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "Gene_Ortholog": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Genes --> Homologs",
+      "description": "Returns homologs of specified genes.",
+      "select": [
+        "Gene.primaryIdentifier",
+        "Gene.symbol",
+        "Gene.organism.name",
+        "Gene.homologues.homologue.primaryIdentifier",
+        "Gene.homologues.homologue.symbol",
+        "Gene.homologues.homologue.organism.name",
+        "Gene.homologues.type",
+        "Gene.homologues.dataSets.name"
+      ],
+      "constraintLogic": "A and B",
+      "name": "Gene_Ortholog",
+      "comment": "",
+      "tags": [
+        "im:aspect:Homology",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "4",
+      "orderBy": [
+        {
+          "Gene.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Gene.homologues.type",
+          "op": "NONE OF",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "values": [
+            "horizontal gene transfer",
+            "least diverged horizontal gene transfer"
+          ]
+        },
+        {
+          "path": "Gene",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "C4a, Sox9",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "Gene_Protein": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Gene --> Proteins ",
+      "description": "For the specified mouse gene(s), returns the associated proteins. This includes both Swiss-Prot (reviewed entries known to have experimental evidence) and TrEMBL (additional submitted sequences some of which may be partial) sequences.",
+      "select": [
+        "Gene.primaryIdentifier",
+        "Gene.symbol",
+        "Gene.proteins.primaryAccession",
+        "Gene.proteins.synonyms.value",
+        "Gene.proteins.length",
+        "Gene.proteins.isFragment",
+        "Gene.proteins.dataSets.name",
+        "Gene.proteins.comments.type",
+        "Gene.proteins.comments.description"
+      ],
+      "constraintLogic": "A and B and C",
+      "name": "Gene_Protein",
+      "comment": "",
+      "tags": [
+        "im:aspect:Proteins",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "18",
+      "orderBy": [
+        {
+          "Gene.symbol": "ASC"
+        },
+        {
+          "Gene.proteins.dataSets.name": "ASC"
+        },
+        {
+          "Gene.proteins.length": "DESC"
+        }
+      ],
+      "joins": [
+        "Gene.proteins.comments",
+        "Gene.proteins.synonyms"
+      ],
+      "where": [
+        {
+          "path": "Gene.organism.taxonId",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Gene.proteins.dataSets.name",
+          "op": "ONE OF",
+          "code": "C",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "values": [
+            "Swiss-Prot data set",
+            "TrEMBL data set"
+          ]
+        },
+        {
+          "path": "Gene",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pparg",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "Gene_Proteins_Domains": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Gene --> Protein + Domains",
+      "description": "Show protein domain information for the proteins of a specified mouse gene.",
+      "select": [
+        "Gene.primaryIdentifier",
+        "Gene.symbol",
+        "Gene.proteins.uniprotAccession",
+        "Gene.proteins.isFragment",
+        "Gene.proteins.dataSets.name",
+        "Gene.proteins.proteinDomainRegions.proteinDomain.name",
+        "Gene.proteins.proteinDomainRegions.proteinDomain.type",
+        "Gene.proteins.proteinDomainRegions.start",
+        "Gene.proteins.proteinDomainRegions.end",
+        "Gene.proteins.proteinDomainRegions.identifier",
+        "Gene.proteins.proteinDomainRegions.database"
+      ],
+      "constraintLogic": "A and B and C",
+      "name": "Gene_Proteins_Domains",
+      "comment": "",
+      "tags": [
+        "im:aspect:Proteins",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "40",
+      "orderBy": [
+        {
+          "Gene.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Gene.proteins.dataSets.name",
+          "op": "ONE OF",
+          "code": "C",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "values": [
+            "Swiss-Prot data set",
+            "TrEMBL data set"
+          ]
+        },
+        {
+          "path": "Gene.organism.taxonId",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Gene",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Tspan6",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "HDisease_HGene": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Diseases --> Human genes",
+      "description": "Returns human genes associated with specified human diseases.",
+      "select": [
+        "Gene.ontologyAnnotations.ontologyTerm.identifier",
+        "Gene.ontologyAnnotations.ontologyTerm.name",
+        "Gene.primaryIdentifier",
+        "Gene.symbol"
+      ],
+      "constraintLogic": "B and A",
+      "name": "HDisease_HGene",
+      "comment": "",
+      "tags": [
+        "im:aspect:Disease",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "27",
+      "orderBy": [
+        {
+          "Gene.ontologyAnnotations.ontologyTerm.name": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Gene.ontologyAnnotations.ontologyTerm",
+          "type": "DiseaseTerm"
+        },
+        {
+          "path": "Gene.ontologyAnnotations.dataSets.name",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "DiseaseTerm to Human Feature Annotations from MGI"
+        },
+        {
+          "path": "Gene.ontologyAnnotations.ontologyTerm",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "*diabetes*"
+        }
+      ]
+    },
+    "HDisease_MGene": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Diseases --> Mouse genes",
+      "description": "Returns mouse genes associated with (modeling) specified human diseases.",
+      "select": [
+        "OntologyAnnotation.ontologyTerm.identifier",
+        "OntologyAnnotation.ontologyTerm.name",
+        "OntologyAnnotation.qualifier",
+        "OntologyAnnotation.subject.primaryIdentifier",
+        "OntologyAnnotation.subject.symbol",
+        "OntologyAnnotation.evidence.baseAnnotations.subject.symbol",
+        "OntologyAnnotation.evidence.baseAnnotations.subject.background.name"
+      ],
+      "name": "HDisease_MGene",
+      "comment": "",
+      "tags": [
+        "im:aspect:Disease",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "15",
+      "orderBy": [
+        {
+          "OntologyAnnotation.subject.symbol": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "OntologyAnnotation.evidence.baseAnnotations.subject",
+          "type": "Genotype"
+        },
+        {
+          "path": "OntologyAnnotation.subject",
+          "type": "SequenceFeature"
+        },
+        {
+          "path": "OntologyAnnotation.ontologyTerm.parents",
+          "type": "DiseaseTerm"
+        },
+        {
+          "path": "OntologyAnnotation.ontologyTerm",
+          "type": "DiseaseTerm"
+        },
+        {
+          "path": "OntologyAnnotation.ontologyTerm.parents",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "*deafness*"
+        }
+      ]
+    },
+    "HDisease_MModel": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Diseases --> Mouse models",
+      "description": "Returns mouse models (genotypes) associated with (modeling) specified human diseases.",
+      "select": [
+        "OntologyAnnotation.ontologyTerm.identifier",
+        "OntologyAnnotation.ontologyTerm.name",
+        "OntologyAnnotation.qualifier",
+        "OntologyAnnotation.subject.symbol",
+        "OntologyAnnotation.subject.background.name",
+        "OntologyAnnotation.subject.zygosity"
+      ],
+      "name": "HDisease_MModel",
+      "comment": "",
+      "tags": [
+        "im:aspect:Disease",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "19",
+      "orderBy": [
+        {
+          "OntologyAnnotation.ontologyTerm.identifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "OntologyAnnotation.subject",
+          "type": "Genotype"
+        },
+        {
+          "path": "OntologyAnnotation.ontologyTerm",
+          "type": "DiseaseTerm"
+        },
+        {
+          "path": "OntologyAnnotation.ontologyTerm.parents",
+          "type": "DiseaseTerm"
+        },
+        {
+          "path": "OntologyAnnotation.ontologyTerm.parents",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "alzheimer*"
+        }
+      ]
+    },
+    "HDisease_Publications": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Diseases --> Publications",
+      "description": "Returns mouse model publications for the specified disease terms.",
+      "select": [
+        "DiseaseTerm.identifier",
+        "DiseaseTerm.name",
+        "DiseaseTerm.ontologyAnnotations.evidence.publications.mgiJnum",
+        "DiseaseTerm.ontologyAnnotations.evidence.publications.pubMedId",
+        "DiseaseTerm.ontologyAnnotations.evidence.publications.firstAuthor",
+        "DiseaseTerm.ontologyAnnotations.evidence.publications.journal",
+        "DiseaseTerm.ontologyAnnotations.evidence.publications.title",
+        "DiseaseTerm.ontologyAnnotations.evidence.publications.year"
+      ],
+      "constraintLogic": "A and B and (D or E)",
+      "name": "HDisease_Publications",
+      "comment": "",
+      "tags": [
+        "im:aspect:Disease",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "34",
+      "orderBy": [
+        {
+          "DiseaseTerm.name": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "DiseaseTerm.ontologyAnnotations.dataSets.name",
+          "op": "ONE OF",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "values": [
+            "DiseaseTerm to Mouse Allele Annotations from MGI",
+            "DiseaseTerm to Mouse Genotype Annotations from MGI"
+          ]
+        },
+        {
+          "path": "DiseaseTerm.parents",
+          "type": "DiseaseTerm"
+        },
+        {
+          "path": "DiseaseTerm.ontologyAnnotations.qualifier",
+          "op": "IS NULL",
+          "code": "D",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "IS NULL"
+        },
+        {
+          "path": "DiseaseTerm.ontologyAnnotations.qualifier",
+          "op": "!=",
+          "code": "E",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "NOT"
+        },
+        {
+          "path": "DiseaseTerm.parents",
+          "op": "LOOKUP",
+          "code": "B",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Parkinson*"
+        }
+      ]
+    },
+    "HGene_HDisease": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Human genes --> Diseases terms",
+      "description": "Returns human diseases  associated with specified human genes.",
+      "select": [
+        "Gene.primaryIdentifier",
+        "Gene.symbol",
+        "Gene.ontologyAnnotations.ontologyTerm.identifier",
+        "Gene.ontologyAnnotations.ontologyTerm.name"
+      ],
+      "constraintLogic": "A and B and C",
+      "name": "HGene_HDisease",
+      "comment": "",
+      "tags": [
+        "im:aspect:Disease",
+        "im:public"
+      ],
+      "rank": "22",
+      "orderBy": [
+        {
+          "Gene.ontologyAnnotations.ontologyTerm.name": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Gene.ontologyAnnotations.ontologyTerm",
+          "type": "DiseaseTerm"
+        },
+        {
+          "path": "Gene.ontologyAnnotations.dataSets.name",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "DiseaseTerm to Human Feature Annotations from MGI"
+        },
+        {
+          "path": "Gene.organism.taxonId",
+          "op": "=",
+          "code": "C",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "9606"
+        },
+        {
+          "path": "Gene",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "CFTR",
+          "extraValue": "H. sapiens"
+        }
+      ]
+    },
+    "HGene_MPhenotype": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Human genes --> Phenotypes of mouse orthologs",
+      "description": "Returns the phenotypes of mice with mutations in the orthologs of the specified human genes.",
+      "select": [
+        "Gene.primaryIdentifier",
+        "Gene.symbol",
+        "Gene.organism.name",
+        "Gene.homologues.homologue.primaryIdentifier",
+        "Gene.homologues.homologue.symbol",
+        "Gene.homologues.homologue.organism.name",
+        "Gene.homologues.homologue.ontologyAnnotations.ontologyTerm.identifier",
+        "Gene.homologues.homologue.ontologyAnnotations.ontologyTerm.name"
+      ],
+      "constraintLogic": "A and D and J and B and C",
+      "name": "HGene_MPhenotype",
+      "comment": "",
+      "tags": [
+        "im:aspect:Homology",
+        "im:aspect:Phenotype",
+        "im:public"
+      ],
+      "rank": "2",
+      "orderBy": [
+        {
+          "Gene.homologues.homologue.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Gene.homologues.type",
+          "op": "NONE OF",
+          "code": "C",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "values": [
+            "horizontal gene transfer",
+            "least diverged horizontal gene transfer"
+          ]
+        },
+        {
+          "path": "Gene.homologues.dataSets.name",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Mouse/Human Orthologies from MGI"
+        },
+        {
+          "path": "Gene.organism.taxonId",
+          "op": "=",
+          "code": "D",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "9606"
+        },
+        {
+          "path": "Gene.homologues.homologue.organism.taxonId",
+          "op": "=",
+          "code": "J",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Gene.homologues.homologue.ontologyAnnotations.ontologyTerm",
+          "type": "MPTerm"
+        },
+        {
+          "path": "Gene",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "BMP4",
+          "extraValue": "H. sapiens"
+        }
+      ]
+    },
+    "Lookup_EMAPA": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "LOOKUP --> Anatomy (EMAPA) terms",
+      "select": [
+        "EMAPATerm.name",
+        "EMAPATerm.identifier",
+        "EMAPATerm.startsAt",
+        "EMAPATerm.endsAt"
+      ],
+      "name": "Lookup_EMAPA",
+      "comment": "",
+      "tags": [
+        "im:aspect:Expression",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "35",
+      "orderBy": [
+        {
+          "EMAPATerm.startsAt": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "EMAPATerm.name",
+          "op": "=",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "primitive heart tube"
+        }
+      ]
+    },
+    "Lookup_Features": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Lookup --> Features",
+      "description": "Returns genome features that match a specified string. (ID, symbol, name, synonym) for the specified species.",
+      "select": [
+        "SequenceFeature.primaryIdentifier",
+        "SequenceFeature.symbol",
+        "SequenceFeature.name",
+        "SequenceFeature.sequenceOntologyTerm.name",
+        "SequenceFeature.chromosomeLocation.locatedOn.primaryIdentifier",
+        "SequenceFeature.chromosomeLocation.start",
+        "SequenceFeature.chromosomeLocation.end",
+        "SequenceFeature.chromosomeLocation.strand",
+        "SequenceFeature.organism.shortName"
+      ],
+      "constraintLogic": "A and B",
+      "name": "Lookup_Features",
+      "comment": "",
+      "tags": [
+        "im:aspect:Genome",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "21",
+      "orderBy": [
+        {
+          "SequenceFeature.symbol": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "SequenceFeature",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Adh*",
+          "extraValue": "M. musculus"
+        },
+        {
+          "path": "SequenceFeature.organism.shortName",
+          "op": "=",
+          "code": "B",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "M. musculus"
+        }
+      ]
+    },
+    "Lookup_GO": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Lookup --> Functions (GO terms)",
+      "description": "Returns GO terms that match specified search string.",
+      "select": [
+        "GOTerm.identifier",
+        "GOTerm.name",
+        "GOTerm.description",
+        "GOTerm.namespace"
+      ],
+      "constraintLogic": "A and B",
+      "name": "Lookup_GO",
+      "comment": "",
+      "tags": [
+        "im:aspect:Function",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "32",
+      "orderBy": [
+        {
+          "GOTerm.identifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "GOTerm.obsolete",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "false"
+        },
+        {
+          "path": "GOTerm.name",
+          "op": "CONTAINS",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "homeostasis"
+        }
+      ]
+    },
+    "Lookup_HDisease": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Lookup --> Disease terms",
+      "description": "Returns human disease terms that match the specified search string.",
+      "select": [
+        "DOTerm.identifier",
+        "DOTerm.name",
+        "DOTerm.description"
+      ],
+      "constraintLogic": "A and B",
+      "name": "Lookup_HDisease",
+      "comment": "",
+      "tags": [
+        "im:aspect:Disease",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "49",
+      "orderBy": [
+        {
+          "DOTerm.name": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "DOTerm.obsolete",
+          "op": "=",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "false"
+        },
+        {
+          "path": "DOTerm.name",
+          "op": "CONTAINS",
+          "code": "B",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "autoimmune"
+        }
+      ]
+    },
+    "Lookup_MAlleles": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Lookup --> Mouse Alleles",
+      "description": "Returns mouse alleles matching the given string.",
+      "select": [
+        "Allele.primaryIdentifier",
+        "Allele.symbol",
+        "Allele.name",
+        "Allele.alleleType"
+      ],
+      "constraintLogic": "A and B",
+      "name": "Lookup_MAlleles",
+      "comment": "",
+      "tags": [
+        "im:aspect:Genome",
+        "im:public"
+      ],
+      "rank": "17",
+      "orderBy": [
+        {
+          "Allele.symbol": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Allele.organism.taxonId",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Allele",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pax6<Sey-Dey>",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "Lookup_MPhenotype": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Lookup --> Mammalian phenotypes (MP terms)",
+      "description": "Returns MP terms whose names match the specified search terms.",
+      "select": [
+        "MPTerm.name",
+        "MPTerm.identifier",
+        "MPTerm.description"
+      ],
+      "constraintLogic": "A and B",
+      "name": "Lookup_MPhenotype",
+      "comment": "",
+      "tags": [
+        "im:aspect:Phenotype",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "29",
+      "orderBy": [
+        {
+          "MPTerm.name": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "MPTerm.obsolete",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "false"
+        },
+        {
+          "path": "MPTerm.name",
+          "op": "CONTAINS",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "hemoglobin"
+        }
+      ]
+    },
+    "MAllele_Genotype": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Mouse alleles --> Genotypes/models",
+      "description": "Returns genotypes (aka mouse models) carrying any of the specified alleles.",
+      "select": [
+        "Allele.primaryIdentifier",
+        "Allele.symbol",
+        "Allele.name",
+        "Allele.genotypes.primaryIdentifier",
+        "Allele.genotypes.zygosity",
+        "Allele.genotypes.symbol",
+        "Allele.genotypes.background.name",
+        "Allele.genotypes.background.strainType"
+      ],
+      "constraintLogic": "A and B",
+      "name": "MAllele_Genotype",
+      "comment": "",
+      "tags": [
+        "im:aspect:Phenotype",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "24",
+      "orderBy": [
+        {
+          "Allele.symbol": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Allele.organism.taxonId",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Allele",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pax6<Sey-Dey>",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "MAllele_HDisease": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Mouse alleles --> Human diseases",
+      "description": "Returns human diseases modeled by mice carrying specified alleles.",
+      "select": [
+        "Allele.primaryIdentifier",
+        "Allele.symbol",
+        "Allele.name",
+        "Allele.ontologyAnnotations.ontologyTerm.identifier",
+        "Allele.ontologyAnnotations.ontologyTerm.name"
+      ],
+      "constraintLogic": "D and C",
+      "name": "MAllele_HDisease",
+      "comment": "",
+      "tags": [
+        "im:aspect:Phenotype",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "37",
+      "orderBy": [
+        {
+          "Allele.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Allele.organism.taxonId",
+          "op": "=",
+          "code": "C",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Allele.ontologyAnnotations.ontologyTerm",
+          "type": "DiseaseTerm"
+        },
+        {
+          "path": "Allele",
+          "op": "LOOKUP",
+          "code": "D",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Kras*"
+        }
+      ]
+    },
+    "MAllele_MPhenotype": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Mouse alleles --> Mammalian phenotypes (MP terms)",
+      "description": "Returns phenotypes (MP terms) displayed by mice carrying specified alleles.",
+      "select": [
+        "Allele.primaryIdentifier",
+        "Allele.symbol",
+        "Allele.name",
+        "Allele.ontologyAnnotations.ontologyTerm.identifier",
+        "Allele.ontologyAnnotations.ontologyTerm.name"
+      ],
+      "constraintLogic": "D and B",
+      "name": "MAllele_MPhenotype",
+      "comment": "",
+      "tags": [
+        "im:aspect:Phenotype",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "12",
+      "orderBy": [
+        {
+          "Allele.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Allele.organism.taxonId",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Allele.ontologyAnnotations.ontologyTerm",
+          "type": "MPTerm"
+        },
+        {
+          "path": "Allele",
+          "op": "LOOKUP",
+          "code": "D",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Kras*"
+        }
+      ]
+    },
+    "MFeature_GO": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Mouse features --> Functions (GO terms)",
+      "description": "Returns GO terms associated with specified mouse features.",
+      "select": [
+        "SequenceFeature.primaryIdentifier",
+        "SequenceFeature.symbol",
+        "SequenceFeature.name",
+        "SequenceFeature.mgiType",
+        "SequenceFeature.ontologyAnnotations.ontologyTerm.namespace",
+        "SequenceFeature.ontologyAnnotations.qualifier",
+        "SequenceFeature.ontologyAnnotations.ontologyTerm.identifier",
+        "SequenceFeature.ontologyAnnotations.ontologyTerm.name",
+        "SequenceFeature.ontologyAnnotations.evidence.code.code",
+        "SequenceFeature.ontologyAnnotations.evidence.withText",
+        "SequenceFeature.ontologyAnnotations.evidence.publications.mgiJnum",
+        "SequenceFeature.ontologyAnnotations.evidence.publications.pubMedId",
+        "SequenceFeature.ontologyAnnotations.evidence.publications.citation",
+        "SequenceFeature.ontologyAnnotations.evidence.comments.type",
+        "SequenceFeature.ontologyAnnotations.evidence.comments.description"
+      ],
+      "constraintLogic": "A and C and D",
+      "name": "MFeature_GO",
+      "comment": "",
+      "tags": [
+        "im:aspect:Function",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "14",
+      "orderBy": [
+        {
+          "SequenceFeature.primaryIdentifier": "ASC"
+        }
+      ],
+      "joins": [
+        "SequenceFeature.ontologyAnnotations.evidence.comments"
+      ],
+      "where": [
+        {
+          "path": "SequenceFeature.organism.taxonId",
+          "op": "=",
+          "code": "D",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "SequenceFeature.ontologyAnnotations.ontologyTerm",
+          "type": "GOTerm"
+        },
+        {
+          "path": "SequenceFeature.ontologyAnnotations.dataSets.name",
+          "op": "=",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "GOTerm to Mouse Feature Annotations from MGI"
+        },
+        {
+          "path": "SequenceFeature",
+          "op": "LOOKUP",
+          "code": "C",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Bmp*",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "MFeature_HDisease": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Mouse features --> Human diseases",
+      "description": "Returns human diseases modeled by mice with mutations in the specified genes. ",
+      "select": [
+        "SequenceFeature.primaryIdentifier",
+        "SequenceFeature.symbol",
+        "SequenceFeature.ontologyAnnotations.ontologyTerm.identifier",
+        "SequenceFeature.ontologyAnnotations.ontologyTerm.name",
+        "SequenceFeature.ontologyAnnotations.qualifier",
+        "SequenceFeature.ontologyAnnotations.evidence.baseAnnotations.subject.symbol",
+        "SequenceFeature.ontologyAnnotations.evidence.baseAnnotations.subject.background.name"
+      ],
+      "constraintLogic": "A and C",
+      "name": "MFeature_HDisease",
+      "comment": "",
+      "tags": [
+        "im:aspect:Disease",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "8",
+      "orderBy": [
+        {
+          "SequenceFeature.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "SequenceFeature.ontologyAnnotations.evidence.baseAnnotations.subject",
+          "type": "Genotype"
+        },
+        {
+          "path": "SequenceFeature.ontologyAnnotations.ontologyTerm",
+          "type": "DiseaseTerm"
+        },
+        {
+          "path": "SequenceFeature.organism.taxonId",
+          "op": "=",
+          "code": "C",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "SequenceFeature",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pou*",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "MFeature_MAllele": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Mouse features --> Alleles",
+      "description": "Returns alleles of the specified features.",
+      "select": [
+        "SequenceFeature.primaryIdentifier",
+        "SequenceFeature.symbol",
+        "SequenceFeature.alleles.primaryIdentifier",
+        "SequenceFeature.alleles.symbol",
+        "SequenceFeature.alleles.name",
+        "SequenceFeature.alleles.alleleType"
+      ],
+      "constraintLogic": "A and B and C",
+      "name": "MFeature_MAllele",
+      "comment": "",
+      "tags": [
+        "im:aspect:Phenotype",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "11",
+      "orderBy": [
+        {
+          "SequenceFeature.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "SequenceFeature.organism.taxonId",
+          "op": "=",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "SequenceFeature.alleles.isWildType",
+          "op": "=",
+          "code": "C",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "false"
+        },
+        {
+          "path": "SequenceFeature",
+          "op": "LOOKUP",
+          "code": "B",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pax6"
+        }
+      ]
+    },
+    "MFeature_Publication": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Mouse features --> Publications",
+      "description": "Returns publications for the specified mouse features.",
+      "select": [
+        "SequenceFeature.primaryIdentifier",
+        "SequenceFeature.symbol",
+        "SequenceFeature.publications.mgiJnum",
+        "SequenceFeature.publications.pubMedId",
+        "SequenceFeature.publications.firstAuthor",
+        "SequenceFeature.publications.journal",
+        "SequenceFeature.publications.title",
+        "SequenceFeature.publications.year"
+      ],
+      "constraintLogic": "A and B and C",
+      "name": "MFeature_Publication",
+      "comment": "",
+      "tags": [
+        "im:aspect:Literature",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "26",
+      "orderBy": [
+        {
+          "SequenceFeature.publications.pubMedId": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "SequenceFeature.publications.pubMedId",
+          "op": "IS NOT NULL",
+          "code": "C",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "IS NOT NULL"
+        },
+        {
+          "path": "SequenceFeature.organism.taxonId",
+          "op": "=",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "SequenceFeature",
+          "op": "LOOKUP",
+          "code": "B",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Adh*",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "MPInteraction_Genes": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "MP term + Interacting gene (protein-protein) --> Genes.",
+      "description": "List all genes that are annotated with a given phenotype term and that have been shown to interact (protein-protein) with a specified gene(s).",
+      "select": [
+        "Gene.primaryIdentifier",
+        "Gene.symbol",
+        "Gene.ontologyAnnotations.ontologyTerm.name",
+        "Gene.interactions.participant2.primaryIdentifier",
+        "Gene.interactions.participant2.symbol",
+        "Gene.interactions.details.relationshipType",
+        "Gene.interactions.details.experiment.interactionDetectionMethods.name",
+        "Gene.interactions.details.experiment.name",
+        "Gene.interactions.details.experiment.publication.pubMedId",
+        "Gene.interactions.details.dataSets.name"
+      ],
+      "constraintLogic": "A and B and C and D",
+      "name": "MPInteraction_Genes",
+      "comment": "",
+      "tags": [
+        "im:aspect:Interactions",
+        "im:aspect:Phenotype",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "44",
+      "orderBy": [
+        {
+          "Gene.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Gene.interactions.participant2",
+          "type": "Gene"
+        },
+        {
+          "path": "Gene.interactions.participant2.organism.taxonId",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Gene.ontologyAnnotations.ontologyTerm",
+          "type": "MPTerm"
+        },
+        {
+          "path": "Gene.ontologyAnnotations.ontologyTerm.parents",
+          "type": "MPTerm"
+        },
+        {
+          "path": "Gene.organism.taxonId",
+          "op": "=",
+          "code": "D",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Gene.ontologyAnnotations.ontologyTerm.parents",
+          "op": "LOOKUP",
+          "code": "C",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "cataract"
+        },
+        {
+          "path": "Gene.interactions.participant2",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pax6",
+          "extraValue": "M. musculus"
+        }
+      ]
+    },
+    "MPhenotype_MGenotype": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Mammalian phenotypes (MP terms) --> Mouse genes and models",
+      "description": "Returns mouse genes (or other sequence features) associated with the specified phenotypes (MP terms), along with the models (genotypes) in which the phenotypes were observed.",
+      "select": [
+        "OntologyAnnotation.subject.primaryIdentifier",
+        "OntologyAnnotation.subject.symbol",
+        "OntologyAnnotation.evidence.baseAnnotations.subject.symbol",
+        "OntologyAnnotation.evidence.baseAnnotations.subject.background.name",
+        "OntologyAnnotation.evidence.baseAnnotations.subject.zygosity",
+        "OntologyAnnotation.ontologyTerm.identifier",
+        "OntologyAnnotation.ontologyTerm.name"
+      ],
+      "name": "MPhenotype_MGenotype",
+      "comment": "",
+      "tags": [
+        "im:aspect:Phenotype",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "1",
+      "orderBy": [
+        {
+          "OntologyAnnotation.subject.symbol": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "OntologyAnnotation.evidence.baseAnnotations.subject",
+          "type": "Genotype"
+        },
+        {
+          "path": "OntologyAnnotation.subject",
+          "type": "SequenceFeature"
+        },
+        {
+          "path": "OntologyAnnotation.ontologyTerm",
+          "type": "MPTerm"
+        },
+        {
+          "path": "OntologyAnnotation.ontologyTerm.parents",
+          "type": "MPTerm"
+        },
+        {
+          "path": "OntologyAnnotation.ontologyTerm.parents",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "*circulating glucose*"
+        }
+      ]
+    },
+    "MPhenotype_Publications": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Mammalian phenotypes (MP terms) --> Publications",
+      "description": "Returns publications associated with the specified MP term(s). These pubs were used in phenotype annotations.",
+      "select": [
+        "MPTerm.identifier",
+        "MPTerm.name",
+        "MPTerm.ontologyAnnotations.evidence.publications.pubMedId",
+        "MPTerm.ontologyAnnotations.evidence.publications.mgiJnum",
+        "MPTerm.ontologyAnnotations.evidence.publications.firstAuthor",
+        "MPTerm.ontologyAnnotations.evidence.publications.journal",
+        "MPTerm.ontologyAnnotations.evidence.publications.title",
+        "MPTerm.ontologyAnnotations.evidence.publications.year",
+        "MPTerm.ontologyAnnotations.evidence.comments.type",
+        "MPTerm.ontologyAnnotations.evidence.comments.description"
+      ],
+      "constraintLogic": "A and C",
+      "name": "MPhenotype_Publications",
+      "comment": "",
+      "tags": [
+        "im:aspect:Literature",
+        "im:aspect:Phenotype",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "43",
+      "orderBy": [
+        {
+          "MPTerm.ontologyAnnotations.evidence.publications.year": "ASC"
+        }
+      ],
+      "joins": [
+        "MPTerm.ontologyAnnotations.evidence.comments"
+      ],
+      "where": [
+        {
+          "path": "MPTerm.ontologyAnnotations.dataSets.name",
+          "op": "=",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "MPTerm to Mouse Genotype Annotations from MGI"
+        },
+        {
+          "path": "MPTerm.parents",
+          "type": "MPTerm"
+        },
+        {
+          "path": "MPTerm.parents",
+          "op": "LOOKUP",
+          "code": "C",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "*tail morphology*"
+        }
+      ]
+    },
+    "Organism_genes": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Organism --> All genes",
+      "description": "Returns all genes for the specified organism.",
+      "select": [
+        "Gene.primaryIdentifier",
+        "Gene.symbol",
+        "Gene.name",
+        "Gene.sequenceOntologyTerm.name",
+        "Gene.organism.name"
+      ],
+      "name": "Organism_genes",
+      "comment": "",
+      "tags": [
+        "im:aspect:Genome",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "5",
+      "orderBy": [
+        {
+          "Gene.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Gene.organism.shortName",
+          "op": "=",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "M. musculus"
+        }
+      ]
+    },
+    "Pathway_Proteins_Genes": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Pathway --> Proteins and Genes",
+      "description": "Returns the proteins and genes annotated to the specified pathway(s). Proteins include both Swiss-Prot (reviewed entries known to have experimental evidence) and TrEMBL (additional submitted sequences some of which may be partial) sequences.",
+      "select": [
+        "Pathway.identifier",
+        "Pathway.name",
+        "Pathway.proteins.primaryAccession",
+        "Pathway.proteins.isFragment",
+        "Pathway.proteins.dataSets.name",
+        "Pathway.proteins.genes.symbol",
+        "Pathway.proteins.genes.primaryIdentifier"
+      ],
+      "constraintLogic": "B and A",
+      "name": "Pathway_Proteins_Genes",
+      "comment": "",
+      "tags": [
+        "im:aspect:Interactions",
+        "im:aspect:Proteins",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "23",
+      "orderBy": [
+        {
+          "Pathway.identifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Pathway.proteins.dataSets.name",
+          "op": "ONE OF",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "values": [
+            "Swiss-Prot data set",
+            "TrEMBL data set"
+          ]
+        },
+        {
+          "path": "Pathway",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "*Adenylate cyclase*"
+        }
+      ]
+    },
+    "Protein_Genes": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Protein --> Genes",
+      "description": "Returns the genes associated with the specified protein(s).",
+      "select": [
+        "Protein.primaryAccession",
+        "Protein.isFragment",
+        "Protein.dataSets.name",
+        "Protein.genes.primaryIdentifier",
+        "Protein.genes.symbol",
+        "Protein.genes.name"
+      ],
+      "constraintLogic": "A and B and C",
+      "name": "Protein_Genes",
+      "comment": "",
+      "tags": [
+        "im:aspect:Proteins",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "39",
+      "orderBy": [
+        {
+          "Protein.primaryAccession": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Protein.dataSets.name",
+          "op": "ONE OF",
+          "code": "C",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "values": [
+            "Swiss-Prot data set",
+            "TrEMBL data set"
+          ]
+        },
+        {
+          "path": "Protein.organism.taxonId",
+          "op": "=",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Protein",
+          "op": "LOOKUP",
+          "code": "B",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Q61282"
+        }
+      ]
+    },
+    "Publication_Expression": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Publication --> Expression annotations",
+      "description": "Returns expression annotations for the specified publication(s).",
+      "select": [
+        "GXDExpression.assayType",
+        "GXDExpression.feature.symbol",
+        "GXDExpression.feature.primaryIdentifier",
+        "GXDExpression.stage",
+        "GXDExpression.structure.name",
+        "GXDExpression.strength",
+        "GXDExpression.pattern",
+        "GXDExpression.genotype.symbol",
+        "GXDExpression.sex",
+        "GXDExpression.age",
+        "GXDExpression.assayId",
+        "GXDExpression.probe",
+        "GXDExpression.image",
+        "GXDExpression.publication.mgiJnum"
+      ],
+      "constraintLogic": "B and A",
+      "name": "Publication_Expression",
+      "comment": "",
+      "tags": [
+        "im:aspect:Expression",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "38",
+      "orderBy": [
+        {
+          "GXDExpression.assayId": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "GXDExpression.feature.organism.taxonId",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "GXDExpression.publication",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "J:49164, 9636075"
+        }
+      ]
+    },
+    "Publication_GO": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Publication --> Functions (GO terms)",
+      "description": "Returns gene functions (GO terms) reported in specified publication(s).",
+      "select": [
+        "GOTerm.ontologyAnnotations.evidence.publications.mgiJnum",
+        "GOTerm.ontologyAnnotations.evidence.publications.pubMedId",
+        "GOTerm.ontologyAnnotations.evidence.publications.firstAuthor",
+        "GOTerm.ontologyAnnotations.evidence.publications.journal",
+        "GOTerm.ontologyAnnotations.evidence.publications.title",
+        "GOTerm.ontologyAnnotations.evidence.publications.year",
+        "GOTerm.ontologyAnnotations.subject.primaryIdentifier",
+        "GOTerm.ontologyAnnotations.subject.symbol",
+        "GOTerm.namespace",
+        "GOTerm.ontologyAnnotations.qualifier",
+        "GOTerm.identifier",
+        "GOTerm.name",
+        "GOTerm.ontologyAnnotations.evidence.code.code",
+        "GOTerm.ontologyAnnotations.evidence.withText",
+        "GOTerm.ontologyAnnotations.evidence.comments.type",
+        "GOTerm.ontologyAnnotations.evidence.comments.description"
+      ],
+      "name": "Publication_GO",
+      "comment": "",
+      "tags": [
+        "im:aspect:Function",
+        "im:aspect:Literature",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "36",
+      "orderBy": [
+        {
+          "GOTerm.identifier": "ASC"
+        }
+      ],
+      "joins": [
+        "GOTerm.ontologyAnnotations.evidence.comments"
+      ],
+      "where": [
+        {
+          "path": "GOTerm.ontologyAnnotations.subject",
+          "type": "SequenceFeature"
+        },
+        {
+          "path": "GOTerm.ontologyAnnotations.evidence.publications",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "12068289"
+        }
+      ]
+    },
+    "Publication_MFeature": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Publication --> Mouse features",
+      "description": "Returns mouse features associated with the specified publication(s).",
+      "select": [
+        "Publication.mgiJnum",
+        "Publication.pubMedId",
+        "Publication.firstAuthor",
+        "Publication.journal",
+        "Publication.title",
+        "Publication.year",
+        "Publication.bioEntities.primaryIdentifier",
+        "Publication.bioEntities.symbol",
+        "Publication.bioEntities.name",
+        "Publication.bioEntities.mgiType"
+      ],
+      "constraintLogic": "A and B",
+      "name": "Publication_MFeature",
+      "comment": "",
+      "tags": [
+        "im:aspect:Literature",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "30",
+      "orderBy": [
+        {
+          "Publication.bioEntities.symbol": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Publication.bioEntities",
+          "type": "SequenceFeature"
+        },
+        {
+          "path": "Publication.bioEntities.organism.taxonId",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Publication",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "J:185670"
+        }
+      ]
+    },
+    "Publication_MPhenotypes": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Publication --> Mammalian phenotypes (MP terms)",
+      "description": "Returns phenotypes (MP terms) annotated from specified publication(s).",
+      "select": [
+        "MPTerm.ontologyAnnotations.evidence.publications.pubMedId",
+        "MPTerm.ontologyAnnotations.evidence.publications.mgiJnum",
+        "MPTerm.ontologyAnnotations.evidence.publications.firstAuthor",
+        "MPTerm.ontologyAnnotations.evidence.publications.journal",
+        "MPTerm.ontologyAnnotations.evidence.publications.title",
+        "MPTerm.ontologyAnnotations.evidence.publications.year",
+        "MPTerm.identifier",
+        "MPTerm.name",
+        "MPTerm.ontologyAnnotations.evidence.comments.type",
+        "MPTerm.ontologyAnnotations.evidence.comments.description"
+      ],
+      "name": "Publication_MPhenotypes",
+      "comment": "",
+      "tags": [
+        "im:aspect:Literature",
+        "im:aspect:Phenotype",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "31",
+      "orderBy": [
+        {
+          "MPTerm.identifier": "ASC"
+        }
+      ],
+      "joins": [
+        "MPTerm.ontologyAnnotations.evidence.comments"
+      ],
+      "where": [
+        {
+          "path": "MPTerm.ontologyAnnotations.evidence.publications",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "12068289"
+        }
+      ]
+    },
+    "Q_Allele_by_categories": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Allele categories --> Alleles",
+      "description": "Simple query form for finding alleles by \"categories\", i.e., by type, allele-attribute, and/or projectCollection.  ",
+      "select": [
+        "Allele.symbol",
+        "Allele.primaryIdentifier",
+        "Allele.alleleType",
+        "Allele.attributeString",
+        "Allele.projectCollection"
+      ],
+      "constraintLogic": "A and C and B and D and E",
+      "name": "Q_Allele_by_categories",
+      "comment": "",
+      "tags": [
+        "im:aspect:Genome",
+        "im:aspect:Phenotype",
+        "im:frontpage",
+        "im:public"
+      ],
+      "rank": "10",
+      "orderBy": [
+        {
+          "Allele.symbol": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "Allele.feature.organism.taxonId",
+          "op": "=",
+          "code": "E",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "Allele.alleleType",
+          "op": "=",
+          "code": "A",
+          "editable": true,
+          "switchable": true,
+          "switched": "ON",
+          "value": "Targeted"
+        },
+        {
+          "path": "Allele.alleleAttributes.name",
+          "op": "=",
+          "code": "B",
+          "editable": true,
+          "switchable": true,
+          "switched": "ON",
+          "value": "Null/knockout"
+        },
+        {
+          "path": "Allele.projectCollection",
+          "op": "=",
+          "code": "C",
+          "editable": true,
+          "switchable": true,
+          "switched": "ON",
+          "value": "KOMP-CSD"
+        }
+      ]
+    },
+    "Structure_Expression": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Anatomical structure --> Expression annotations",
+      "description": "Returns expression annotations for the specified anatomical structure(s).",
+      "select": [
+        "GXDExpression.assayType",
+        "GXDExpression.feature.symbol",
+        "GXDExpression.feature.primaryIdentifier",
+        "GXDExpression.stage",
+        "GXDExpression.age",
+        "GXDExpression.structure.name",
+        "GXDExpression.strength",
+        "GXDExpression.pattern",
+        "GXDExpression.genotype.symbol",
+        "GXDExpression.sex",
+        "GXDExpression.assayId",
+        "GXDExpression.probe",
+        "GXDExpression.image",
+        "GXDExpression.publication.mgiJnum"
+      ],
+      "constraintLogic": "B and A",
+      "name": "Structure_Expression",
+      "comment": "",
+      "tags": [
+        "im:aspect:Expression",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "7",
+      "orderBy": [
+        {
+          "GXDExpression.assayId": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "GXDExpression.feature.organism.taxonId",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "GXDExpression.structure.parents",
+          "type": "EMAPATerm"
+        },
+        {
+          "path": "GXDExpression.structure.parents",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "future spinal cord"
+        }
+      ]
+    },
+    "Term_Ancestors": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Ontology Term --> All ancestors",
+      "description": "Returns the given term(s) and all their descendant terms.",
+      "select": [
+        "OntologyTerm.parents.identifier",
+        "OntologyTerm.parents.name",
+        "OntologyTerm.identifier",
+        "OntologyTerm.name"
+      ],
+      "name": "Term_Ancestors",
+      "comment": "",
+      "tags": [
+        "im:aspect:Ontology",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "50",
+      "orderBy": [
+        {
+          "OntologyTerm.identifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "OntologyTerm",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "EMAPA:35115"
+        }
+      ]
+    },
+    "Term_Children": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Ontology Term --> Direct children",
+      "select": [
+        "OntologyTerm.relations.childTerm.identifier",
+        "OntologyTerm.relations.childTerm.name",
+        "OntologyTerm.relations.relationship",
+        "OntologyTerm.identifier",
+        "OntologyTerm.name"
+      ],
+      "constraintLogic": "A and B and C",
+      "name": "Term_Children",
+      "comment": "",
+      "tags": [
+        "im:aspect:Ontology",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "49",
+      "orderBy": [
+        {
+          "OntologyTerm.identifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "OntologyTerm.relations.direct",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "true"
+        },
+        {
+          "path": "OntologyTerm.relations.parentTerm",
+          "op": "=",
+          "code": "C",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "OntologyTerm"
+        },
+        {
+          "path": "OntologyTerm",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "GO:0035909"
+        }
+      ]
+    },
+    "Term_Descendants": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Ontology Term --> All descendants",
+      "description": "Returns the given term(s) and all their descendant terms.",
+      "select": [
+        "OntologyTerm.parents.identifier",
+        "OntologyTerm.parents.name",
+        "OntologyTerm.identifier",
+        "OntologyTerm.name"
+      ],
+      "name": "Term_Descendants",
+      "comment": "",
+      "tags": [
+        "im:aspect:Ontology",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "41",
+      "orderBy": [
+        {
+          "OntologyTerm.identifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "OntologyTerm.parents",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "GO:0035909"
+        }
+      ]
+    },
+    "Term_Parents": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Ontology Term --> Direct parents",
+      "select": [
+        "OntologyTerm.identifier",
+        "OntologyTerm.name",
+        "OntologyTerm.relations.relationship",
+        "OntologyTerm.relations.parentTerm.identifier",
+        "OntologyTerm.relations.parentTerm.name"
+      ],
+      "constraintLogic": "A and B and C",
+      "name": "Term_Parents",
+      "comment": "",
+      "tags": [
+        "im:aspect:Ontology",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "50",
+      "orderBy": [
+        {
+          "OntologyTerm.identifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "OntologyTerm.relations.childTerm",
+          "op": "=",
+          "code": "C",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "OntologyTerm"
+        },
+        {
+          "path": "OntologyTerm.relations.direct",
+          "op": "=",
+          "code": "B",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "true"
+        },
+        {
+          "path": "OntologyTerm",
+          "op": "LOOKUP",
+          "code": "A",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "GO:0035909"
+        }
+      ]
+    },
+    "_Feature_Phenotype": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Genes/Features --> Phenotypes (MP terms)",
+      "description": "Returns the phenotypes (MP terms) associated with the specified  mouse genes or other features. ",
+      "select": [
+        "OntologyAnnotation.subject.primaryIdentifier",
+        "OntologyAnnotation.subject.symbol",
+        "OntologyAnnotation.subject.sequenceOntologyTerm.name",
+        "OntologyAnnotation.ontologyTerm.identifier",
+        "OntologyAnnotation.ontologyTerm.name",
+        "OntologyAnnotation.evidence.publications.pubMedId",
+        "OntologyAnnotation.evidence.comments.type",
+        "OntologyAnnotation.evidence.comments.description"
+      ],
+      "constraintLogic": "C and B and A",
+      "name": "_Feature_Phenotype",
+      "comment": "",
+      "tags": [
+        "im:aspect:Phenotype",
+        "im:frontpage",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "3",
+      "orderBy": [
+        {
+          "OntologyAnnotation.ontologyTerm.name": "ASC"
+        }
+      ],
+      "joins": [
+        "OntologyAnnotation.evidence.comments"
+      ],
+      "where": [
+        {
+          "path": "OntologyAnnotation.subject.organism.taxonId",
+          "op": "=",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "OntologyAnnotation.ontologyTerm",
+          "type": "MPTerm"
+        },
+        {
+          "path": "OntologyAnnotation.subject",
+          "type": "SequenceFeature"
+        },
+        {
+          "path": "OntologyAnnotation.subject",
+          "op": "LOOKUP",
+          "code": "B",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pax*"
+        }
+      ]
+    },
+    "_Genotype_Disease": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Genotypes --> Diseases",
+      "description": "Returns the diseases associated with the specified mouse genotypes.",
+      "select": [
+        "OntologyAnnotation.subject.primaryIdentifier",
+        "OntologyAnnotation.subject.symbol",
+        "OntologyAnnotation.subject.background.name",
+        "OntologyAnnotation.subject.zygosity",
+        "OntologyAnnotation.ontologyTerm.identifier",
+        "OntologyAnnotation.ontologyTerm.name",
+        "OntologyAnnotation.qualifier",
+        "OntologyAnnotation.evidence.publications.pubMedId"
+      ],
+      "constraintLogic": "A and C and B",
+      "name": "_Genotype_Disease",
+      "comment": "",
+      "tags": [
+        "im:aspect:Disease",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "35",
+      "orderBy": [
+        {
+          "OntologyAnnotation.subject.primaryIdentifier": "ASC"
+        }
+      ],
+      "where": [
+        {
+          "path": "OntologyAnnotation.subject.organism.taxonId",
+          "op": "=",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "OntologyAnnotation.subject",
+          "type": "Genotype"
+        },
+        {
+          "path": "OntologyAnnotation.ontologyTerm",
+          "type": "DiseaseTerm"
+        },
+        {
+          "path": "OntologyAnnotation.subject.symbol",
+          "op": "CONTAINS",
+          "code": "B",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pax6"
+        }
+      ]
+    },
+    "_Genotype_Phenotype": {
+      "model": {
+        "name": "genomic"
+      },
+      "title": "Genotypes --> Phenotypes (MP terms)",
+      "description": "Returns the phenotypes (MP terms) associated with the specified mouse genotypes.",
+      "select": [
+        "OntologyAnnotation.subject.primaryIdentifier",
+        "OntologyAnnotation.subject.symbol",
+        "OntologyAnnotation.subject.background.name",
+        "OntologyAnnotation.subject.zygosity",
+        "OntologyAnnotation.ontologyTerm.identifier",
+        "OntologyAnnotation.ontologyTerm.name",
+        "OntologyAnnotation.evidence.publications.pubMedId",
+        "OntologyAnnotation.qualifier",
+        "OntologyAnnotation.evidence.comments.type",
+        "OntologyAnnotation.evidence.comments.description"
+      ],
+      "constraintLogic": "A and C and B",
+      "name": "_Genotype_Phenotype",
+      "comment": "",
+      "tags": [
+        "im:aspect:Phenotype",
+        "im:public",
+        "im:report"
+      ],
+      "rank": "28",
+      "orderBy": [
+        {
+          "OntologyAnnotation.ontologyTerm.name": "ASC"
+        }
+      ],
+      "joins": [
+        "OntologyAnnotation.evidence.comments"
+      ],
+      "where": [
+        {
+          "path": "OntologyAnnotation.ontologyTerm",
+          "type": "MPTerm"
+        },
+        {
+          "path": "OntologyAnnotation.subject",
+          "type": "Genotype"
+        },
+        {
+          "path": "OntologyAnnotation.subject.organism.taxonId",
+          "op": "=",
+          "code": "A",
+          "editable": false,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "10090"
+        },
+        {
+          "path": "OntologyAnnotation.subject.symbol",
+          "op": "CONTAINS",
+          "code": "B",
+          "editable": true,
+          "switchable": false,
+          "switched": "LOCKED",
+          "value": "Pax6"
+        }
+      ]
+    }
+  },
+  "executionTime": "2017.10.31 06:08::38",
+  "wasSuccessful": true,
+  "error": null,
+  "statusCode": 200
+}
