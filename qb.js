@@ -95,6 +95,9 @@ function setup(){
     //
     d3.select("#dialog .subclassConstraint select")
         .on("change", function(){ setSubclassConstraint(currNode, this.value); });
+    //
+    d3.select("#dialog .select-ctrl input")
+        .on("change", function(){ currNode.view = this.checked; update(currNode);  });
 
     // start with the first mine by default.
     selectedMine(mines[0].name);
@@ -109,9 +112,12 @@ function selectedMine(mname){
     url = currMine.url
     currMine.tnames = []
     currMine.templates = []
-    turl = url + "service/templates?format=json";
-    murl = url + "service/model?format=json";
+    //turl = url + "service/templates?format=json";
+    //murl = url + "service/model?format=json";
+    turl = "./doc/templates.json"
+    murl = "./doc/model.json"
     // get the model
+    console.log("Loading resources:", murl, turl)
     d3.json(murl, function(model) {
         if( ! model || ! model.wasSuccessful ){
             alert("Could not load model from resource: " + murl);
@@ -288,9 +294,59 @@ function compileTemplate(template, model) {
         var n = addPath(t, j, model);
         n.join = "outer";
     })
+    t.orderBy && t.orderBy.forEach(function(o, i){
+        var p = Object.keys(o)[0]
+        var dir = o[p]
+        var n = addPath(t, p, model);
+        n.sort = { dir: dir, level: i };
+    });
     return t;
 }
 
+// Returns a deep copy of object o. 
+// Args:
+//   o  (object) Must be a JSON object (no curcular refs, no functions).
+// Returns:
+//   a deep copy of o
+function deepc(o) {
+    if (!o) return o;
+    return JSON.parse(JSON.stringify(o));
+}
+
+//
+function uncompileTemplate(tmplt){
+    t = {
+        name: tmplt.name,
+        title: tmplt.title,
+        description: tmplt.description,
+        comment: tmplt.comment,
+        rank: tmplt.rank,
+        model: deepc(tmplt.model),
+        tags: deepc(tmplt.tags),
+        select : [],
+        where : [],
+        joins : [],
+        orderBy : deepc(tmplt.orderBy)
+    }
+    function reach(n){
+        p = getPath(n)
+        if (n.view) {
+            t.select.push(p);
+        }
+        (n.constraints || []).forEach(function(c){
+             t.where.push(c);
+                
+        })
+        if (n.join === "outer") {
+            t.joins.push(p);
+        }
+        n.children.forEach(reach);
+    }
+    reach(tmplt.qtree);
+    return JSON.stringify(t);
+}
+
+//
 function newNode(name, pcomp, ptype){
     return {
         name: name,     // display name
@@ -449,7 +505,7 @@ function selectedTemplate (tname) {
     }
     // Make sure the editor works on a copy of the template.
     //
-    currTemplate = JSON.parse(JSON.stringify(t));
+    currTemplate = deepc(t);
 
     var ti = d3.select("#tInfo");
     ti.select(".title").text(currTemplate.title)
@@ -474,6 +530,11 @@ function selectedNext(currNode,p,mode){
         p.unshift(n.name);
     }
     var n = addPath(currTemplate, p.join("."), currMine.model );
+    if (mode === "selected")
+        n.view = true;
+    if (mode === "constrained" && n.constraints.length === 0) {
+        n.constraints.push({ op: "IS NOT NULL", value: "IS NOT NULL" });
+    }
     hideDialog();
     update(currNode);
 }
@@ -515,8 +576,12 @@ function findDomByDataObj(d){
 //
 function showDialog(n, elt){
   if (!elt) elt = findDomByDataObj(n);
+ 
+  // Set the global currNode
   currNode = n;
-  var dialog = d3.select("#dialog");
+  var isroot = ! currNode.parent;
+  //
+  var dialog = d3.select("#dialog").datum(n);
   //
   var dbb = dialog[0][0].getBoundingClientRect();
   var ebb = elt.getBoundingClientRect();
@@ -532,6 +597,11 @@ function showDialog(n, elt){
       .style("transform-origin", "0% 0%")
       .classed("hidden", false)
       ;
+
+  dialog.select(".removeButton")
+      .attr("disabled", isroot?true:null)
+      ;
+
   dialog.transition()
       .duration(500)
       .style("transform","scale(1.0)");
@@ -542,6 +612,8 @@ function showDialog(n, elt){
           .classed("simple",true);
       dialog.select("span.clsName")
           .text(n.pcomp.type.name || n.pcomp.type );
+      dialog.select(".select-ctrl input")
+          .attr("checked", function(n){ this.checked=n.view; return null; })
   }
   else {
       // Dialog for classes
@@ -550,14 +622,11 @@ function showDialog(n, elt){
       dialog.select("span.clsName")
           .text(n.pcomp.type ? n.pcomp.type.name : n.pcomp.name);
       // Fill in the subclass constraint selection list.
-      // Note we want the subclass of the underlying
-      // path component, not the one stashed in the node
-      // (because a subclass constraint may have already been applied!)
-      var scs = getSubclasses(n.pcomp.kind ? n.pcomp.type : n.pcomp);
-      scs.unshift({name:(scs.length==0 ? "No subclasses." : "Constrain to subclass:")});
+      // First find all the subclasses of the node's class.
+      var scs = isroot ? [] : getSubclasses(n.pcomp.kind ? n.pcomp.type : n.pcomp);
+      scs.unshift(n.pcomp.kind ? n.pcomp.type : n.pcomp)
       var scOpts = dialog
           .select(".subclassConstraint select")
-          .attr("disabled", function(d){return scs.length === 1 ? "true" : null;})
           .selectAll("option")
           .data(scs) ;
       scOpts.enter()
@@ -586,11 +655,11 @@ function showDialog(n, elt){
                   },{
                   name: "S",
                   cls: 'selectsimple',
-                  click: function (){selectedNext(currNode,comp.name,"select"); }
+                  click: function (){selectedNext(currNode,comp.name,"selected"); }
                   },{
                   name: "C",
                   cls: 'constrainsimple',
-                  click: function (){selectedNext(currNode,comp.name,"constrain"); }
+                  click: function (){selectedNext(currNode,comp.name,"constrained"); }
                   }];
               }
               else {
@@ -680,6 +749,7 @@ function update(source) {
   // User can slow things down by holding the altKey on clicks and such.
   var duration = d3.event && d3.event.altKey ? 2000 : 250;
 
+
   var nl = doLayout(root);
   var nodes = nl[0];
   var links = nl[1];
@@ -726,11 +796,11 @@ function update(source) {
 
   // Transition nodes to their new position.
   var nodeUpdate = nodeGrps
-      .classed("selected", function(d){ return d.view; })
-      .classed("constrained", function(d){ return d.constraints.length > 0; })
+      .classed("selected", function(n){ return n.view; })
+      .classed("constrained", function(n){ return n.constraints.length > 0; })
       .transition()
       .duration(duration)
-      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+      .attr("transform", function(n) { return "translate(" + n.y + "," + n.x + ")"; })
       ;
 
   nodeGrps.selectAll("text.constraint").remove();
@@ -743,7 +813,7 @@ function update(source) {
        .attr("class","constraint")
        .html(function(d){
            var strs = (d.constraints || []).map(constraintText);
-           return strs.join('<br>');
+           return strs.join(' / ');
        })
        ;
 
@@ -820,6 +890,9 @@ function update(source) {
     d.x0 = d.x;
     d.y0 = d.y;
   });
+  //
+  d3.select("#ttext textarea")
+      .text(uncompileTemplate(currTemplate));
 }
 
 })()

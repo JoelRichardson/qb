@@ -40,6 +40,10 @@
     flex-direction: column;
 }
 
+#dialog.isroot .removeButton {
+    disabled: true;
+}
+
 #dialog.hidden {
     display: none;
 }
@@ -50,9 +54,16 @@
 #dialog.simple .subclassConstraint {
     display:none;
 }
+#dialog .select-ctrl {
+    display: none;
+}
+#dialog.simple .select-ctrl {
+    display: block;
+}
 
 #dialog table.attributes {
-    padding: 0;
+    width: 100%;
+    padding-right: 10px;
     border: 1px solid #aaa;
 }
 
@@ -107,11 +118,20 @@ button.removeButton {
     flex-direction: row;
 }
 
+#ttext textarea {
+    width: 500px;
+    height: 200px;
+}
+
 path.link {
   fill: none;
 }
 
-    </style>
+label {
+    font-weight: bold;
+}
+
+</style>
 </head>
 <body>
     <div id="body">
@@ -127,10 +147,16 @@ path.link {
             <option>dendrogram</option>
         </select>
 
+        <div id="ttext">
+            <textarea></textarea>
+        </div>
+
         <div id="dialog">
             <div class="header">
-                <div><label>Class: </label><span class="clsName"></span></div>
-                <div class="subclassConstraint"><label>Subclass<br/>constraint: </label><select></select></div>
+                <div class="subclassConstraint"><label>Class: </label><select></select></div>
+            </div>
+            <div class="select-ctrl">
+                <div><label>Select: </label><input type="checkbox"></input></div>
             </div>
             <div class="attrContainer">
                 <table class="attributes"></table>
@@ -149,6 +175,5 @@ path.link {
 
         <script type="text/javascript" src="qb.js"> </script>
     </div>  
-    <div>Hi there</div>
 </body>
 </html>
