@@ -29,7 +29,116 @@ var mines = [{
     "model" : null
     }];
 
+// Constraints on attributes:
+// - value (comparing an attribute to a value, using an operator)
+//      > >= < <= = != LIKE NOT-LIKE CONTAINS DOES-NOT-CONTAIN
+// - multivalue (subtype of value constraint, multiple value)
+//      ONE-OF NOT-ONE OF
+// - range (subtype of multivalue, for coordinate ranges)
+//      WITHIN OUTSIDE OVERLAPS DOES-NOT-OVERLAP
+// - null (subtype of value constraint, for testing NULL)
+//      NULL IS-NOT-NULL
+//
+// Constraints on references/collections
+// - null (subtype of value constraint, for testing NULL ref/empty collection)
+//      NULL IS-NOT-NULL
+// - lookup (
+//      LOOKUP
+// - subclass
+//      ISA
+// - list
+//      IN NOT-IN
+// - loop (TODO)
+var ops = [
 
+    // Valid for any attribute
+    // Also the operators for loop constraints (not yet implemented).
+    {
+    op: "=",
+    ctype: "value"
+    },{
+    op: "!=",
+    ctype: "value"
+    },
+    
+    // Valid for numeric and date attributes
+    {
+    op: ">",
+    ctype: "value"
+    },{
+    op: ">=",
+    ctype: "value"
+    },{
+    op: "<",
+    ctype: "value"
+    },{
+    op: "<=",
+    ctype: "value"
+    },
+    
+    // Valid for string attributes
+    {
+    op: "CONTAINS",
+    ctype: "value"
+    },{
+    op: "DOES NOT CONTAIN",
+    ctype: "value"
+    },{
+    op: "LIKE",
+    ctype: "value"
+    },{
+    op: "NOT LIKE",
+    ctype: "value"
+    },{
+    op: "ONE OF",
+    ctype: "multivalue"
+    },{
+    op: "NONE OF",
+    ctype: "multivalue"
+    },
+    
+    // Valid only for Location nodes
+    {
+    op: "WITHIN",
+    ctype: "range"
+    },{
+    op: "OVERLAPS",
+    ctype: "range"
+    },{
+    op: "DOES NOT OVERLAP",
+    ctype: "range"
+    },{
+    op: "OUTSIDE",
+    ctype: "range"
+    },
+ 
+    // NULL constraints. Valid for any node except root.
+    {
+    op: "IS NULL",
+    ctype: "null"
+    },{
+    op: "IS NOT NULL",
+    ctype: "null"
+    },
+    
+    // Valid only at any non-attribute node (i.e., the root, or any 
+    // reference or collection node).
+    {
+    op: "LOOKUP",
+    ctype: "lookup"
+    },{
+    op: "IN",
+    ctype: "list"
+    },{
+    op: "NOT IN",
+    ctype: "list"
+    },
+    
+    // Valid at any non-attribute node except the root.
+    {
+    op: "ISA",
+    ctype: "subclass"
+    }];
 
 var mines;
 var name2mine;
@@ -598,13 +707,40 @@ function showDialog(n, elt){
       .classed("hidden", false)
       ;
 
+  // Set the dialog title to node name
+  dialog.select(".dialogTitle")
+      .text(n.name);
+
+  // Fill out the constraints section
+  // (Don't list ISA constraint here. It is handled separately.)
+  var constrs = dialog.select(".constraintSection")
+      .selectAll(".constraint")
+      .data(n.constraints
+          .filter(function(c){ return c.ctype != "subclass";})
+          );
+  // Create divs for entering
+  constrs.enter()
+      .append("div")
+      .attr("class","constraint");
+  // Remove exiting
+  constrs.exit()
+      .remove() ;
+  // Set the text
+  constrs
+      .text(function(c){
+          return constraintText(c);
+      });
+
+  // Disable the remove button for the root node.
   dialog.select(".removeButton")
       .attr("disabled", isroot?true:null)
       ;
 
+  // Transition to "grow" the dialog out of the node
   dialog.transition()
       .duration(500)
       .style("transform","scale(1.0)");
+  //
   var t = n.pcomp.type;
   if (typeof(t) === "string") {
       // dialog for simple attributes.
@@ -612,6 +748,7 @@ function showDialog(n, elt){
           .classed("simple",true);
       dialog.select("span.clsName")
           .text(n.pcomp.type.name || n.pcomp.type );
+      // 
       dialog.select(".select-ctrl input")
           .attr("checked", function(n){ this.checked=n.view; return null; })
   }
@@ -861,9 +998,7 @@ function update(source) {
         var o = {x: source.x0, y: source.y0};
         return diagonal({source: o, target: o});
       })
-      .style("stroke-dasharray", function(d) { return d.target.join === "outer" ? "3 3" : "none"; })
-      .style("stroke", function(d) { return d.target.join === "outer" ? "orange" : "#ccc"; })
-      .style("stroke-width", function(d) { return d.target.join === "outer" ? "3" : "1.5"; })
+      .classed("outer", function(n) { return n.target.join === "outer"; })
     .transition()
       .duration(duration)
       .attr("d", diagonal)

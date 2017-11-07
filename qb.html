@@ -40,6 +40,10 @@
     flex-direction: column;
 }
 
+#dialog .constraintSection {
+    color: purple;
+}
+
 #dialog.isroot .removeButton {
     disabled: true;
 }
@@ -127,6 +131,17 @@ path.link {
   fill: none;
 }
 
+.link {
+    stroke: #ccc;
+    stroke-width: 1.5px;
+}
+
+.link.outer {
+    stroke: orange;
+    stroke-width: 3px;
+    stroke-dasharray: 3 3;
+}
+
 label {
     font-weight: bold;
 }
@@ -147,16 +162,21 @@ label {
             <option>dendrogram</option>
         </select>
 
-        <div id="ttext">
-            <textarea></textarea>
-        </div>
-
         <div id="dialog">
             <div class="header">
-                <div class="subclassConstraint"><label>Class: </label><select></select></div>
+                <div class="dialogTitle"></div>
+                <div class="subclassConstraint">
+                    <label>Class: </label>
+                    <select></select>
+                </div>
             </div>
             <div class="select-ctrl">
-                <div><label>Select: </label><input type="checkbox"></input></div>
+                <div>
+                    <label>Selected: </label>
+                    <input type="checkbox"></input>
+                </div>
+            </div>
+            <div class="constraintSection">
             </div>
             <div class="attrContainer">
                 <table class="attributes"></table>
@@ -175,5 +195,9 @@ label {
 
         <script type="text/javascript" src="qb.js"> </script>
     </div>  
+    <div id="ttext">
+        <textarea></textarea>
+    </div>
+
 </body>
 </html>
