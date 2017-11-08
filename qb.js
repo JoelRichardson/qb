@@ -154,6 +154,7 @@ var vis;
 var currTemplate;
 var currNode;
 var layoutStyle = "tree";
+var animationDuration = 500; // ms
 
 setup()
 
@@ -465,13 +466,25 @@ function newNode(name, pcomp, ptype){
                         // the starting class. Otherwise, points to an attribute (simple, 
                         // reference, or collection).
         ptype : ptype,  // path type. The type of the path at this node, i.e. the type of pcomp. 
-                        // For simple attributes, this is a string.
-                        // Points to a class in the model. May be overriden by subclass constraint.
+                        // For simple attributes, this is a string. Otherwise,
+                        // points to a class in the model. May be overriden by subclass constraint.
         subclassConstraint: null, // subclass constraint (if any). Points to a class in the model
-                        // 
+                        // If specified, overrides ptype as the type of the node.
         constraints: [],// all constraints
         view: false     // attribute to be returned. Note only simple attributes can have view == true.
     };
+}
+
+function newConstraint(n) {
+    return {
+        ctype: "null",
+        code: "?",
+        path: getPath(n),
+        op: "IS NOT NULL",
+        value: "IS NOT NULL",
+        values: null,
+        type: null
+    }
 }
 
 // Adds a path to the current diagram. Path is specified as a dotted list of names.
@@ -617,9 +630,9 @@ function selectedTemplate (tname) {
     currTemplate = deepc(t);
 
     var ti = d3.select("#tInfo");
-    ti.select(".title").text(currTemplate.title)
-    ti.select(".description").text(currTemplate.description)
-    ti.select(".comment").text(currTemplate.comment)
+    ti.select(".title").select("input").attr("value", currTemplate.title)
+    ti.select(".description").select("textarea").text(currTemplate.description)
+    ti.select(".comment").select("text").text(currTemplate.comment)
 
     root = compileTemplate(currTemplate, currMine.model).qtree
     root.x0 = h / 2;
@@ -642,10 +655,12 @@ function selectedNext(currNode,p,mode){
     if (mode === "selected")
         n.view = true;
     if (mode === "constrained" && n.constraints.length === 0) {
-        n.constraints.push({ op: "IS NOT NULL", value: "IS NOT NULL" });
+        n.constraints.push(newConstraint(n));
     }
     hideDialog();
     update(currNode);
+    setTimeout(function(){ showDialog(n); }, animationDuration);
+    
 }
 
 // Returns a text representation of a constraint
@@ -668,10 +683,27 @@ function constraintText(c) {
 // Returns  the DOM element corresponding to the given data object.
 //
 function findDomByDataObj(d){
-    var x = d3.selectAll(".nodegroup").filter(function(dd){ return dd === d; });
+    var x = d3.selectAll(".nodegroup .node").filter(function(dd){ return dd === d; });
     return x[0][0];
 }
 
+//
+function addConstraint(n) {
+    n.constraints.push(newConstraint(n));
+    update(n);
+    showDialog(n, null, true);
+}
+
+//
+function editConstraint(c, n){
+    console.log("Edit", c, n);
+}
+//
+function removeConstraint(c, n){
+    n.constraints = n.constraints.filter(function(cc){ return cc !== c; });
+    update(n);
+    showDialog(n, null, true);
+}
 
 // Opens a dialog on the specified node.
 // Also makes that node the current node.
@@ -683,7 +715,7 @@ function findDomByDataObj(d){
 // Side effect:
 //   sets global currNode
 //
-function showDialog(n, elt){
+function showDialog(n, elt, refreshOnly){
   if (!elt) elt = findDomByDataObj(n);
  
   // Set the global currNode
@@ -702,7 +734,7 @@ function showDialog(n, elt){
   dialog
       .style("top", t+"px")
       .style("left", l+"px")
-      .style("transform", "scale(1e-6)")
+      .style("transform", refreshOnly?"scale(1)":"scale(1e-6)")
       .style("transform-origin", "0% 0%")
       .classed("hidden", false)
       ;
@@ -710,6 +742,10 @@ function showDialog(n, elt){
   // Set the dialog title to node name
   dialog.select(".dialogTitle")
       .text(n.name);
+
+  //
+  dialog.select("#dialog .constraintSection .add-button")
+        .on("click", function(){ addConstraint(n); });
 
   // Fill out the constraints section
   // (Don't list ISA constraint here. It is handled separately.)
@@ -719,17 +755,52 @@ function showDialog(n, elt){
           .filter(function(c){ return c.ctype != "subclass";})
           );
   // Create divs for entering
-  constrs.enter()
+  var cdivs = constrs.enter()
       .append("div")
-      .attr("class","constraint");
+      .attr("class","constraint")
+      ;
+  cdivs.append("div")
+      .attr("class", "op")
+      ;
+  cdivs.append("div")
+      .attr("class", "value")
+      ;
+  cdivs.append("div")
+      .attr("class", "code")
+      ;
+  cdivs.append("i")
+      .attr("class", "material-icons edit")
+      .text("mode_edit")
+      ;
+  cdivs.append("i")
+      .attr("class", "material-icons cancel")
+      .text("cancel")
+      ;
+
   // Remove exiting
   constrs.exit()
       .remove() ;
+
   // Set the text
   constrs
+      .attr("class", function(c) { return "constraint " + c.ctype; });
+  constrs.select(".code")
+      .text(function(c){ return "("+c.code+")" || ""; });
+  constrs.select(".op")
+      .text(function(c){ return c.op || "ISA"; });
+  constrs.select(".value")
       .text(function(c){
-          return constraintText(c);
+          return c.value || (c.values && c.values.join(",")) || c.type;
       });
+  constrs.select("i.edit")
+      .on("click", function(c){ 
+          editConstraint(c, n);
+      });
+  constrs.select("i.cancel")
+      .on("click", function(c){ 
+          removeConstraint(c, n);
+      })
+
 
   // Disable the remove button for the root node.
   dialog.select(".removeButton")
@@ -738,7 +809,7 @@ function showDialog(n, elt){
 
   // Transition to "grow" the dialog out of the node
   dialog.transition()
-      .duration(500)
+      .duration(animationDuration)
       .style("transform","scale(1.0)");
   //
   var t = n.pcomp.type;
@@ -839,7 +910,7 @@ function hideDialog(){
   dialog
       .classed("hidden", true)
       .transition()
-      .duration(250)
+      .duration(animationDuration/2)
       .style("transform","scale(1e-6)")
       ;
 }
@@ -884,7 +955,7 @@ function doLayout(root){
 //
 function update(source) {
   // User can slow things down by holding the altKey on clicks and such.
-  var duration = d3.event && d3.event.altKey ? 2000 : 250;
+  var duration = animationDuration * (d3.event && d3.event.altKey ? 10 : 1);
 
 
   var nl = doLayout(root);
@@ -998,14 +1069,20 @@ function update(source) {
         var o = {x: source.x0, y: source.y0};
         return diagonal({source: o, target: o});
       })
-      .classed("outer", function(n) { return n.target.join === "outer"; })
+      .classed("attribute", function(n) { return n.target.pcomp.kind === "attribute"; })
+      .on("click", function(l){ 
+          if (l.target.pcomp.kind == "attribute") return;
+          l.target.join = (l.target.join ? null : "outer");
+          update(l.source);
+      })
     .transition()
       .duration(duration)
       .attr("d", diagonal)
       ;
 
   // Transition links to their new position.
-  link.transition()
+  link.classed("outer", function(n) { return n.target.join === "outer"; })
+      .transition()
       .duration(duration)
       .attr("d", diagonal)
       ;

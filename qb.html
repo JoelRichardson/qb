@@ -1,12 +1,34 @@
 <!DOCTYPE html>
 <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link type="text/css" rel="stylesheet" href="./resources/style.css">
     <script type="text/javascript" src="./resources/d3.v3.js"></script>
     <script type="text/javascript" src="./resources/d3.layout.js"></script>
-    <style type="text/css">
 
 
+<style type="text/css">
+#tInfo {
+    display: flex;
+    flex-direction: row;
+}
+
+#tInfo > div {
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+}
+
+#tInfo > div > * {
+    padding: 4px;
+}
+
+#tInfo label {
+    text-align: center;
+}
+
+#tInfo .title input {
+}
 
 .nodegroup {
   font-size: 11px;
@@ -35,13 +57,81 @@
 #dialog {
     position: absolute;
     background-color: #ccc;
-    padding: 16px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
+    min-width: 200px;
 }
 
 #dialog .constraintSection {
     color: purple;
+}
+
+#dialog .constraintSection .add-button {
+    display: flex;
+    flex-direction: row;
+}
+
+#dialog .constraintSection .add-button i.add {
+    font-size: 20px;
+}
+
+#dialog .constraintSection .add-button:hover {
+    cursor: pointer;
+    color: white;
+    background-color: purple;
+}
+
+#dialog .constraintSection .add-button:hover label {
+    cursor: pointer;
+}
+
+#dialog .constraintSection .constraint {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+#dialog .constraintSection .constraint:hover {
+    background-color: #ddd;
+}
+
+#dialog .constraintSection .constraint div {
+    padding: 2px;
+    margin: 2px;
+}
+
+#dialog .constraintSection .constraint div.op {
+    color: white;
+    background-color: purple;
+    border-radius: 6px;
+    min-width: 20px;
+    text-align: center;
+}
+
+#dialog .constraintSection .constraint div.value {
+    flex-grow: 100;
+    border: thin solid gray;
+}
+
+#dialog .constraintSection .constraint i.material-icons {
+    cursor: pointer;
+    padding-top: 3px;
+}
+
+#dialog .constraintSection .constraint div.code {
+    color: #888;
+    border: none;
+}
+
+#dialog .constraintSection .constraint.null div.value {
+    border: none;
+    font-size: 1e-6px;
+}
+
+#dialog .constraintSection .constraint i.material-icons:hover {
+    color: white;
+    background-color: purple;
 }
 
 #dialog.isroot .removeButton {
@@ -112,14 +202,30 @@ button.removeButton {
     overflow: scroll;
 }
 
+#dialog.simple .attrContainer {
+    display: none;
+}
+
 #dialog .header {
     display: flex;
     flex-direction: column;
+    text-align: center;
 }
 
-#dialog .footer {
+#dialog > div {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-bottom: thin solid white;
+}
+
+#dialog > div.footer {
     display: flex;
     flex-direction: row;
+    border-bottom: none;
+}
+
+#dialog i.material-icons {
+    font-size: 16px;
 }
 
 #ttext textarea {
@@ -129,11 +235,16 @@ button.removeButton {
 
 path.link {
   fill: none;
+  cursor: pointer;
 }
 
 .link {
     stroke: #ccc;
     stroke-width: 1.5px;
+}
+
+.link.attribute {
+    cursor: none;
 }
 
 .link.outer {
@@ -177,6 +288,10 @@ label {
                 </div>
             </div>
             <div class="constraintSection">
+                <div class="add-button">
+                <i class="material-icons add">add_box</i>
+                <label>Add constraint</label>
+                </div>
             </div>
             <div class="attrContainer">
                 <table class="attributes"></table>
@@ -188,9 +303,18 @@ label {
         </div>
 
         <div id="tInfo">
-            <div class="title"></div>
-            <div class="description"></div>
-            <div class="comment"></div>
+            <div class="title">
+                <label>Title</label>
+                <input size="40" type="text" ></input>
+            </div>
+            <div class="description">
+                <label>Description</label>
+                <textarea ></textarea>
+            </div>
+            <div class="comment">
+                <label>Comment</label>
+                <textarea></textarea>
+            </div>
         </div>
 
         <script type="text/javascript" src="qb.js"> </script>
