@@ -707,6 +707,7 @@ function editConstraint(c, n, editBtn){
     var cbb = editBtn.parentElement.getBoundingClientRect();
 
     var ced = d3.select("#constraintEdit")
+        .attr("class", c.ctype)
         .classed("open", true)
         .style("top", (cbb.top - dbb.top)+"px")
         .style("left", (cbb.left - dbb.left)+"px")
@@ -810,7 +811,7 @@ function showDialog(n, elt, refreshOnly){
       ;
   cdivs.append("i")
       .attr("class", "material-icons cancel")
-      .text("cancel")
+      .text("delete_forever")
       ;
 
   // Remove exiting

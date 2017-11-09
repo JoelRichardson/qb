@@ -35,13 +35,17 @@ body {
 }
 .node {
   cursor: pointer;
-  fill: white;
-  stroke: black;
+  stroke: none;
   stroke-width: 1.5px;
+}
+rect.node {
+  fill: #ccc;
+}
+circle.node {
+  fill: lightsteelblue;
 }
 .constrained .node {
     stroke: purple;
-    stroke-width: 2;
 }
 .selected .node {
     fill: green;
@@ -103,7 +107,7 @@ body {
 }
 
 #dialog .constraintSection .add-button i.add {
-    font-size: 20px;
+    font-size: 28px;
 }
 
 #dialog .constraintSection .add-button:hover {
@@ -120,6 +124,8 @@ body {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 #dialog .constraintSection .constraint:hover {
@@ -180,28 +186,6 @@ i.material-icons.button:hover {
 #dialog i.button.remove:hover {
     background-color: red;
     color: white;
-}
-
-#constraintEdit {
-    border: thin solid black;
-    background-color: white;
-    position: absolute;
-    display: none;
-}
-
-#constraintEdit.open {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-}
-
-#constraintEdit > * {
-    margin: 4px;
-}
-
-#constraintEdit .material-icons.close:hover {
-    color: white;
-    background-color: black;
 }
 
 #dialog.hidden {
@@ -298,6 +282,37 @@ button {
     font-size: 16px;
 }
 
+#constraintEdit {
+    border: thin solid black;
+    background-color: white;
+    position: absolute;
+    display: none;
+}
+
+#constraintEdit.open {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#constraintEdit.null .value {
+    display: none;
+}
+
+#constraintEdit > * {
+    margin: 4px;
+}
+
+#constraintEdit .material-icons.save:hover {
+    color: white;
+    background-color: black;
+}
+
+#constraintEdit .material-icons.close:hover {
+    color: white;
+    background-color: black;
+}
+
 #ttext textarea {
     width: 500px;
     height: 200px;
@@ -309,17 +324,22 @@ path.link {
 }
 
 .link {
-    stroke: #ccc;
-    stroke-width: 1.5px;
+    stroke: lightsteelblue;
+    stroke-width: 3px;
+}
+
+.link:hover {
+    stroke-width: 5px;
 }
 
 .link.attribute {
-    cursor: none;
+    cursor: default;
+    stroke-width: 3px;
+    stroke: #ccc;
 }
 
 .link.outer {
     stroke: orange;
-    stroke-width: 3px;
     stroke-dasharray: 3 3;
 }
 
