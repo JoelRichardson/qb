@@ -714,8 +714,16 @@ function editConstraint(c, n, editBtn){
 
     var cops = d3.select("#constraintEdit select").selectAll("option").data(OPS);
     cops.enter()
-        .append("option")
+        .append("option");
+    cops.exit()
+        .remove();
+    cops
         .text(function(o){return o.op})
+        .attr("selected", function(d){ return d.op === c.op ? true : null; })
+        ;
+        
+    d3.select("#constraintEdit .value")
+        .attr("value", c.value)
         ;
 
     d3.select("#constraintEdit .button.close")

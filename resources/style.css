@@ -7,6 +7,7 @@ body {
 #tInfo {
     display: flex;
     flex-direction: row;
+    align-items: center;
 }
 
 #tInfo > div {
@@ -52,11 +53,43 @@ body {
 
 #dialog {
     position: absolute;
-    background-color: #ccc;
+    background-color: rgba(182,182,182,.92);
     padding: 8px;
     display: flex;
     flex-direction: column;
     min-width: 200px;
+}
+
+#dialog i.button.close {
+    font-size: 20px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+#dialog i.button.close:hover {
+    background-color: black;
+    color: white;
+}
+
+#dialog .select-ctrl {
+    display: none;
+}
+
+    
+#dialog.simple .select-ctrl {
+    display: flex;
+    flex-direction: row;
+    cursor: pointer;
+}
+
+#dialog.simple .select-ctrl div {
+    flex-grow: 2;
+    border: thin solid white;
+}
+
+#dialog.simple .select-ctrl.selected div {
+    background-color: green;
 }
 
 #dialog .constraintSection {
@@ -66,6 +99,7 @@ body {
 #dialog .constraintSection .add-button {
     display: flex;
     flex-direction: row;
+    align-items: center;
 }
 
 #dialog .constraintSection .add-button i.add {
@@ -148,18 +182,6 @@ i.material-icons.button:hover {
     color: white;
 }
 
-#dialog i.button.close {
-    font-size: 20px;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-#dialog i.button.close:hover {
-    background-color: black;
-    color: white;
-}
-
 #constraintEdit {
     border: thin solid black;
     background-color: white;
@@ -170,6 +192,11 @@ i.material-icons.button:hover {
 #constraintEdit.open {
     display: flex;
     flex-direction: row;
+    align-items: center;
+}
+
+#constraintEdit > * {
+    margin: 4px;
 }
 
 #constraintEdit .material-icons.close:hover {
@@ -187,16 +214,6 @@ i.material-icons.button:hover {
 #dialog.simple .subclassConstraint {
     display:none;
 }
-#dialog .select-ctrl {
-    display: none;
-}
-#dialog.simple .select-ctrl {
-    display: block;
-}
-#dialog.simple .select-ctrl.selected {
-    background-color: green;
-}
-
 #dialog table.attributes {
     width: 100%;
     padding-right: 10px;
@@ -253,6 +270,7 @@ button {
 #dialog .header > div {
     display: flex;
     flex-direction: row;
+    align-items: center;
     padding: 4px;
 }
 
@@ -272,6 +290,7 @@ button {
     border-bottom: none;
     display: flex;
     flex-direction: row;
+    align-items: center;
     justify-content: center;
 }
 
