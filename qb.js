@@ -65,52 +65,114 @@ var animationDuration = 250; // ms
 // - list
 //      IN NOT-IN
 // - loop (TODO)
+var NUMERICTYPES= [
+    "int", "java.lang.Integer",
+    "short", "java.lang.Short",
+    "long", "java.lang.Long",
+    "float", "java.lang.Float",
+    "double", "java.lang.Double",
+    "java.math.BigDecimal",
+    "java.util.Date"
+];
+var NULLABLETYPES= [
+    "java.lang.Integer",
+    "java.lang.Short",
+    "java.lang.Long",
+    "java.lang.Float",
+    "java.lang.Double",
+    "java.math.BigDecimal",
+    "java.util.Date",
+    "java.lang.String",
+    "java.lang.Boolean"
+    ]
+
 var OPS = [
 
     // Valid for any attribute
     // Also the operators for loop constraints (not yet implemented).
     {
     op: "=",
-    ctype: "value"
+    ctype: "value",
+    validForClass: false,
+    validForAttr: true,
+    validForRoot: false
     },{
     op: "!=",
-    ctype: "value"
+    ctype: "value",
+    validForClass: false,
+    validForAttr: true,
+    validForRoot: false
     },
     
     // Valid for numeric and date attributes
     {
     op: ">",
-    ctype: "value"
+    ctype: "value",
+    validForClass: false,
+    validForAttr: true,
+    validForRoot: false,
+    validTypes: NUMERICTYPES
     },{
     op: ">=",
-    ctype: "value"
+    ctype: "value",
+    validForClass: false,
+    validForAttr: true,
+    validForRoot: false,
+    validTypes: NUMERICTYPES
     },{
     op: "<",
-    ctype: "value"
+    ctype: "value",
+    validForClass: false,
+    validForAttr: true,
+    validForRoot: false,
+    validTypes: NUMERICTYPES
     },{
     op: "<=",
-    ctype: "value"
+    ctype: "value",
+    validForClass: false,
+    validForAttr: true,
+    validForRoot: false,
+    validTypes: NUMERICTYPES
     },
     
     // Valid for string attributes
     {
     op: "CONTAINS",
-    ctype: "value"
+    ctype: "value",
+    validForClass: false,
+    validForAttr: true,
+    validForRoot: false,
+    validTypes: ["java.lang.String"]
+
     },{
     op: "DOES NOT CONTAIN",
-    ctype: "value"
+    ctype: "value",
+    validForClass: false,
+    validForAttr: true,
+    validForRoot: false,
+    validTypes: ["java.lang.String"]
     },{
     op: "LIKE",
-    ctype: "value"
+    ctype: "value",
+    validForClass: false,
+    validForAttr: true,
+    validForRoot: false,
+    validTypes: ["java.lang.String"]
     },{
     op: "NOT LIKE",
-    ctype: "value"
+    ctype: "value",
+    validForClass: false,
+    validForAttr: true,
+    validForRoot: false,
+    validTypes: ["java.lang.String"]
     },{
     op: "ONE OF",
-    ctype: "multivalue"
+    ctype: "multivalue",
+    validTypes: ["java.lang.String"]
     },{
     op: "NONE OF",
-    ctype: "multivalue"
+    ctype: "multivalue",
+    validTypes: ["java.lang.String"]
     },
     
     // Valid only for Location nodes
@@ -131,29 +193,49 @@ var OPS = [
     // NULL constraints. Valid for any node except root.
     {
     op: "IS NULL",
-    ctype: "null"
+    ctype: "null",
+    validForClass: true,
+    validForAttr: true,
+    validForRoot: false,
+    validTypes: NULLABLETYPES
     },{
     op: "IS NOT NULL",
-    ctype: "null"
+    ctype: "null",
+    validForClass: true,
+    validForAttr: true,
+    validForRoot: false,
+    validTypes: NULLABLETYPES
     },
     
     // Valid only at any non-attribute node (i.e., the root, or any 
     // reference or collection node).
     {
     op: "LOOKUP",
-    ctype: "lookup"
+    ctype: "lookup",
+    validForClass: true,
+    validForAttr: false,
+    validForRoot: true
     },{
     op: "IN",
-    ctype: "list"
+    ctype: "list",
+    validForClass: true,
+    validForAttr: false,
+    validForRoot: true
     },{
     op: "NOT IN",
-    ctype: "list"
+    ctype: "list",
+    validForClass: true,
+    validForAttr: false,
+    validForRoot: true
     },
     
     // Valid at any non-attribute node except the root.
     {
     op: "ISA",
-    ctype: "subclass"
+    ctype: "subclass",
+    validForClass: true,
+    validForAttr: false,
+    validForRoot: false
     }];
 
 setup()
@@ -573,18 +655,17 @@ function getPath(node){
 //   n (node) The node having the constraint.
 //   scName (type) Name of subclass.
 function setSubclassConstraint(n, scName){
+    // remove any existing subclass constraint
     n.constraints = n.constraints.filter(function (c){ return c.ctype !== "subclass"; });
-    if (scName === ""){
-        n.subclassConstraint = null;
-    }
-    else {
+    n.subclassConstraint = null;
+    if (scName){
         let cls = currMine.model.model.classes[scName];
         if(!cls) throw RuntimeError("Could not find class " + scName);
+        n.constraints.push({ ctype:"subclass", op:"ISA", path:getPath(n), type:cls.name });
         n.subclassConstraint = cls;
-        n.constraints.push({ ctype:"subclass", path:getPath(n), type:cls.name });
     }
     function check(node, removed) {
-        var cls = n.subclassConstraint || node.ptype;
+        var cls = node.subclassConstraint || node.ptype;
         var c2 = [];
         node.children.forEach(function(c){
             if(c.name in cls.attributes || c.name in cls.references || c.name in cls.collections) {
@@ -601,8 +682,11 @@ function setSubclassConstraint(n, scName){
     hideDialog();
     update(n);
     if(removed.length > 0)
-        console.log("Constraining to subclass " + scName 
-                + " caused the following paths to be removed:", removed.map(getPath)); 
+        window.setTimeout(function(){
+            alert("Constraining to subclass " + (scName || n.ptype.name)
+            + " caused the following paths to be removed: " 
+            + removed.map(getPath).join(", ")); 
+        }, animationDuration);
 }
 
 // Removes the current node and all its descendants.
@@ -700,6 +784,18 @@ function addConstraint(n) {
 }
 
 //
+function opValidFor(op, n){
+    if(!n.parent && !op.validForRoot) return false;
+    if(typeof(n.ptype) === "string")
+        if(! op.validForAttr)
+            return false;
+        else if( op.validTypes && op.validTypes.indexOf(n.ptype) == -1)
+            return false;
+    if(n.ptype.name && ! op.validForClass) return false;
+    return true;
+}
+
+//
 function editConstraint(c, n, editBtn){
     console.log("Edit", c, n);
 
@@ -713,7 +809,9 @@ function editConstraint(c, n, editBtn){
         .style("left", (cbb.left - dbb.left)+"px")
         ;
 
-    var cops = d3.select("#constraintEdit select").selectAll("option").data(OPS);
+    var cops = d3.select("#constraintEdit select")
+        .selectAll("option")
+        .data(OPS.filter(function(op){ return opValidFor(op, n); }));
     cops.enter()
         .append("option");
     cops.exit()
