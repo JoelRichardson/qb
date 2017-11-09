@@ -7,257 +7,6 @@
     <script type="text/javascript" src="./resources/d3.layout.js"></script>
 
 
-<style type="text/css">
-#tInfo {
-    display: flex;
-    flex-direction: row;
-}
-
-#tInfo > div {
-    display: flex;
-    flex-direction: column;
-    padding: 4px;
-}
-
-#tInfo > div > * {
-    padding: 4px;
-}
-
-#tInfo label {
-    text-align: center;
-}
-
-#tInfo .title input {
-}
-
-.nodegroup {
-  font-size: 11px;
-}
-.nodeName {
-    text-anchor: end;
-}
-.node {
-  cursor: pointer;
-  fill: white;
-  stroke: black;
-  stroke-width: 1.5px;
-}
-.constrained .node {
-    stroke: purple;
-    stroke-width: 2;
-}
-.selected .node {
-    fill: green;
-}
-.constraint {
-    stroke : purple;
-    fill: purple;
-}
-
-#dialog {
-    position: absolute;
-    background-color: #ccc;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    min-width: 200px;
-}
-
-#dialog .constraintSection {
-    color: purple;
-}
-
-#dialog .constraintSection .add-button {
-    display: flex;
-    flex-direction: row;
-}
-
-#dialog .constraintSection .add-button i.add {
-    font-size: 20px;
-}
-
-#dialog .constraintSection .add-button:hover {
-    cursor: pointer;
-    color: white;
-    background-color: purple;
-}
-
-#dialog .constraintSection .add-button:hover label {
-    cursor: pointer;
-}
-
-#dialog .constraintSection .constraint {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-}
-
-#dialog .constraintSection .constraint:hover {
-    background-color: #ddd;
-}
-
-#dialog .constraintSection .constraint div {
-    padding: 2px;
-    margin: 2px;
-}
-
-#dialog .constraintSection .constraint div.op {
-    color: white;
-    background-color: purple;
-    border-radius: 6px;
-    min-width: 20px;
-    text-align: center;
-}
-
-#dialog .constraintSection .constraint div.value {
-    flex-grow: 100;
-    border: thin solid gray;
-}
-
-#dialog .constraintSection .constraint i.material-icons {
-    cursor: pointer;
-    padding-top: 3px;
-}
-
-#dialog .constraintSection .constraint div.code {
-    color: #888;
-    border: none;
-}
-
-#dialog .constraintSection .constraint.null div.value {
-    border: none;
-    font-size: 1e-6px;
-}
-
-#dialog .constraintSection .constraint i.material-icons:hover {
-    color: white;
-    background-color: purple;
-}
-
-#dialog.isroot .removeButton {
-    disabled: true;
-}
-
-#dialog.hidden {
-    display: none;
-}
-
-#dialog.simple .attributes {
-    display:none;
-}
-#dialog.simple .subclassConstraint {
-    display:none;
-}
-#dialog .select-ctrl {
-    display: none;
-}
-#dialog.simple .select-ctrl {
-    display: block;
-}
-
-#dialog table.attributes {
-    width: 100%;
-    padding-right: 10px;
-    border: 1px solid #aaa;
-}
-
-
-#dialog table.attributes td {
-    padding: 6px;
-}
-
-#dialog table.attributes tr:hover {
-    background-color: #ddd;
-}
-
-#dialog table.attributes td.selectsimple {
-    color: white;
-    background-color: green;
-    cursor: pointer;
-}
-
-#dialog table.attributes td.constrainsimple {
-    color: white;
-    background-color: purple;
-    cursor: pointer;
-}
-
-#dialog table.attributes td.opennext {
-    color: white;
-    background-color: steelblue;
-    cursor: pointer;
-}
-
-button {
-    cursor: pointer;
-}
-
-button.removeButton {
-    color: red;
-}
-
-#dialog .attrContainer {
-    border: thin solid white;
-    max-height: 150px;
-    overflow: scroll;
-}
-
-#dialog.simple .attrContainer {
-    display: none;
-}
-
-#dialog .header {
-    display: flex;
-    flex-direction: column;
-    text-align: center;
-}
-
-#dialog > div {
-    padding-top: 4px;
-    padding-bottom: 4px;
-    border-bottom: thin solid white;
-}
-
-#dialog > div.footer {
-    display: flex;
-    flex-direction: row;
-    border-bottom: none;
-}
-
-#dialog i.material-icons {
-    font-size: 16px;
-}
-
-#ttext textarea {
-    width: 500px;
-    height: 200px;
-}
-
-path.link {
-  fill: none;
-  cursor: pointer;
-}
-
-.link {
-    stroke: #ccc;
-    stroke-width: 1.5px;
-}
-
-.link.attribute {
-    cursor: none;
-}
-
-.link.outer {
-    stroke: orange;
-    stroke-width: 3px;
-    stroke-dasharray: 3 3;
-}
-
-label {
-    font-weight: bold;
-}
-
-</style>
 </head>
 <body>
     <div id="body">
@@ -275,34 +24,48 @@ label {
 
         <div id="dialog">
             <div class="header">
-                <div class="dialogTitle"></div>
+                <div class="dialogTitle">
+                    <label>Name:&nbsp;</label>
+                    <span></span>
+                </div>
+                <div class="fullPath">
+                    <label>Path:&nbsp;</label>
+                    <div></div>
+                </div>
                 <div class="subclassConstraint">
-                    <label>Class: </label>
+                    <label>Class:&nbsp;</label>
                     <select></select>
                 </div>
             </div>
             <div class="select-ctrl">
-                <div>
-                    <label>Selected: </label>
-                    <input type="checkbox"></input>
-                </div>
+                <label>Selected:&nbsp;</label>
             </div>
             <div class="constraintSection">
                 <div class="add-button">
-                <i class="material-icons add">add_box</i>
-                <label>Add constraint</label>
+                    <i class="material-icons add">add_box</i>
+                    <label>Add constraint</label>
                 </div>
             </div>
             <div class="attrContainer">
                 <table class="attributes"></table>
             </div>
             <div class="footer">
-              <button class="removeButton">Remove</button>
-              <button class="closeButton">Close</button>
+              <i class="material-icons button remove" title="Remove this node.">delete_forever</i>
+              <i class="material-icons button close" title="Close dialog.">close</i>
             </div>  
         </div>
 
+        <div id="constraintEdit">
+            <select class="op"></select>
+            <input type="text" class="value"></input>
+            <i class="material-icons button close">close</i>
+        </div>
+
         <div id="tInfo">
+            <div class="name">
+                <label>Name</label>
+                <input size="25" type="text" ></input>
+            </div>
             <div class="title">
                 <label>Title</label>
                 <input size="40" type="text" ></input>

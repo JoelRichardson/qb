@@ -29,6 +29,22 @@ var mines = [{
     "model" : null
     }];
 
+var mines;
+var name2mine;
+var currMine;
+var m;
+var w;
+var h;
+var i;
+var root;
+var layoutStyle;
+var diagonal;
+var vis;
+var currTemplate;
+var currNode;
+var layoutStyle = "tree";
+var animationDuration = 250; // ms
+
 // Constraints on attributes:
 // - value (comparing an attribute to a value, using an operator)
 //      > >= < <= = != LIKE NOT-LIKE CONTAINS DOES-NOT-CONTAIN
@@ -49,7 +65,7 @@ var mines = [{
 // - list
 //      IN NOT-IN
 // - loop (TODO)
-var ops = [
+var OPS = [
 
     // Valid for any attribute
     // Also the operators for loop constraints (not yet implemented).
@@ -140,22 +156,6 @@ var ops = [
     ctype: "subclass"
     }];
 
-var mines;
-var name2mine;
-var currMine;
-var m;
-var w;
-var h;
-var i;
-var root;
-var layoutStyle;
-var diagonal;
-var vis;
-var currTemplate;
-var currNode;
-var layoutStyle = "tree";
-var animationDuration = 500; // ms
-
 setup()
 
 function setup(){
@@ -193,8 +193,8 @@ function setup(){
     //
     var dg = d3.select("#dialog");
     dg.classed("hidden",true)
-    dg.select(".closeButton").on("click", hideDialog);
-    dg.select(".removeButton").on("click", removeNode);
+    dg.select(".button.close").on("click", hideDialog);
+    dg.select(".button.remove").on("click", removeNode);
 
     // 
     //
@@ -206,8 +206,12 @@ function setup(){
     d3.select("#dialog .subclassConstraint select")
         .on("change", function(){ setSubclassConstraint(currNode, this.value); });
     //
-    d3.select("#dialog .select-ctrl input")
-        .on("change", function(){ currNode.view = this.checked; update(currNode);  });
+    d3.select("#dialog .select-ctrl")
+        .on("click", function() {
+            currNode.view = !currNode.view;
+            update(currNode);
+            d3.select("#dialog .select-ctrl").classed("selected", currNode.view);
+        });
 
     // start with the first mine by default.
     selectedMine(mines[0].name);
@@ -630,6 +634,7 @@ function selectedTemplate (tname) {
     currTemplate = deepc(t);
 
     var ti = d3.select("#tInfo");
+    ti.select(".name").select("input").attr("value", currTemplate.name)
     ti.select(".title").select("input").attr("value", currTemplate.title)
     ti.select(".description").select("textarea").text(currTemplate.description)
     ti.select(".comment").select("text").text(currTemplate.comment)
@@ -695,8 +700,27 @@ function addConstraint(n) {
 }
 
 //
-function editConstraint(c, n){
+function editConstraint(c, n, editBtn){
     console.log("Edit", c, n);
+
+    var dbb = editBtn.parentElement.parentElement.parentElement.parentElement.getBoundingClientRect();
+    var cbb = editBtn.parentElement.getBoundingClientRect();
+
+    var ced = d3.select("#constraintEdit")
+        .classed("open", true)
+        .style("top", (cbb.top - dbb.top)+"px")
+        .style("left", (cbb.left - dbb.left)+"px")
+        ;
+
+    var cops = d3.select("#constraintEdit select").selectAll("option").data(OPS);
+    cops.enter()
+        .append("option")
+        .text(function(o){return o.op})
+        ;
+
+    d3.select("#constraintEdit .button.close")
+        .on("click", function(){ d3.select("#constraintEdit").classed("open", null); });
+
 }
 //
 function removeConstraint(c, n){
@@ -737,11 +761,15 @@ function showDialog(n, elt, refreshOnly){
       .style("transform", refreshOnly?"scale(1)":"scale(1e-6)")
       .style("transform-origin", "0% 0%")
       .classed("hidden", false)
+      .classed("isroot", isroot)
       ;
 
   // Set the dialog title to node name
-  dialog.select(".dialogTitle")
+  dialog.select(".header .dialogTitle span")
       .text(n.name);
+  // Show the full path
+  dialog.select(".header .fullPath div")
+      .text(getPath(n));
 
   //
   dialog.select("#dialog .constraintSection .add-button")
@@ -794,18 +822,13 @@ function showDialog(n, elt, refreshOnly){
       });
   constrs.select("i.edit")
       .on("click", function(c){ 
-          editConstraint(c, n);
+          editConstraint(c, n, this);
       });
   constrs.select("i.cancel")
       .on("click", function(c){ 
           removeConstraint(c, n);
       })
 
-
-  // Disable the remove button for the root node.
-  dialog.select(".removeButton")
-      .attr("disabled", isroot?true:null)
-      ;
 
   // Transition to "grow" the dialog out of the node
   dialog.transition()
@@ -820,8 +843,8 @@ function showDialog(n, elt, refreshOnly){
       dialog.select("span.clsName")
           .text(n.pcomp.type.name || n.pcomp.type );
       // 
-      dialog.select(".select-ctrl input")
-          .attr("checked", function(n){ this.checked=n.view; return null; })
+      dialog.select(".select-ctrl")
+          .classed("selected", function(n){ return n.view; });
   }
   else {
       // Dialog for classes
@@ -861,11 +884,11 @@ function showDialog(n, elt, refreshOnly){
                   name: comp.name,
                   cls: ''
                   },{
-                  name: "S",
+                  name: '<i class="material-icons">play_arrow</i>',
                   cls: 'selectsimple',
                   click: function (){selectedNext(currNode,comp.name,"selected"); }
                   },{
-                  name: "C",
+                  name: '<i class="material-icons">play_arrow</i>',
                   cls: 'constrainsimple',
                   click: function (){selectedNext(currNode,comp.name,"constrained"); }
                   }];
@@ -875,7 +898,7 @@ function showDialog(n, elt, refreshOnly){
                   name: comp.name,
                   cls: ''
                   },{
-                  name: ">",
+                  name: '<i class="material-icons">play_arrow</i>',
                   cls: 'opennext',
                   click: function (){selectedNext(currNode,comp.name,"open"); }
                   },{
@@ -888,7 +911,7 @@ function showDialog(n, elt, refreshOnly){
       cells.enter().append("td");
       cells
           .attr("class", function(d){return d.cls;})
-          .text(function(d){return d.name;})
+          .html(function(d){return d.name;})
           .on("click", function(d){ return d.click && d.click(); })
           ;
       cells.exit().remove();
@@ -906,12 +929,14 @@ function showDialog(n, elt, refreshOnly){
 //
 function hideDialog(){
   currNode = null;
-  var dialog = d3.select("#dialog");
-  dialog
+  var dialog = d3.select("#dialog")
       .classed("hidden", true)
       .transition()
       .duration(animationDuration/2)
       .style("transform","scale(1e-6)")
+      ;
+  d3.select("#constraintEdit")
+      .classed("open", null)
       ;
 }
 

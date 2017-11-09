@@ -4,84 +4,307 @@ body {
   font-family: "Helvetica Neue", Helvetica;
 }
 
-#chart, #header, #footer {
-  position: absolute;
-  top: 0;
+#tInfo {
+    display: flex;
+    flex-direction: row;
 }
 
-#header, #footer {
-  z-index: 1;
-  display: block;
-  font-size: 36px;
-  font-weight: 300;
-  text-shadow: 0 1px 0 #fff;
+#tInfo > div {
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
 }
 
-#header.inverted, #footer.inverted {
-  color: #fff;
-  text-shadow: 0 1px 4px #000;
+#tInfo > div > * {
+    padding: 4px;
 }
 
-#header {
-  top: 80px;
-  left: 140px;
-  width: 1000px;
+#tInfo label {
+    text-align: center;
 }
 
-#footer {
-  top: 20px;
-  right: 20px;
-  text-align: left;
+#tInfo .title input {
 }
 
-rect {
-  fill: none;
-  pointer-events: all;
+.nodegroup {
+  font-size: 11px;
 }
-
-pre {
-  font-size: 18px;
+.nodeName {
+    text-anchor: end;
 }
-
-line {
-  stroke: #000;
+.node {
+  cursor: pointer;
+  fill: white;
+  stroke: black;
   stroke-width: 1.5px;
 }
-
-.string, .regexp {
-  color: #f39;
+.constrained .node {
+    stroke: purple;
+    stroke-width: 2;
+}
+.selected .node {
+    fill: green;
+}
+.constraint {
+    stroke : purple;
+    fill: purple;
 }
 
-.keyword {
-  color: #00c;
+#dialog {
+    position: absolute;
+    background-color: #ccc;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
 }
 
-.comment {
-  color: #777;
-  font-style: oblique;
+#dialog .constraintSection {
+    color: purple;
 }
 
-.number {
-  color: #369;
+#dialog .constraintSection .add-button {
+    display: flex;
+    flex-direction: row;
 }
 
-.class, .special {
-  color: #1181B8;
+#dialog .constraintSection .add-button i.add {
+    font-size: 20px;
 }
 
-a:link, a:visited {
-  color: #000;
-  text-decoration: none;
+#dialog .constraintSection .add-button:hover {
+    cursor: pointer;
+    color: white;
+    background-color: purple;
 }
 
-a:hover {
-  color: #666;
+#dialog .constraintSection .add-button:hover label {
+    cursor: pointer;
 }
 
-.hint {
-  position: absolute;
-  right: 0;
-  width: 1280px;
-  font-size: 12px;
-  color: #999;
+#dialog .constraintSection .constraint {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
 }
+
+#dialog .constraintSection .constraint:hover {
+    background-color: #ddd;
+}
+
+#dialog .constraintSection .constraint div {
+    padding: 2px;
+    margin: 2px;
+}
+
+#dialog .constraintSection .constraint div.op {
+    color: white;
+    background-color: purple;
+    border-radius: 6px;
+    min-width: 20px;
+    text-align: center;
+}
+
+#dialog .constraintSection .constraint div.value {
+    flex-grow: 100;
+    border: thin solid gray;
+}
+
+#dialog .constraintSection .constraint i.material-icons {
+    cursor: pointer;
+    padding-top: 3px;
+}
+
+#dialog .constraintSection .constraint div.code {
+    color: #888;
+    border: none;
+}
+
+#dialog .constraintSection .constraint.null div.value {
+    border: none;
+    font-size: 1e-6px;
+}
+
+#dialog .constraintSection .constraint i.material-icons:hover {
+    color: white;
+    background-color: purple;
+}
+
+i.material-icons.button:hover {
+    cursor: pointer;
+}
+
+#dialog i.button.remove {
+    font-size: 28px;
+    color: red;
+}
+
+#dialog.isroot i.button.remove {
+    display: none;
+}
+
+#dialog i.button.remove:hover {
+    background-color: red;
+    color: white;
+}
+
+#dialog i.button.close {
+    font-size: 20px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+#dialog i.button.close:hover {
+    background-color: black;
+    color: white;
+}
+
+#constraintEdit {
+    border: thin solid black;
+    background-color: white;
+    position: absolute;
+    display: none;
+}
+
+#constraintEdit.open {
+    display: flex;
+    flex-direction: row;
+}
+
+#constraintEdit .material-icons.close:hover {
+    color: white;
+    background-color: black;
+}
+
+#dialog.hidden {
+    display: none;
+}
+
+#dialog.simple .attributes {
+    display:none;
+}
+#dialog.simple .subclassConstraint {
+    display:none;
+}
+#dialog .select-ctrl {
+    display: none;
+}
+#dialog.simple .select-ctrl {
+    display: block;
+}
+#dialog.simple .select-ctrl.selected {
+    background-color: green;
+}
+
+#dialog table.attributes {
+    width: 100%;
+    padding-right: 10px;
+}
+
+
+#dialog table.attributes td {
+    padding: 6px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#dialog table.attributes tr:hover {
+    background-color: #ddd;
+}
+
+#dialog table.attributes td.selectsimple {
+    color: white;
+    background-color: green;
+    cursor: pointer;
+}
+
+#dialog table.attributes td.constrainsimple {
+    color: white;
+    background-color: purple;
+    cursor: pointer;
+}
+
+#dialog table.attributes td.opennext {
+    color: white;
+    background-color: steelblue;
+    cursor: pointer;
+}
+
+button {
+    cursor: pointer;
+}
+
+#dialog .attrContainer {
+    border: thin solid white;
+    max-height: 150px;
+    overflow: scroll;
+}
+
+#dialog.simple .attrContainer {
+    display: none;
+}
+
+#dialog .header {
+    display: flex;
+    flex-direction: column;
+}
+
+#dialog .header > div {
+    display: flex;
+    flex-direction: row;
+    padding: 4px;
+}
+
+#dialog .header .fullPath div {
+    font-size: 10px;
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+#dialog > div {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-bottom: thin solid white;
+}
+
+#dialog > div.footer {
+    border-bottom: none;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+#dialog i.material-icons {
+    font-size: 16px;
+}
+
+#ttext textarea {
+    width: 500px;
+    height: 200px;
+}
+
+path.link {
+  fill: none;
+  cursor: pointer;
+}
+
+.link {
+    stroke: #ccc;
+    stroke-width: 1.5px;
+}
+
+.link.attribute {
+    cursor: none;
+}
+
+.link.outer {
+    stroke: orange;
+    stroke-width: 3px;
+    stroke-dasharray: 3 3;
+}
+
+label {
+    font-weight: bold;
+}
+
