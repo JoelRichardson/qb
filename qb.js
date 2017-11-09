@@ -951,7 +951,6 @@ function hideDialog(){
 
 function setLayout(style){
     layoutStyle = style;
-    doLayout(root);
     update(root);
 }
 
@@ -963,9 +962,10 @@ function doLayout(root){
           .size([h, w]);
   }
   else {
-      var maxd = 0;
-      function md (n) { maxd = Math.max(maxd, n.depth); n.children.forEach( md ) };
-      md(root);
+      function md (n) {
+          return 1 + (n.children.length ? Math.max.apply(null, n.children.map(md)) : 0);
+      };
+      var maxd = md(root);
       layout = d3.layout.cluster()
           .size([h, maxd * 180]);
   }
