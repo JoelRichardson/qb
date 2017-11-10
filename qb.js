@@ -804,7 +804,6 @@ function opValidFor(op, n){
 }
 
 function openConstraintEditor(c, n, editBtn){
-    console.log("Edit", c, n);
 
     var dbb = editBtn.parentElement.parentElement.parentElement.parentElement.getBoundingClientRect();
     var cbb = editBtn.parentElement.getBoundingClientRect();
@@ -817,7 +816,7 @@ function openConstraintEditor(c, n, editBtn){
         ;
 
     var o; 
-    var cops = d3.select("#constraintEditor select.op")
+    var cops = d3.select('#constraintEditor select[name="op"]')
         .selectAll("option")
         .data(OPS.filter(function(op){ return opValidFor(op, n); }));
     cops.enter()
@@ -835,8 +834,9 @@ function openConstraintEditor(c, n, editBtn){
         })
         ;
         
-    d3.select("#constraintEditor select.op")
-        .attr("value", o)       // set the select value
+    d3.select('#constraintEditor [name="op"]')[0][0].value = o;
+
+    d3.select('#constraintEditor [name="op"]')
         .on("change", function(){
             var op = OPINDEX[this.value];
             d3.select("#constraintEditor")
@@ -845,19 +845,19 @@ function openConstraintEditor(c, n, editBtn){
         })
         ;
 
-    d3.select("#constraintEditor .value")
+    d3.select('#constraintEditor [name="value"]')
         .attr("value", c.value)
         ;
 
-    d3.select("#constraintEditor .values")
+    d3.select('#constraintEditor [name="values"]')
         .attr("value", c.values)
         ;
 
-    d3.select("#constraintEditor .type")
+    d3.select('#constraintEditor [name="type"]')
         .attr("value", c.type)
         ;
 
-    d3.select("#constraintEditor .code")
+    d3.select('#constraintEditor [name="code"]')
         .attr("value", c.code)
         ;
 
@@ -865,7 +865,7 @@ function openConstraintEditor(c, n, editBtn){
         .on("click", closeConstraintEditor);
 
     d3.select("#constraintEditor .button.save")
-        .on("click", function(){ saveConstraintEdits(c) });
+        .on("click", function(){ saveConstraintEdits(n, c) });
 
 }
 //
@@ -883,13 +883,16 @@ function removeConstraint(c, n){
     showDialog(n, null, true);
 }
 //
-function saveConstraintEdits(c){
+function saveConstraintEdits(n, c){
     console.log("Saving constraint", c);
     var xs = d3.selectAll("#constraintEditor .in")[0]
         .filter(function(x){ return d3.select(x).style("display") !== "none"; })
         ;
-    var ccfg = xs.reduce(function(cc,x){ cc[x.name]=x.value; return cc; },{})
+    xs.forEach(function(x){ c[x.name] = x.value; });
+    c.ctype = OPINDEX[c.op].ctype;
     closeConstraintEditor();
+    update(n);
+    showDialog(n, null, true);
 }
 
 // Opens a dialog on the specified node.
