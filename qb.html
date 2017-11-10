@@ -11,18 +11,23 @@
 <body>
     <div id="body">
 
+        <!-- The list of available mines. -->
         <select id="mlist">
         </select>
 
+        <!-- Selected template from the currently selected mine. -->
         <select id="tlist">
         </select>
 
+        <!-- Two ways of drawing the tree. Why? Because we can! (It's D3 after all.)-->
         <select id="layoutstyle">
             <option>tree</option>
             <option>dendrogram</option>
         </select>
 
+        <!-- The dropdown dialog you get when you mouse over a node. -->
         <div id="dialog">
+            <!-- Displays basic info about the node. -->
             <div class="header">
                 <div class="dialogTitle">
                     <label>Name:&nbsp;</label>
@@ -37,35 +42,49 @@
                     <select></select>
                 </div>
             </div>
+
+            <!-- Where the user gets to select/unselect an attribute to return. 
+                 Only display for attributes (not for refs/colls) -->
             <div class="select-ctrl">
                 <label>Selected:&nbsp;</label>
                 <div></div>
             </div>
+
+            <!-- Where the current set of constraints on this node are displayed. -->
             <div class="constraintSection">
                 <div class="add-button">
                     <i class="material-icons add">add_box</i>
                     <label>Add constraint</label>
                 </div>
             </div>
+
+            <!-- where the attrs/refs/colls of a class are displayed.
+                 Only shown for nodes representing refs/colls, i.e., not for attrs.  -->
             <div class="attrContainer">
                 <table class="attributes"></table>
             </div>
+
+            <!-- where the delete button lurks. -->
             <div class="footer">
               <i class="material-icons button remove" title="Remove this node">delete_forever</i>
               <i class="material-icons button close" title="Close dialog">close</i>
             </div>  
         </div>
 
+        <!-- Constraint editor. The little popup you get when you edit a constraint at a node. -->
         <div id="constraintEditor">
+            <!-- All the potential inputs. For a given constraint, only a subset are displayed,
+                 depending on the operator (all done thru css). -->
             <select class="in" name="op" placeholder="constraint operator"></select>
             <input class="in" name="value" type="text" placeholder="value"></input>
             <input class="in" name="values" type="text" placeholder="multivalued constraint" ></input>
             <input class="in" name="type" type="text" placeholder="subclass constraint"></input>
-            <span>(<input class="in code" name="code" type="text" placeholder="constraint code"></input>)</span>
+            <span>(<input class="in" name="code" type="text" placeholder="constraint code"></input>)</span>
             <i class="material-icons button save" title="Save changes">check</i>
             <i class="material-icons button close" title="Cancel" >close</i>
         </div>
 
+        <!-- Template info section. Shows template's name, description, etc. -->
         <div id="tInfo">
             <div class="name">
                 <label>Name</label>
@@ -85,11 +104,12 @@
             </div>
         </div>
 
-        <script type="text/javascript" src="qb.js"> </script>
     </div>  
     <div id="ttext">
         <textarea></textarea>
     </div>
+
+    <script type="text/javascript" src="qb.js"> </script>
 
 </body>
 </html>
