@@ -1,0 +1,226 @@
+#dialog {
+    position: absolute;
+    background-color: rgba(182,182,182,.92);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+}
+
+#dialog i.button.close {
+    font-size: 20px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+#dialog i.button.close:hover {
+    background-color: black;
+    color: white;
+}
+
+#dialog .select-ctrl {
+    display: none;
+}
+
+    
+#dialog.simple .select-ctrl {
+    display: flex;
+    flex-direction: row;
+    cursor: pointer;
+}
+
+#dialog.simple .select-ctrl div {
+    flex-grow: 2;
+    border: thin solid white;
+}
+
+#dialog.simple .select-ctrl.selected div {
+    background-color: green;
+}
+
+#dialog .constraintSection {
+    color: purple;
+}
+
+#dialog .constraintSection .add-button {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#dialog .constraintSection .add-button i.add {
+    font-size: 28px;
+}
+
+#dialog .constraintSection .add-button:hover {
+    cursor: pointer;
+    color: white;
+    background-color: purple;
+}
+
+#dialog .constraintSection .add-button:hover label {
+    cursor: pointer;
+}
+
+#dialog .constraintSection .constraint {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+#dialog .constraintSection .constraint:hover {
+    background-color: #ddd;
+}
+
+#dialog .constraintSection .constraint div {
+    padding: 2px;
+    margin: 2px;
+}
+
+#dialog .constraintSection .constraint div.op {
+    color: white;
+    background-color: purple;
+    border-radius: 6px;
+    min-width: 20px;
+    text-align: center;
+}
+
+#dialog .constraintSection .constraint div.value {
+    flex-grow: 100;
+    border: thin solid gray;
+}
+
+#dialog .constraintSection .constraint i.material-icons {
+    cursor: pointer;
+    padding-top: 3px;
+}
+
+#dialog .constraintSection .constraint div.code {
+    color: #888;
+    border: none;
+}
+
+#dialog .constraintSection .constraint.null div.value {
+    border: none;
+    font-size: 1e-6px;
+}
+
+#dialog .constraintSection .constraint i.material-icons:hover {
+    color: white;
+    background-color: purple;
+}
+
+i.material-icons.button:hover {
+    cursor: pointer;
+}
+
+#dialog i.button.remove {
+    font-size: 28px;
+    color: red;
+}
+
+#dialog.isroot i.button.remove {
+    display: none;
+}
+
+#dialog i.button.remove:hover {
+    background-color: red;
+    color: white;
+}
+
+#dialog.hidden {
+    display: none;
+}
+
+#dialog.simple .attributes {
+    display:none;
+}
+#dialog.simple .subclassConstraint {
+    display:none;
+}
+#dialog table.attributes {
+    width: 100%;
+    padding-right: 10px;
+}
+
+
+#dialog table.attributes td {
+    padding: 6px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#dialog table.attributes tr:hover {
+    background-color: #ddd;
+}
+
+#dialog table.attributes td.selectsimple {
+    color: white;
+    background-color: green;
+    cursor: pointer;
+}
+
+#dialog table.attributes td.constrainsimple {
+    color: white;
+    background-color: purple;
+    cursor: pointer;
+}
+
+#dialog table.attributes td.opennext {
+    color: white;
+    background-color: steelblue;
+    cursor: pointer;
+}
+
+button {
+    cursor: pointer;
+}
+
+#dialog .attrContainer {
+    border: thin solid white;
+    max-height: 150px;
+    overflow: scroll;
+}
+
+#dialog.simple .attrContainer {
+    display: none;
+}
+
+#dialog .header {
+    display: flex;
+    flex-direction: column;
+}
+
+#dialog .header > div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 4px;
+}
+
+#dialog .header .fullPath div {
+    font-size: 10px;
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+#dialog > div {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-bottom: thin solid white;
+}
+
+#dialog > div.footer {
+    border-bottom: none;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+#dialog i.material-icons {
+    font-size: 16px;
+}

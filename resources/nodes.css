@@ -1,0 +1,53 @@
+.nodegroup {
+  font-size: 11px;
+}
+.nodeName {
+    text-anchor: end;
+}
+.node {
+  cursor: pointer;
+  stroke: none;
+  stroke-width: 1.5px;
+}
+rect.node {
+  fill: #ccc;
+}
+circle.node {
+  fill: lightsteelblue;
+}
+.constrained .node {
+    stroke: purple;
+}
+.selected .node {
+    fill: green;
+}
+.constraint {
+    stroke : purple;
+    fill: purple;
+}
+
+path.link {
+  fill: none;
+  cursor: pointer;
+}
+
+.link {
+    stroke: lightsteelblue;
+    stroke-width: 3px;
+}
+
+.link:hover {
+    stroke-width: 5px;
+}
+
+.link.attribute {
+    cursor: default;
+    stroke-width: 3px;
+    stroke: #ccc;
+}
+
+.link.outer {
+    stroke: orange;
+    stroke-dasharray: 3 3;
+}
+

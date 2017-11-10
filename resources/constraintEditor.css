@@ -1,0 +1,56 @@
+#constraintEditor {
+    border: thin solid black;
+    background-color: white;
+    position: absolute;
+    display: none;
+}
+
+#constraintEditor.open {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#constraintEditor .code {
+    width: 15px;
+}
+
+/* If editing ISA, only show the type input. */
+#constraintEditor.isa [name="value"], #constraintEditor.isa [name="values"] {
+    display: none;
+}
+
+/* If editing LOOKUP, only show value input. */
+#constraintEditor.lookup [name="values"], #constraintEditor.lookup [name="type"] {
+    display: none;
+}
+
+/* If editing a value constraint, only show value input. */
+/* #constraintEditor.value .values, #constraintEditor.value .type {*/
+#constraintEditor.value [name="values"], #constraintEditor.value [name="type"] {
+    display: none;
+}
+
+/* If editing a multivalue constraint, only show multivalue input. */
+#constraintEditor.multivalue [name="value"], #constraintEditor.multivalue [name="type"] {
+    display: none;
+}
+
+/* If editing a null constraint, only show the operator. */
+#constraintEditor.null [name="value"], #constraintEditor.null [name="values"], #constraintEditor.null [name="type"] {
+    display: none;
+}
+
+#constraintEditor > * {
+    margin: 4px;
+}
+
+#constraintEditor .material-icons.save:hover {
+    color: white;
+    background-color: black;
+}
+
+#constraintEditor .material-icons.close:hover {
+    color: white;
+    background-color: black;
+}
