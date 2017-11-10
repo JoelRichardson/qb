@@ -346,7 +346,7 @@ function selectedMine(mname){
 
 // Returns an array containing the item values from the given object.
 // The list is sorted by the item keys.
-// If nameAttr is specified, those keys are also added to each element
+// If nameAttr is specified, the item key is also added to each element
 // as an attribute (only works if those items are themselves objects).
 // Examples:
 //    states = {'ME':{name:'Maine'}, 'IA':{name:'Iowa'}}
@@ -530,6 +530,7 @@ function uncompileTemplate(tmplt){
         select : [],
         where : [],
         joins : [],
+        constraintLogic: tmplt.constraintLogic,
         orderBy : deepc(tmplt.orderBy)
     }
     function reach(n){
@@ -547,12 +548,7 @@ function uncompileTemplate(tmplt){
         n.children.forEach(reach);
     }
     reach(tmplt.qtree);
-    return JSON.stringify(t);
-}
-
-// Turns a json representation of a template into XML, suitable for importing into the Intermine QB.
-function json2xml(t){
-    // TODO
+    return t
 }
 
 //
@@ -1324,10 +1320,70 @@ function update(source) {
   updateTtext();
 }
 
+var entityMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+    '/': '&#x2F;',
+    '`': '&#x60;',
+    '=': '&#x3D;'
+};
+
+function escapeHtml (string) {
+  return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+          return entityMap[s];
+    });
+}
+
+// Turns a json representation of a template into XML, suitable for importing into the Intermine QB.
+function json2xml(t){
+    var so = t.orderBy.reduce(function(s,x){ 
+        var k = Object.keys(x)[0];
+        var v = x[k]
+        return s + `${k} ${v} `;
+    }, "");
+
+    function c2xml(c){
+        var g;
+        if (c.ctype === "value" || c.type === "lookup" || c.type === "list")
+            g = `path="${c.path}" op="${escapeHtml(c.op)}" value="${escapeHtml(c.value)}" code="${c.code}" editable="${c.editable}"`
+        else if (c.ctype === "multivalue")
+            g = `path="${c.path}" op="${escapeHtml(c.op)}" value="${escapeHtml(c.values)}" code="${c.code}" editable="${c.editable}"`
+        else if (c.ctype === "subclass")
+            g = `path="${c.path}" type="${c.type}" editable="false"`
+        else if (c.ctype === "null")
+            g = `path="${c.path}" op="${c.op}" code="${c.code}" editable="${c.editable}"`
+        return `<constraint ${g} />\n`
+    }
+
+    var tmplt = 
+`<template
+    name="${t.name}"
+    title="${escapeHtml(t.title)}"
+    comment="${escapeHtml(t.comment)}"
+    >
+  <query
+    name="${t.name}"
+    model="${t.model.name}"
+    view="${t.select.join(' ')}"
+    longDescription="${escapeHtml(t.description)}"
+    sortOrder="${so}"
+    constraintLogic="${t.constraintLogic}"
+    >
+    ${t.where.map(c2xml).join(" ")}
+  </query>
+</template>
+`
+    return tmplt
+}
+
 //
 function updateTtext(){
-  d3.select("#ttext textarea")
-      .text(uncompileTemplate(currTemplate));
+  d3.select("#ttext textarea") 
+      //.text(JSON.stringify(uncompileTemplate(currTemplate)));
+      .text(json2xml(uncompileTemplate(currTemplate)));
 }
 
 //
