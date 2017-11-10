@@ -237,7 +237,12 @@ var OPS = [
     validForAttr: false,
     validForRoot: false
     }];
+OPINDEX = OPS.reduce(function(x,o){
+    x[o.op] = o;
+    return x;
+}, {})
 
+//
 setup()
 
 function setup(){
@@ -451,6 +456,7 @@ function compileTemplate(template, model) {
     t.where && t.where.forEach(function(c){
         if (c.type) {
             c.ctype = "subclass";
+            c.op = "ISA"
             subclassCs.push(c);
         }
         else if (c.op === "LOOKUP")
@@ -459,6 +465,8 @@ function compileTemplate(template, model) {
             c.ctype = "list";
         else if (c.op === "IS NULL" || c.op === "IS NOT NULL")
             c.ctype = "null"
+        else if (c.op === "ONE OF" || c.op === "NONE OF")
+            c.ctype = "multivalue";
         else
             c.ctype = "value";
 
@@ -795,21 +803,21 @@ function opValidFor(op, n){
     return true;
 }
 
-//
-function editConstraint(c, n, editBtn){
+function openConstraintEditor(c, n, editBtn){
     console.log("Edit", c, n);
 
     var dbb = editBtn.parentElement.parentElement.parentElement.parentElement.getBoundingClientRect();
     var cbb = editBtn.parentElement.getBoundingClientRect();
 
-    var ced = d3.select("#constraintEdit")
+    var ced = d3.select("#constraintEditor")
         .attr("class", c.ctype)
         .classed("open", true)
         .style("top", (cbb.top - dbb.top)+"px")
         .style("left", (cbb.left - dbb.left)+"px")
         ;
 
-    var cops = d3.select("#constraintEdit select")
+    var o; 
+    var cops = d3.select("#constraintEditor select.op")
         .selectAll("option")
         .data(OPS.filter(function(op){ return opValidFor(op, n); }));
     cops.enter()
@@ -818,22 +826,70 @@ function editConstraint(c, n, editBtn){
         .remove();
     cops
         .text(function(o){return o.op})
-        .attr("selected", function(d){ return d.op === c.op ? true : null; })
+        .attr("selected", function(d){
+            if (d.op === c.op) {
+                o = c.op; // save the currently selected op
+                return true;
+            }
+            return null;
+        })
         ;
         
-    d3.select("#constraintEdit .value")
+    d3.select("#constraintEditor select.op")
+        .attr("value", o)       // set the select value
+        .on("change", function(){
+            var op = OPINDEX[this.value];
+            d3.select("#constraintEditor")
+                .attr("class", op.ctype)
+                .classed("open", true);
+        })
+        ;
+
+    d3.select("#constraintEditor .value")
         .attr("value", c.value)
         ;
 
-    d3.select("#constraintEdit .button.close")
-        .on("click", function(){ d3.select("#constraintEdit").classed("open", null); });
+    d3.select("#constraintEditor .values")
+        .attr("value", c.values)
+        ;
 
+    d3.select("#constraintEditor .type")
+        .attr("value", c.type)
+        ;
+
+    d3.select("#constraintEditor .code")
+        .attr("value", c.code)
+        ;
+
+    d3.select("#constraintEditor .button.close")
+        .on("click", closeConstraintEditor);
+
+    d3.select("#constraintEditor .button.save")
+        .on("click", function(){ saveConstraintEdits(c) });
+
+}
+//
+function closeConstraintEditor(){
+    d3.select("#constraintEditor").classed("open", null);
+}
+//
+function editConstraint(c, n, editBtn){
+    openConstraintEditor(c, n, editBtn);
 }
 //
 function removeConstraint(c, n){
     n.constraints = n.constraints.filter(function(cc){ return cc !== c; });
     update(n);
     showDialog(n, null, true);
+}
+//
+function saveConstraintEdits(c){
+    console.log("Saving constraint", c);
+    var xs = d3.selectAll("#constraintEditor .in")[0]
+        .filter(function(x){ return d3.select(x).style("display") !== "none"; })
+        ;
+    var ccfg = xs.reduce(function(cc,x){ cc[x.name]=x.value; return cc; },{})
+    closeConstraintEditor();
 }
 
 // Opens a dialog on the specified node.
@@ -1042,7 +1098,7 @@ function hideDialog(){
       .duration(animationDuration/2)
       .style("transform","scale(1e-6)")
       ;
-  d3.select("#constraintEdit")
+  d3.select("#constraintEditor")
       .classed("open", null)
       ;
 }
