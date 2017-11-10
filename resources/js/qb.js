@@ -1383,7 +1383,8 @@ function json2xml(t){
 function updateTtext(){
   d3.select("#ttext textarea") 
       //.text(JSON.stringify(uncompileTemplate(currTemplate)));
-      .text(json2xml(uncompileTemplate(currTemplate)));
+      .text(json2xml(uncompileTemplate(currTemplate)))
+      .on("click", function(){ this.select() });
 }
 
 //
