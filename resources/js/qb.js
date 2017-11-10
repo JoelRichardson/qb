@@ -1,3 +1,4 @@
+
 /*
  * Data structures:
  *   0. The data model for a mine is a graph of objects representing 
@@ -237,13 +238,11 @@ var OPS = [
     validForAttr: false,
     validForRoot: false
     }];
+//
 OPINDEX = OPS.reduce(function(x,o){
     x[o.op] = o;
     return x;
 }, {})
-
-//
-setup()
 
 function setup(){
     name2mine = {};
@@ -517,6 +516,7 @@ function deepc(o) {
     return JSON.parse(JSON.stringify(o));
 }
 
+// Turns a qtree structure back into a raw template.
 //
 function uncompileTemplate(tmplt){
     t = {
@@ -548,6 +548,11 @@ function uncompileTemplate(tmplt){
     }
     reach(tmplt.qtree);
     return JSON.stringify(t);
+}
+
+// Turns a json representation of a template into XML, suitable for importing into the Intermine QB.
+function json2xml(t){
+    // TODO
 }
 
 //
@@ -726,10 +731,23 @@ function selectedTemplate (tname) {
     currTemplate = deepc(t);
 
     var ti = d3.select("#tInfo");
-    ti.select(".name").select("input").attr("value", currTemplate.name)
-    ti.select(".title").select("input").attr("value", currTemplate.title)
-    ti.select(".description").select("textarea").text(currTemplate.description)
-    ti.select(".comment").select("text").text(currTemplate.comment)
+    var xfer = function(name, elt){ currTemplate[name] = elt.value; updateTtext(); };
+    // Name (the internal unique name)
+    ti.select(".name input")
+        .attr("value", currTemplate.name)
+        .on("change", function(){ xfer("name", this) });
+    // Title (what the user sees)
+    ti.select(".title input")
+        .attr("value", currTemplate.title)
+        .on("change", function(){ xfer("title", this) });
+    // Description (what it does - a little documentation).
+    ti.select(".description textarea")
+        .text(currTemplate.description)
+        .on("change", function(){ xfer("description", this) });
+    // Comment - for whatever, I guess. 
+    ti.select(".comment textarea")
+        .text(currTemplate.comment)
+        .on("change", function(){ xfer("comment", this) });
 
     root = compileTemplate(currTemplate, currMine.model).qtree
     root.x0 = h / 2;
@@ -836,12 +854,14 @@ function openConstraintEditor(c, n, editBtn){
         
     d3.select('#constraintEditor [name="op"]')[0][0].value = o;
 
+    // When user selects an operator, add a class to the c.e.'s container
     d3.select('#constraintEditor [name="op"]')
-        .on("change", function(){
+        .on("change", function(c){
             var op = OPINDEX[this.value];
             d3.select("#constraintEditor")
-                .attr("class", op.ctype)
-                .classed("open", true);
+                .attr("class", "open " + op.ctype)
+                .selectAll(".in") // clear all the values in the input elements
+                .attr("value", null);
         })
         ;
 
@@ -890,6 +910,8 @@ function saveConstraintEdits(n, c){
         ;
     xs.forEach(function(x){ c[x.name] = x.value; });
     c.ctype = OPINDEX[c.op].ctype;
+    if (c.ctype === "null") 
+        c.value = c.op;
     closeConstraintEditor();
     update(n);
     showDialog(n, null, true);
@@ -907,6 +929,7 @@ function saveConstraintEdits(n, c){
 //
 function showDialog(n, elt, refreshOnly){
   if (!elt) elt = findDomByDataObj(n);
+  closeConstraintEditor();
  
   // Set the global currNode
   currNode = n;
@@ -931,11 +954,14 @@ function showDialog(n, elt, refreshOnly){
       ;
 
   // Set the dialog title to node name
-  dialog.select(".header .dialogTitle span")
+  dialog.select('[name="header"] [name="dialogTitle"] span')
       .text(n.name);
   // Show the full path
-  dialog.select(".header .fullPath div")
+  dialog.select('[name="header"] [name="fullPath"] div')
       .text(getPath(n));
+  // Type at this node
+  dialog.select('[name="header"] [name="type"] div')
+      .text(n.ptype.name || n.ptype);
 
   //
   dialog.select("#dialog .constraintSection .add-button")
@@ -1023,7 +1049,7 @@ function showDialog(n, elt, refreshOnly){
       var scs = isroot ? [] : getSubclasses(n.pcomp.kind ? n.pcomp.type : n.pcomp);
       scs.unshift(n.pcomp.kind ? n.pcomp.type : n.pcomp)
       var scOpts = dialog
-          .select(".subclassConstraint select")
+          .select('[name="subclassConstraint"] select')
           .selectAll("option")
           .data(scs) ;
       scOpts.enter()
@@ -1294,8 +1320,17 @@ function update(source) {
     d.y0 = d.y;
   });
   //
+
+  updateTtext();
+}
+
+//
+function updateTtext(){
   d3.select("#ttext textarea")
       .text(uncompileTemplate(currTemplate));
 }
 
+//
+setup()
+//
 })()

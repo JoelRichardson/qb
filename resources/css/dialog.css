@@ -138,7 +138,7 @@ i.material-icons.button:hover {
 #dialog.simple .attributes {
     display:none;
 }
-#dialog.simple .subclassConstraint {
+#dialog.simple [name="subclassConstraint"] {
     display:none;
 }
 #dialog table.attributes {
@@ -189,19 +189,19 @@ button {
     display: none;
 }
 
-#dialog .header {
+#dialog [name="header"] {
     display: flex;
     flex-direction: column;
 }
 
-#dialog .header > div {
+#dialog [name="header"] > div {
     display: flex;
     flex-direction: row;
     align-items: center;
     padding: 4px;
 }
 
-#dialog .header .fullPath div {
+#dialog [name="header"] [name="fullPath"] div {
     font-size: 10px;
     max-width: 200px;
     word-wrap: break-word;

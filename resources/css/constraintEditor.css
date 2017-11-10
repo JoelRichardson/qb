@@ -16,7 +16,7 @@
 }
 
 /* If editing ISA, only show the type input. */
-#constraintEditor.isa [name="value"], #constraintEditor.isa [name="values"] {
+#constraintEditor.subclass [name="value"], #constraintEditor.subclass [name="values"], #constraintEditor.subclass [name="code"] {
     display: none;
 }
 
