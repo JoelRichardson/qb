@@ -14,6 +14,11 @@
  */
 (function(){
 var mines = [{
+    "name" : "testing",
+    "url" : "./resources/testdata/",
+    "templates" : null,
+    "model" : null
+    },{
     "name" : "MouseMine",
     "url" : "http://www.mousemine.org/mousemine/",
     "templates" : null,
@@ -312,10 +317,14 @@ function selectedMine(mname){
     url = currMine.url
     currMine.tnames = []
     currMine.templates = []
-    //turl = url + "service/templates?format=json";
-    //murl = url + "service/model?format=json";
-    turl = "./doc/templates.json"
-    murl = "./doc/model.json"
+    if (mname === "testing") { 
+        turl = url + "templates.json"
+        murl = url + "model.json"
+    }
+    else {
+        turl = url + "service/templates?format=json";
+        murl = url + "service/model?format=json";
+    }
     // get the model
     console.log("Loading resources:", murl, turl)
     d3.json(murl, function(model) {
@@ -1358,33 +1367,40 @@ function json2xml(t){
         return `<constraint ${g} />\n`
     }
 
+    var qtmplt = 
+    `<query
+      name="${t.name}"
+      model="${t.model.name}"
+      view="${t.select.join(' ')}"
+      longDescription="${escapeHtml(t.description)}"
+      sortOrder="${so}"
+      constraintLogic="${t.constraintLogic}"
+      >
+      ${t.where.map(c2xml).join(" ")}
+    </query>
+`;
     var tmplt = 
-`<template
-    name="${t.name}"
-    title="${escapeHtml(t.title)}"
-    comment="${escapeHtml(t.comment)}"
-    >
-  <query
-    name="${t.name}"
-    model="${t.model.name}"
-    view="${t.select.join(' ')}"
-    longDescription="${escapeHtml(t.description)}"
-    sortOrder="${so}"
-    constraintLogic="${t.constraintLogic}"
-    >
-    ${t.where.map(c2xml).join(" ")}
-  </query>
-</template>
-`
-    return tmplt
+    `<template
+      name="${t.name}"
+      title="${escapeHtml(t.title)}"
+      comment="${escapeHtml(t.comment)}"
+      >
+     ${qtmplt}
+     </template>
+`;
+    return qtmplt
 }
 
 //
 function updateTtext(){
+  var txt = json2xml(uncompileTemplate(currTemplate));
+  var linkurl = currMine.url + "loadQuery.do?skipBuilder=true&method=xml&query=" + encodeURI(txt);
   d3.select("#ttext textarea") 
       //.text(JSON.stringify(uncompileTemplate(currTemplate)));
-      .text(json2xml(uncompileTemplate(currTemplate)))
-      .on("click", function(){ this.select() });
+      //.text(encodeURI(linkurl))
+      //.text(linkurl)
+      .text(txt)
+      .on("focus", function(){ this.select() });
 }
 
 //
