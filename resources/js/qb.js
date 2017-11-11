@@ -871,25 +871,16 @@ function openConstraintEditor(c, n, editBtn){
             d3.select("#constraintEditor")
                 .attr("class", "open " + op.ctype)
                 .selectAll(".in") // clear all the values in the input elements
-                .attr("value", null);
+                .each(function(){
+                    //if(this.name !== "op") this.value = "";
+                })
         })
         ;
 
-    d3.select('#constraintEditor [name="value"]')
-        .attr("value", c.value)
-        ;
-
-    d3.select('#constraintEditor [name="values"]')
-        .attr("value", c.values)
-        ;
-
-    d3.select('#constraintEditor [name="type"]')
-        .attr("value", c.type)
-        ;
-
-    d3.select('#constraintEditor [name="code"]')
-        .attr("value", c.code)
-        ;
+    d3.select('#constraintEditor [name="value"]')[0][0].value = c.ctype==="null" ? "" : c.value;
+    d3.select('#constraintEditor [name="values"]')[0][0].value = c.values;
+    d3.select('#constraintEditor [name="type"]')[0][0].value = c.type;
+    d3.select('#constraintEditor [name="code"]')[0][0].value = c.code;
 
     d3.select("#constraintEditor .button.close")
         .on("click", hideConstraintEditor);
