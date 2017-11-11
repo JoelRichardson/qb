@@ -28,31 +28,37 @@
         <!-- Template info section. Shows template's name, description, etc. -->
         <div id="tInfo">
             <div>
-                <div class="name">
+                <div name="name">
                     <label>Name</label>
                     <input size="25" type="text" ></input>
                 </div>
-                <div class="title">
+                <div name="title">
                     <label>Title</label>
                     <input size="40" type="text" ></input>
                 </div>
             </div>
             <div>
-                <div class="description">
+                <div name="description">
                     <label>Description</label>
                     <textarea cols="40" rows="4"></textarea>
                 </div>
-                <div class="comment">
+                <div name="comment">
                     <label>Comment</label>
                     <textarea cols="40" rows="4"></textarea>
                 </div>
             </div>    
+            <div>
+                <div name="logicExpression">
+                    <label>Logic expression</label>
+                    <input size="40" type="text" ></input>
+                </div>
+            </div>
         </div>
 
-    <!-- Where the query text is dumped with every update. -->
-    <div id="ttext">
-        <textarea></textarea>
-    </div>
+        <!-- Where the query text is dumped with every update. -->
+        <div id="ttext">
+            <textarea></textarea>
+        </div>
 
         <!-- The dropdown dialog you get when you mouse over a node. -->
         <div id="dialog">
@@ -108,7 +114,7 @@
             <input class="in" name="value" type="text" placeholder="value"></input>
             <input class="in" name="values" type="text" placeholder="multivalued constraint" ></input>
             <select class="in" name="type" type="text" placeholder="subclass constraint"></select>
-            <input class="in" name="code" size="1" type="text" placeholder="?"></input>
+            <div name="code"></div>
             <i class="material-icons button save" title="Save changes">check</i>
             <i class="material-icons button close" title="Cancel" >close</i>
         </div>

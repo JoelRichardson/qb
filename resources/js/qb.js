@@ -742,19 +742,19 @@ function selectedTemplate (tname) {
     var ti = d3.select("#tInfo");
     var xfer = function(name, elt){ currTemplate[name] = elt.value; updateTtext(); };
     // Name (the internal unique name)
-    ti.select(".name input")
+    ti.select('[name="name"] input')
         .attr("value", currTemplate.name)
         .on("change", function(){ xfer("name", this) });
     // Title (what the user sees)
-    ti.select(".title input")
+    ti.select('[name="title"] input')
         .attr("value", currTemplate.title)
         .on("change", function(){ xfer("title", this) });
     // Description (what it does - a little documentation).
-    ti.select(".description textarea")
+    ti.select('[name="description"] textarea')
         .text(currTemplate.description)
         .on("change", function(){ xfer("description", this) });
     // Comment - for whatever, I guess. 
-    ti.select(".comment textarea")
+    ti.select('[name="comment"] textarea')
         .text(currTemplate.comment)
         .on("change", function(){ xfer("comment", this) });
 
@@ -770,8 +770,18 @@ function selectedTemplate (tname) {
 //   currNode (node) Node to extend from
 //   p (string) Name of an attribute, ref, or collection
 //   mode (string) one of "select", "constrain" or "open"
+// Returns:
+//   nothing
+// Side effects:
+//   If the selected item is not already in the display, it enters
+//   as a new child (growing out from the parent node.
+//   Then the dialog is opened on the child node.
+//   If the user clicked on a "open+select" button, the child is selected.
+//   If the user clicked on a "open+constrain" button, a new constraint is added to the
+//   child, and the constraint editor opened  on that constraint.
 //
 function selectedNext(currNode,p,mode){
+    var cc;
     p = [ p ]
     for(var n = currNode; n; n = n.parent){
         p.unshift(n.name);
@@ -780,11 +790,17 @@ function selectedNext(currNode,p,mode){
     if (mode === "selected")
         n.view = true;
     if (mode === "constrained" && n.constraints.length === 0) {
-        n.constraints.push(newConstraint(n));
+        cc = newConstraint(n);
+        n.constraints.push(cc);
     }
     hideDialog();
     update(currNode);
-    setTimeout(function(){ showDialog(n); }, animationDuration);
+    setTimeout(function(){
+        showDialog(n);
+        cc && setTimeout(function(){
+            editConstraint(cc, n)
+        }, animationDuration);
+    }, animationDuration);
     
 }
 
@@ -814,9 +830,11 @@ function findDomByDataObj(d){
 
 //
 function addConstraint(n) {
-    n.constraints.push(newConstraint(n));
+    var c = newConstraint(n);
+    n.constraints.push(c);
     update(n);
     showDialog(n, null, true);
+    editConstraint(c, n);
 }
 
 //
@@ -831,10 +849,20 @@ function opValidFor(op, n){
     return true;
 }
 
-function openConstraintEditor(c, n, editBtn){
+function openConstraintEditor(c, n){
 
-    var dbb = editBtn.parentElement.parentElement.parentElement.parentElement.getBoundingClientRect();
-    var cbb = editBtn.parentElement.getBoundingClientRect();
+    var isroot = ! n.parent;
+ 
+    var cdiv;
+    d3.selectAll("#dialog .constraint")
+        .each(function(cc){
+            if(cc === c) cdiv = this;
+        });
+
+    // bounding box of the constraint's container div
+    var cbb = cdiv.getBoundingClientRect();
+    // bounding box of the app's main body element
+    var dbb = d3.select("#body")[0][0].getBoundingClientRect();
 
     var ced = d3.select("#constraintEditor")
         .attr("class", c.ctype)
@@ -843,7 +871,7 @@ function openConstraintEditor(c, n, editBtn){
         .style("left", (cbb.left - dbb.left)+"px")
         ;
 
-    var o; 
+    var o2; 
     var cops = d3.select('#constraintEditor select[name="op"]')
         .selectAll("option")
         .data(OPS.filter(function(op){ return opValidFor(op, n); }));
@@ -852,17 +880,29 @@ function openConstraintEditor(c, n, editBtn){
     cops.exit()
         .remove();
     cops
-        .text(function(o){return o.op})
-        .attr("selected", function(d){
-            if (d.op === c.op) {
-                o = c.op; // save the currently selected op
-                return true;
-            }
-            return null;
-        })
+        .text(function(o){ return o.op; }) ;
+
+    // Fill in the subclass constraint selection list.
+    // First find all the subclasses of the node's class.
+    var scs = isroot ? [] : getSubclasses(n.pcomp.kind ? n.pcomp.type : n.pcomp);
+    var scOpts = d3.select('#constraintEditor select[name="type"]')
+        .selectAll("option")
+        .data(scs) ;
+    scOpts.enter()
+        .append("option");
+    scOpts.exit().remove();
+    scOpts
+        .attr("value", function(d,i){ return d.name; })
+        .text(function(d){ return d.name; });
+    scOpts.filter(function(d){ return d.name === ((n.subclassConstraint || n.ptype).name || n.ptype); })
+        .attr("selected","true")
         ;
-        
-    d3.select('#constraintEditor [name="op"]')[0][0].value = o;
+
+    d3.select('#constraintEditor [name="op"]')[0][0].value = c.op;
+    d3.select('#constraintEditor [name="value"]')[0][0].value = c.ctype==="null" ? "" : c.value;
+    d3.select('#constraintEditor [name="values"]')[0][0].value = deepc(c.values);
+    d3.select('#constraintEditor [name="type"]')[0][0].value = c.type;
+    d3.select('#constraintEditor [name="code"]').text(c.code);
 
     // When user selects an operator, add a class to the c.e.'s container
     d3.select('#constraintEditor [name="op"]')
@@ -870,17 +910,8 @@ function openConstraintEditor(c, n, editBtn){
             var op = OPINDEX[this.value];
             d3.select("#constraintEditor")
                 .attr("class", "open " + op.ctype)
-                .selectAll(".in") // clear all the values in the input elements
-                .each(function(){
-                    //if(this.name !== "op") this.value = "";
-                })
         })
         ;
-
-    d3.select('#constraintEditor [name="value"]')[0][0].value = c.ctype==="null" ? "" : c.value;
-    d3.select('#constraintEditor [name="values"]')[0][0].value = c.values;
-    d3.select('#constraintEditor [name="type"]')[0][0].value = c.type;
-    d3.select('#constraintEditor [name="code"]')[0][0].value = c.code;
 
     d3.select("#constraintEditor .button.close")
         .on("click", hideConstraintEditor);
@@ -894,12 +925,13 @@ function hideConstraintEditor(){
     d3.select("#constraintEditor").classed("open", null);
 }
 //
-function editConstraint(c, n, editBtn){
-    openConstraintEditor(c, n, editBtn);
+function editConstraint(c, n){
+    openConstraintEditor(c, n);
 }
 //
 function removeConstraint(c, n){
     n.constraints = n.constraints.filter(function(cc){ return cc !== c; });
+    if (c.ctype === "subclass") n.subclassConstraint = null;
     update(n);
     showDialog(n, null, true);
 }
@@ -913,6 +945,10 @@ function saveConstraintEdits(n, c){
     c.ctype = OPINDEX[c.op].ctype;
     if (c.ctype === "null") 
         c.value = c.op;
+    else if (c.ctype === "subclass"){
+        setSubclassConstraint(n, c.type)
+        c.value = n.subclassConstraint.name;
+    }
     hideConstraintEditor();
     update(n);
     showDialog(n, null, true);
@@ -961,8 +997,11 @@ function showDialog(n, elt, refreshOnly){
   dialog.select('[name="header"] [name="fullPath"] div')
       .text(getPath(n));
   // Type at this node
+  var tp = n.ptype.name || n.ptype;
+  var stp = (n.subclassConstraint && n.subclassConstraint.name) || null;
+  var tstring = stp && `<span style="color: purple;">${stp}</span> (${tp})` || tp
   dialog.select('[name="header"] [name="type"] div')
-      .text(n.ptype.name || n.ptype);
+      .html(tstring);
 
   //
   dialog.select("#dialog .constraintSection .add-button")
@@ -972,22 +1011,20 @@ function showDialog(n, elt, refreshOnly){
   // (Don't list ISA constraint here. It is handled separately.)
   var constrs = dialog.select(".constraintSection")
       .selectAll(".constraint")
-      .data(n.constraints
-          .filter(function(c){ return c.ctype != "subclass";})
-          );
+      .data(n.constraints);
   // Create divs for entering
   var cdivs = constrs.enter()
       .append("div")
       .attr("class","constraint")
       ;
   cdivs.append("div")
-      .attr("class", "op")
+      .attr("name", "op")
       ;
   cdivs.append("div")
-      .attr("class", "value")
+      .attr("name", "value")
       ;
   cdivs.append("div")
-      .attr("class", "code")
+      .attr("name", "code")
       ;
   cdivs.append("i")
       .attr("class", "material-icons edit")
@@ -1005,17 +1042,17 @@ function showDialog(n, elt, refreshOnly){
   // Set the text
   constrs
       .attr("class", function(c) { return "constraint " + c.ctype; });
-  constrs.select(".code")
-      .text(function(c){ return "("+c.code+")" || ""; });
-  constrs.select(".op")
+  constrs.select('[name="code"]')
+      .text(function(c){ return c.code || "?"; });
+  constrs.select('[name="op"]')
       .text(function(c){ return c.op || "ISA"; });
-  constrs.select(".value")
+  constrs.select('[name="value"]')
       .text(function(c){
           return c.value || (c.values && c.values.join(",")) || c.type;
       });
   constrs.select("i.edit")
       .on("click", function(c){ 
-          editConstraint(c, n, this);
+          editConstraint(c, n);
       });
   constrs.select("i.cancel")
       .on("click", function(c){ 
@@ -1045,23 +1082,6 @@ function showDialog(n, elt, refreshOnly){
           .classed("simple",false);
       dialog.select("span.clsName")
           .text(n.pcomp.type ? n.pcomp.type.name : n.pcomp.name);
-      // Fill in the subclass constraint selection list.
-      // First find all the subclasses of the node's class.
-      var scs = isroot ? [] : getSubclasses(n.pcomp.kind ? n.pcomp.type : n.pcomp);
-      scs.unshift(n.pcomp.kind ? n.pcomp.type : n.pcomp)
-      var scOpts = dialog
-          .select('[name="subclassConstraint"] select')
-          .selectAll("option")
-          .data(scs) ;
-      scOpts.enter()
-          .append("option");
-      scOpts
-          .attr("value", function(d,i){ return i === 0 ? "" : d.name; })
-          .text(function(d){ return d.name; });
-      scOpts.filter(function(d){ return d.name === ((n.subclassConstraint || n.ptype).name || n.ptype); })
-          .attr("selected","true")
-          ;
-      scOpts.exit().remove();
 
       // Fill in the table listing all the attributes/refs/collections.
       var tbl = dialog.select("table.attributes");
@@ -1384,7 +1404,7 @@ function json2xml(t){
      ${qtmplt}
      </template>
 `;
-    return qtmplt
+    return tmplt
 }
 
 //

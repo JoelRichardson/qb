@@ -3,16 +3,39 @@
     background-color: white;
     position: absolute;
     display: none;
+    min-width: 250px;
 }
 
+#constraintEditor > * {
+    margin: 4px;
+}
+
+#constraintEditor .material-icons.save:hover {
+    color: white;
+    background-color: black;
+}
+
+#constraintEditor .material-icons.close:hover {
+    color: white;
+    background-color: black;
+}
 #constraintEditor.open {
     display: flex;
     flex-direction: row;
     align-items: center;
 }
 
-#constraintEditor .code {
+#constraintEditor [name="code"]::before {
+    content: "(";
+}
+
+#constraintEditor [name="code"]::after {
+    content: ")";
+}
+
+#constraintEditor [name="code"] {
     width: 15px;
+    color: #ccc;
 }
 
 /* If editing ISA, only show the type input. */
@@ -41,16 +64,3 @@
     display: none;
 }
 
-#constraintEditor > * {
-    margin: 4px;
-}
-
-#constraintEditor .material-icons.save:hover {
-    color: white;
-    background-color: black;
-}
-
-#constraintEditor .material-icons.close:hover {
-    color: white;
-    background-color: black;
-}

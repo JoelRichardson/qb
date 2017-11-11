@@ -50,7 +50,7 @@
 
 #dialog.simple .select-ctrl div {
     flex-grow: 2;
-    border: thin solid white;
+    background-color: #ddd;
 }
 
 #dialog.simple .select-ctrl.selected div {
@@ -98,7 +98,7 @@
     margin: 2px;
 }
 
-#dialog .constraintSection .constraint div.op {
+#dialog .constraintSection .constraint [name="op"] {
     color: white;
     background-color: purple;
     border-radius: 6px;
@@ -106,24 +106,39 @@
     text-align: center;
 }
 
-#dialog .constraintSection .constraint div.value {
+#dialog .constraintSection .constraint [name="value"] {
     flex-grow: 100;
-    border: thin solid gray;
+    background-color: #ddd;
+    min-width: 15px;
 }
 
-#dialog .constraintSection .constraint i.material-icons {
-    cursor: pointer;
-    padding-top: 3px;
+#dialog .constraintSection .constraint.null [name="value"] {
+    border: none;
+    font-size: 1e-6px;
+    background-color: inherit;
 }
 
-#dialog .constraintSection .constraint div.code {
+#dialog .constraintSection .constraint [name="code"]::before {
+    content: "(";
+}
+
+#dialog .constraintSection .constraint [name="code"]::after {
+    content: ")";
+}
+
+#dialog .constraintSection .constraint [name="code"] {
     color: #888;
     border: none;
 }
 
-#dialog .constraintSection .constraint.null div.value {
-    border: none;
-    font-size: 1e-6px;
+#dialog .constraintSection .constraint.subclass [name="code"] {
+    display: none;
+}
+
+
+#dialog .constraintSection .constraint i.material-icons {
+    cursor: pointer;
+    padding-top: 3px;
 }
 
 #dialog .constraintSection .constraint i.material-icons:hover {
