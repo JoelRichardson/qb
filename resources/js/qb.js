@@ -341,14 +341,19 @@ function selectedMine(mname){
                 return;
             }
             currMine.templates = json.templates;
+            currMine.tlist = obj2array(currMine.templates)
+            currMine.tlist.sort(function(a,b){ 
+                return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
+            });
             currMine.tnames = Object.keys( currMine.templates );
             currMine.tnames.sort();
-            var tl = d3.select("#tlist").selectAll('option').data( currMine.tnames );
+            var tl = d3.select("#tlist").selectAll('option').data( currMine.tlist );
             tl.enter().append('option')
-            tl.text(function(d){return d;});
             tl.exit().remove()
+            tl.attr("value", function(d){ return d.name; })
+              .text(function(d){return d.name;});
             d3.select("#tlist").on("change", function(){ selectedTemplate(this.value); });
-            selectedTemplate(currMine.tnames[0]);
+            selectedTemplate(currMine.tlist[0].name);
             })
     })
 }
@@ -539,7 +544,7 @@ function uncompileTemplate(tmplt){
         select : [],
         where : [],
         joins : [],
-        constraintLogic: tmplt.constraintLogic,
+        constraintLogic: tmplt.constraintLogic || "",
         orderBy : deepc(tmplt.orderBy)
     }
     function reach(n){
@@ -727,7 +732,6 @@ function removeNode() {
 //
 function selectedTemplate (tname) {
     var t = currMine.templates[tname];
-    console.log(tname, t);
     if (!t) {
         return;
     }
@@ -757,6 +761,7 @@ function selectedTemplate (tname) {
     root = compileTemplate(currTemplate, currMine.model).qtree
     root.x0 = h / 2;
     root.y0 = 0;
+    hideDialog();
     update(root);
 }
 
@@ -887,14 +892,14 @@ function openConstraintEditor(c, n, editBtn){
         ;
 
     d3.select("#constraintEditor .button.close")
-        .on("click", closeConstraintEditor);
+        .on("click", hideConstraintEditor);
 
     d3.select("#constraintEditor .button.save")
         .on("click", function(){ saveConstraintEdits(n, c) });
 
 }
 //
-function closeConstraintEditor(){
+function hideConstraintEditor(){
     d3.select("#constraintEditor").classed("open", null);
 }
 //
@@ -917,7 +922,7 @@ function saveConstraintEdits(n, c){
     c.ctype = OPINDEX[c.op].ctype;
     if (c.ctype === "null") 
         c.value = c.op;
-    closeConstraintEditor();
+    hideConstraintEditor();
     update(n);
     showDialog(n, null, true);
 }
@@ -934,7 +939,7 @@ function saveConstraintEdits(n, c){
 //
 function showDialog(n, elt, refreshOnly){
   if (!elt) elt = findDomByDataObj(n);
-  closeConstraintEditor();
+  hideConstraintEditor();
  
   // Set the global currNode
   currNode = n;
