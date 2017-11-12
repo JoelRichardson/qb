@@ -1,0 +1,32 @@
+// Grammar for parsing logic expressions 
+// =====================================
+//
+// Accepts expressions like "A and (B or C)" 
+// Adapted from the example here: https://pegjs.org/online
+// Returns the abstract syntax tree
+//
+
+Expression
+  = head:Term tail:(_ "or" _ Term)* {
+      return tail.reduce(function(result, element) {
+        return  { op: "OR", left:result, right:element[3] };
+      }, head);
+    }
+
+Term
+  = head:Factor tail:(_ "and" _ Factor)* {
+      return tail.reduce(function(result, element) {
+        return  { op: "AND", left:result, right:element[3] }; 
+      }, head);
+    }
+
+Factor
+  = "(" _ expr:Expression _ ")" { return expr; }
+  / Integer
+
+Integer "integer"
+  = _ [A-Za-z] { return text(); }
+
+_ "whitespace"
+  = [ \t\n\r]*
+              

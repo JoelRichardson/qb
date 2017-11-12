@@ -12,30 +12,10 @@
  *   and optionally ends at an attribute.
  *
  */
-(function(){
-var mines = [{
-    "name" : "testing",
-    "url" : "./resources/testdata/",
-    "templates" : null,
-    "model" : null
-    },{
-    "name" : "MouseMine",
-    "url" : "http://www.mousemine.org/mousemine/",
-    "templates" : null,
-    "model" : null
-    },{
-    "name" : "RatMine",
-    "url" : "http://ratmine.mcw.edu/ratmine/",
-    "templates" : null,
-    "model" : null
-    },{
-    "name" : "FlyMine",
-    "url" : "http://www.flymine.org/query/",
-    "templates" : null,
-    "model" : null
-    }];
+import parser from './parser.js';
+import { mines } from './mines.js';
+import { NUMERICTYPES, NULLABLETYPES, OPS, OPINDEX } from './ops.js';
 
-var mines;
 var name2mine;
 var currMine;
 var m;
@@ -50,204 +30,6 @@ var currTemplate;
 var currNode;
 var layoutStyle = "tree";
 var animationDuration = 250; // ms
-
-// Constraints on attributes:
-// - value (comparing an attribute to a value, using an operator)
-//      > >= < <= = != LIKE NOT-LIKE CONTAINS DOES-NOT-CONTAIN
-// - multivalue (subtype of value constraint, multiple value)
-//      ONE-OF NOT-ONE OF
-// - range (subtype of multivalue, for coordinate ranges)
-//      WITHIN OUTSIDE OVERLAPS DOES-NOT-OVERLAP
-// - null (subtype of value constraint, for testing NULL)
-//      NULL IS-NOT-NULL
-//
-// Constraints on references/collections
-// - null (subtype of value constraint, for testing NULL ref/empty collection)
-//      NULL IS-NOT-NULL
-// - lookup (
-//      LOOKUP
-// - subclass
-//      ISA
-// - list
-//      IN NOT-IN
-// - loop (TODO)
-var NUMERICTYPES= [
-    "int", "java.lang.Integer",
-    "short", "java.lang.Short",
-    "long", "java.lang.Long",
-    "float", "java.lang.Float",
-    "double", "java.lang.Double",
-    "java.math.BigDecimal",
-    "java.util.Date"
-];
-var NULLABLETYPES= [
-    "java.lang.Integer",
-    "java.lang.Short",
-    "java.lang.Long",
-    "java.lang.Float",
-    "java.lang.Double",
-    "java.math.BigDecimal",
-    "java.util.Date",
-    "java.lang.String",
-    "java.lang.Boolean"
-    ]
-
-var OPS = [
-
-    // Valid for any attribute
-    // Also the operators for loop constraints (not yet implemented).
-    {
-    op: "=",
-    ctype: "value",
-    validForClass: false,
-    validForAttr: true,
-    validForRoot: false
-    },{
-    op: "!=",
-    ctype: "value",
-    validForClass: false,
-    validForAttr: true,
-    validForRoot: false
-    },
-    
-    // Valid for numeric and date attributes
-    {
-    op: ">",
-    ctype: "value",
-    validForClass: false,
-    validForAttr: true,
-    validForRoot: false,
-    validTypes: NUMERICTYPES
-    },{
-    op: ">=",
-    ctype: "value",
-    validForClass: false,
-    validForAttr: true,
-    validForRoot: false,
-    validTypes: NUMERICTYPES
-    },{
-    op: "<",
-    ctype: "value",
-    validForClass: false,
-    validForAttr: true,
-    validForRoot: false,
-    validTypes: NUMERICTYPES
-    },{
-    op: "<=",
-    ctype: "value",
-    validForClass: false,
-    validForAttr: true,
-    validForRoot: false,
-    validTypes: NUMERICTYPES
-    },
-    
-    // Valid for string attributes
-    {
-    op: "CONTAINS",
-    ctype: "value",
-    validForClass: false,
-    validForAttr: true,
-    validForRoot: false,
-    validTypes: ["java.lang.String"]
-
-    },{
-    op: "DOES NOT CONTAIN",
-    ctype: "value",
-    validForClass: false,
-    validForAttr: true,
-    validForRoot: false,
-    validTypes: ["java.lang.String"]
-    },{
-    op: "LIKE",
-    ctype: "value",
-    validForClass: false,
-    validForAttr: true,
-    validForRoot: false,
-    validTypes: ["java.lang.String"]
-    },{
-    op: "NOT LIKE",
-    ctype: "value",
-    validForClass: false,
-    validForAttr: true,
-    validForRoot: false,
-    validTypes: ["java.lang.String"]
-    },{
-    op: "ONE OF",
-    ctype: "multivalue",
-    validTypes: ["java.lang.String"]
-    },{
-    op: "NONE OF",
-    ctype: "multivalue",
-    validTypes: ["java.lang.String"]
-    },
-    
-    // Valid only for Location nodes
-    {
-    op: "WITHIN",
-    ctype: "range"
-    },{
-    op: "OVERLAPS",
-    ctype: "range"
-    },{
-    op: "DOES NOT OVERLAP",
-    ctype: "range"
-    },{
-    op: "OUTSIDE",
-    ctype: "range"
-    },
- 
-    // NULL constraints. Valid for any node except root.
-    {
-    op: "IS NULL",
-    ctype: "null",
-    validForClass: true,
-    validForAttr: true,
-    validForRoot: false,
-    validTypes: NULLABLETYPES
-    },{
-    op: "IS NOT NULL",
-    ctype: "null",
-    validForClass: true,
-    validForAttr: true,
-    validForRoot: false,
-    validTypes: NULLABLETYPES
-    },
-    
-    // Valid only at any non-attribute node (i.e., the root, or any 
-    // reference or collection node).
-    {
-    op: "LOOKUP",
-    ctype: "lookup",
-    validForClass: true,
-    validForAttr: false,
-    validForRoot: true
-    },{
-    op: "IN",
-    ctype: "list",
-    validForClass: true,
-    validForAttr: false,
-    validForRoot: true
-    },{
-    op: "NOT IN",
-    ctype: "list",
-    validForClass: true,
-    validForAttr: false,
-    validForRoot: true
-    },
-    
-    // Valid at any non-attribute node except the root.
-    {
-    op: "ISA",
-    ctype: "subclass",
-    validForClass: true,
-    validForAttr: false,
-    validForRoot: false
-    }];
-//
-OPINDEX = OPS.reduce(function(x,o){
-    x[o.op] = o;
-    return x;
-}, {})
 
 function setup(){
     name2mine = {};
@@ -314,7 +96,8 @@ function setup(){
 function selectedMine(mname){
     currMine = name2mine[mname]
     if(!currMine) return;
-    url = currMine.url
+    var url = currMine.url;
+    var turl, murl;
     currMine.tnames = []
     currMine.templates = []
     if (mname === "testing") { 
@@ -458,6 +241,7 @@ function getSubclasses(cls){
 //   nothing
 // Side effects:
 //   Creates a tree of query nodes (suitable for drawing by d3, BTW).
+//   Adds this tree to the template object as attribute 'qtree'.
 //   Turns each (string) path into a reference to a tree node corresponding to that path.
 function compileTemplate(template, model) {
     var roots = []
@@ -492,7 +276,7 @@ function compileTemplate(template, model) {
         .forEach(function(c){
              var n = addPath(t, c.path, model);
              var cls = model.model.classes[c.type];
-             if (!cls) throw RuntimeError("Could not find class " + c.type);
+             if (!cls) throw "Could not find class " + c.type;
              n.subclassConstraint = cls;
         });
     //
@@ -533,7 +317,7 @@ function deepc(o) {
 // Turns a qtree structure back into a raw template.
 //
 function uncompileTemplate(tmplt){
-    t = {
+    var t = {
         name: tmplt.name,
         title: tmplt.title,
         description: tmplt.description,
@@ -548,7 +332,7 @@ function uncompileTemplate(tmplt){
         orderBy : deepc(tmplt.orderBy)
     }
     function reach(n){
-        p = getPath(n)
+        var p = getPath(n)
         if (n.view) {
             t.select.push(p);
         }
@@ -623,13 +407,13 @@ function addPath(template, path, model){
                 // If root already exists, make sure new path has same root.
                 n = template.qtree;
                 if (p !== n.name)
-                    throw RuntimeError("Cannot add path from different root.");
+                    throw "Cannot add path from different root.";
             }
             else {
                 // First path to be added
                 cls = classes[p];
                 if (!cls)
-                   throw RuntimeError("Could not find class: " + p);
+                   throw "Could not find class: " + p;
                 n = template.qtree = newNode( p, cls, cls );
             }
         }
@@ -652,10 +436,10 @@ function addPath(template, path, model){
                 else if (cls.references[p] || cls.collections[p]) {
                     x = cls.references[p] || cls.collections[p];
                     cls = classes[x.referencedType] // <--
-                    if (!cls) throw RuntimeError("Could not find class: " + p);
+                    if (!cls) throw "Could not find class: " + p;
                 } 
                 else {
-                    throw RuntimeError("Could not find member named " + p + " in class " + cls.name + ".");
+                    throw "Could not find member named " + p + " in class " + cls.name + ".";
                 }
                 // create new node, add it to n's children
                 nn = newNode(p, x, cls);
@@ -683,7 +467,7 @@ function setSubclassConstraint(n, scName){
     n.subclassConstraint = null;
     if (scName){
         let cls = currMine.model.model.classes[scName];
-        if(!cls) throw RuntimeError("Could not find class " + scName);
+        if(!cls) throw "Could not find class " + scName;
         n.constraints.push({ ctype:"subclass", op:"ISA", path:getPath(n), type:cls.name });
         n.subclassConstraint = cls;
     }
@@ -758,11 +542,82 @@ function selectedTemplate (tname) {
         .text(currTemplate.comment)
         .on("change", function(){ xfer("comment", this) });
 
+    // Logic expression - which ties the individual constraints together
+    ti.select('[name="logicExpression"] input')
+        .call(function(){ this[0][0].value = parseLogicExpression(currTemplate.constraintLogic) })
+        .on("change", function(){
+            this.value = parseLogicExpression(this.value);
+            xfer("constraintLogic", this)
+        });
+
     root = compileTemplate(currTemplate, currMine.model).qtree
     root.x0 = h / 2;
     root.y0 = 0;
     hideDialog();
     update(root);
+}
+
+//
+function parseLogicExpression(ex){
+    var ast = parser.parse(ex);
+    console.log(ex, ast);
+
+    // token classes
+    let LP = "(";
+    let RP = ")";
+    let AND = "and";
+    let OR = "or";
+    let CODE = "code";
+    let OP = "op"
+    function getTclass(t){ return t===LP ? LP : t===RP ? RP : t===AND||t===OR? OP : CODE; }
+
+    // quick and dirty lexer: make sure "(" and ")" have spaces around them, 
+    // then split the string on whitespace.
+    let tokens = ex.toLowerCase().replace(/[()]/g, " $& ").split(/ +/).filter(function(x){return x;});
+
+    //
+    let tclass = null;
+    let level = 0;
+    let expect = [LP,CODE];
+    let root = null;
+    let stack = [];
+    function push(t){
+        let node = { token:t, left: root, right: null }
+        stack.push(node)
+        root = node;
+    }
+    tokens.forEach(function(t){
+        tclass = getTclass(t);
+        if (expect.indexOf(tclass) === -1) 
+            throw "Syntax error: unexpected token: " + t
+
+        if (t === LP) {
+            // Left parenthesis
+            level += 1
+            expect = [LP,CODE];
+        }
+        else if (t === RP) {
+            // Right parenthesis
+            level -= 1;
+            expect = level === 0 ? [OP] : [OP, RP]
+        }
+        else if (t === AND || t === OR) {
+            // Logical operator
+            expect = [LP,CODE];
+        }
+        else {
+            // Constraint code
+            expect = level === 0 ? [OP] : [OP, RP];
+            // verify the
+            
+            push(t);
+        }
+    });
+    if (level > 0) {
+        throw "Syntax error: unbalanced " + LP
+    }
+
+    return ex.toUpperCase();
 }
 
 // Extends the path from currNode to p
@@ -1422,4 +1277,3 @@ function updateTtext(){
 //
 setup()
 //
-})()
