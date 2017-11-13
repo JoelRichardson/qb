@@ -6,27 +6,32 @@
 // Returns the abstract syntax tree
 //
 
-Expression
-  = head:Term tail:(_ "or" _ Term)* {
+{
+  function propagate(op, head, tail) {
+      if (tail.length === 0) return head;
       return tail.reduce(function(result, element) {
-        return  { op: "OR", left:result, right:element[3] };
-      }, head);
-    }
+        result.children.push(element[3]);
+        return  result;
+      }, {"op":op, children:[head]});
+  }
+}
+Expression
+  = _ head:Term tail:(_ ("or" / "OR") _ Term)* _ {
+      return propagate("or", head, tail)
+    }   
 
 Term
-  = head:Factor tail:(_ "and" _ Factor)* {
-      return tail.reduce(function(result, element) {
-        return  { op: "AND", left:result, right:element[3] }; 
-      }, head);
-    }
+  = head:Factor tail:(_ ("and" / "AND") _ Factor)* {
+      return propagate("and", head, tail)
+    }   
 
 Factor
   = "(" _ expr:Expression _ ")" { return expr; }
-  / Integer
+  / Code
 
-Integer "integer"
-  = _ [A-Za-z] { return text(); }
+Code "code"
+  = _ [A-Za-z] { return text().toUpperCase(); }
 
 _ "whitespace"
   = [ \t\n\r]*
-              
+

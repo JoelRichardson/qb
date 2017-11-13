@@ -248,9 +248,12 @@ function compileTemplate(template, model) {
     var t = template;
     // the tree of nodes representing the compiled query will go here
     t.qtree = null;
-    // classify constraints
-    var subclassCs = []
+    // index of code to constraint gors here.
+    t.code2c = {}
+    //
+    var subclassCs = [];
     t.where && t.where.forEach(function(c){
+        if (c.code) t.code2c[c.code] = c;
         if (c.type) {
             c.ctype = "subclass";
             c.op = "ISA"
@@ -266,7 +269,6 @@ function compileTemplate(template, model) {
             c.ctype = "multivalue";
         else
             c.ctype = "value";
-
     })
     // must process any subclass constraints first, from shortest to longest path
     subclassCs
@@ -371,7 +373,7 @@ function newNode(name, pcomp, ptype){
 function newConstraint(n) {
     return {
         ctype: "null",
-        code: "?",
+        code: nextAvailableCode(currTemplate),
         path: getPath(n),
         op: "IS NOT NULL",
         value: "IS NOT NULL",
@@ -522,7 +524,12 @@ function selectedTemplate (tname) {
     // Make sure the editor works on a copy of the template.
     //
     currTemplate = deepc(t);
+    root = compileTemplate(currTemplate, currMine.model).qtree
+    root.x0 = h / 2;
+    root.y0 = 0;
 
+    // Fill in the basic template information (name, title, description, etc.)
+    //
     var ti = d3.select("#tInfo");
     var xfer = function(name, elt){ currTemplate[name] = elt.value; updateTtext(); };
     // Name (the internal unique name)
@@ -544,80 +551,67 @@ function selectedTemplate (tname) {
 
     // Logic expression - which ties the individual constraints together
     ti.select('[name="logicExpression"] input')
-        .call(function(){ this[0][0].value = parseLogicExpression(currTemplate.constraintLogic) })
+        .call(function(){ this[0][0].value = setLogicExpression(currTemplate.constraintLogic, currTemplate) })
         .on("change", function(){
-            this.value = parseLogicExpression(this.value);
+            this.value = setLogicExpression(this.value, currTemplate);
             xfer("constraintLogic", this)
         });
 
-    root = compileTemplate(currTemplate, currMine.model).qtree
-    root.x0 = h / 2;
-    root.y0 = 0;
+    //
     hideDialog();
     update(root);
 }
 
-//
-function parseLogicExpression(ex){
-    var ast = parser.parse(ex);
-    console.log(ex, ast);
-
-    // token classes
-    let LP = "(";
-    let RP = ")";
-    let AND = "and";
-    let OR = "or";
-    let CODE = "code";
-    let OP = "op"
-    function getTclass(t){ return t===LP ? LP : t===RP ? RP : t===AND||t===OR? OP : CODE; }
-
-    // quick and dirty lexer: make sure "(" and ")" have spaces around them, 
-    // then split the string on whitespace.
-    let tokens = ex.toLowerCase().replace(/[()]/g, " $& ").split(/ +/).filter(function(x){return x;});
-
+// Set the constraint logic expression for the given template.
+// In the process, also "corrects" the expression as follows:
+//    * any codes in the expression that are not associated with
+//      any constraint in the current template are removed and the
+//      expression logic updated accordingly
+//    * and codes in the template that are not in the expression
+//      are ANDed to the end.
+// For example, if the current template has codes A, B, and C, and
+// the expression is "(A or D) and B", the D drops out and C is
+// added, resulting in "A and B and C". 
+// Args:
+//   ex (string) the expression
+//   tmplt (obj) the template
+// Returns:
+//   the "corrected" expression
+//   
+function setLogicExpression(ex, tmplt){
+    var ast;
+    try {
+        ast = parser.parse(ex);
+    }
+    catch (err) {
+        alert(err);
+        return tmplt.constraintLogic;
+    }
+    var seen = [];
+    function reach(n,lev){
+        if (typeof(n) === "string" ){
+            // check that n is a constraint code in the template. If not, remove it from the expr.
+            seen.push(n);
+            return (n in tmplt.code2c ? n : "");
+        }
+        var cms = n.children.map(function(c){return reach(c, lev+1);}).filter(function(x){return x;});;
+        var cmss = cms.join(" "+n.op+" ");
+        return cms.length === 0 ? "" : lev === 0 || cms.length === 1 ? cmss : "(" + cmss + ")"
+    }
     //
-    let tclass = null;
-    let level = 0;
-    let expect = [LP,CODE];
-    let root = null;
-    let stack = [];
-    function push(t){
-        let node = { token:t, left: root, right: null }
-        stack.push(node)
-        root = node;
-    }
-    tokens.forEach(function(t){
-        tclass = getTclass(t);
-        if (expect.indexOf(tclass) === -1) 
-            throw "Syntax error: unexpected token: " + t
+    var lex = reach(ast,0);
+    // if any constraint codes in the template were not seen in the expression,
+    // AND them into the expression.
+    var toAdd = Object.keys(tmplt.code2c).filter(function(c){ return seen.indexOf(c) === -1; });
 
-        if (t === LP) {
-            // Left parenthesis
-            level += 1
-            expect = [LP,CODE];
-        }
-        else if (t === RP) {
-            // Right parenthesis
-            level -= 1;
-            expect = level === 0 ? [OP] : [OP, RP]
-        }
-        else if (t === AND || t === OR) {
-            // Logical operator
-            expect = [LP,CODE];
-        }
-        else {
-            // Constraint code
-            expect = level === 0 ? [OP] : [OP, RP];
-            // verify the
-            
-            push(t);
-        }
-    });
-    if (level > 0) {
-        throw "Syntax error: unbalanced " + LP
-    }
+    lex = (lex ? [lex]:[]).concat(toAdd).join(" and ")
+    //
+    tmplt.constraintLogic = lex;
 
-    return ex.toUpperCase();
+    d3.select('#tInfo [name="logicExpression"] input')
+        .call(function(){ this[0][0].value = lex; });
+
+    return lex;
 }
 
 // Extends the path from currNode to p
@@ -645,8 +639,9 @@ function selectedNext(currNode,p,mode){
     if (mode === "selected")
         n.view = true;
     if (mode === "constrained" && n.constraints.length === 0) {
-        cc = newConstraint(n);
-        n.constraints.push(cc);
+        cc = addConstraint(n, false)
+        //cc = newConstraint(n);
+        //n.constraints.push(cc);
     }
     hideDialog();
     update(currNode);
@@ -681,15 +676,6 @@ function constraintText(c) {
 function findDomByDataObj(d){
     var x = d3.selectAll(".nodegroup .node").filter(function(dd){ return dd === d; });
     return x[0][0];
-}
-
-//
-function addConstraint(n) {
-    var c = newConstraint(n);
-    n.constraints.push(c);
-    update(n);
-    showDialog(n, null, true);
-    editConstraint(c, n);
 }
 
 //
@@ -783,10 +769,43 @@ function hideConstraintEditor(){
 function editConstraint(c, n){
     openConstraintEditor(c, n);
 }
+// Returns a single character constraint code in the range A-Z that is not already
+// used in the given template.
+//
+function nextAvailableCode(tmplt){
+    for(var i= "A".charCodeAt(0); i <= "Z".charCodeAt(0); i++){
+        var c = String.fromCharCode(i);
+        if (! (c in tmplt.code2c))
+            return c;
+    }
+    return null;
+}
+
+//
+function addConstraint(n, updateUI) {
+    var c = newConstraint(n);
+    n.constraints.push(c);
+    currTemplate.where.push(c);
+    currTemplate.code2c[c.code] = c;
+    setLogicExpression(currTemplate.constraintLogic, currTemplate);
+    //
+    if (updateUI) {
+        update(n);
+        showDialog(n, null, true);
+        editConstraint(c, n);
+    }
+    //
+    return c;
+}
+
 //
 function removeConstraint(c, n){
     n.constraints = n.constraints.filter(function(cc){ return cc !== c; });
+    currTemplate.where = currTemplate.where.filter(function(cc){ return cc !== c; });
+    delete currTemplate.code2c[c.code];
     if (c.ctype === "subclass") n.subclassConstraint = null;
+    setLogicExpression(currTemplate.constraintLogic, currTemplate);
+    //
     update(n);
     showDialog(n, null, true);
 }
@@ -860,7 +879,7 @@ function showDialog(n, elt, refreshOnly){
 
   //
   dialog.select("#dialog .constraintSection .add-button")
-        .on("click", function(){ addConstraint(n); });
+        .on("click", function(){ addConstraint(n, true); });
 
   // Fill out the constraints section
   // (Don't list ISA constraint here. It is handled separately.)
