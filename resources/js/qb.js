@@ -331,7 +331,7 @@ function uncompileTemplate(tmplt){
         where : [],
         joins : [],
         constraintLogic: tmplt.constraintLogic || "",
-        orderBy : deepc(tmplt.orderBy)
+        orderBy : deepc(tmplt.orderBy) || []
     }
     function reach(n){
         var p = getPath(n)
@@ -601,8 +601,10 @@ function setLogicExpression(ex, tmplt){
     //
     var lex = reach(ast,0);
     // if any constraint codes in the template were not seen in the expression,
-    // AND them into the expression.
-    var toAdd = Object.keys(tmplt.code2c).filter(function(c){ return seen.indexOf(c) === -1; });
+    // AND them into the expression (except ISA constraints).
+    var toAdd = Object.keys(tmplt.code2c).filter(function(c){
+        return seen.indexOf(c) === -1 && c.op !== "ISA";
+    });
 
     lex = (lex ? [lex]:[]).concat(toAdd).join(" and ")
     //
@@ -640,8 +642,6 @@ function selectedNext(currNode,p,mode){
         n.view = true;
     if (mode === "constrained" && n.constraints.length === 0) {
         cc = addConstraint(n, false)
-        //cc = newConstraint(n);
-        //n.constraints.push(cc);
     }
     hideDialog();
     update(currNode);
@@ -659,8 +659,8 @@ function selectedNext(currNode,p,mode){
 function constraintText(c) {
    var t = "";
    if (!c) return "";
-   if (!c.op){
-       t = c.type ? "ISA " + c.type : "?";
+   if (c.op === "ISA"){
+       t = "ISA " + (c.type || "?");
    }
    else if (c.value !== undefined){
        t = c.op + (c.op.includes("NULL") ? "" : " " + c.value)
@@ -1246,7 +1246,7 @@ function json2xml(t){
 
     function c2xml(c){
         var g;
-        if (c.ctype === "value" || c.type === "lookup" || c.type === "list")
+        if (c.ctype === "value" || c.ctype === "lookup" || c.ctype === "list")
             g = `path="${c.path}" op="${escapeHtml(c.op)}" value="${escapeHtml(c.value)}" code="${c.code}" editable="${c.editable}"`
         else if (c.ctype === "multivalue")
             g = `path="${c.path}" op="${escapeHtml(c.op)}" value="${escapeHtml(c.values)}" code="${c.code}" editable="${c.editable}"`
