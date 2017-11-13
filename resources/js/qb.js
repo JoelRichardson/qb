@@ -527,6 +527,7 @@ function selectedTemplate (tname) {
     root = compileTemplate(currTemplate, currMine.model).qtree
     root.x0 = h / 2;
     root.y0 = 0;
+    console.log(currTemplate);
 
     // Fill in the basic template information (name, title, description, etc.)
     //
@@ -811,7 +812,6 @@ function removeConstraint(c, n){
 }
 //
 function saveConstraintEdits(n, c){
-    console.log("Saving constraint", c);
     var xs = d3.selectAll("#constraintEditor .in")[0]
         .filter(function(x){ return d3.select(x).style("display") !== "none"; })
         ;
@@ -1219,23 +1219,6 @@ function update(source) {
   updateTtext();
 }
 
-var entityMap = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-    '/': '&#x2F;',
-    '`': '&#x60;',
-    '=': '&#x3D;'
-};
-
-function escapeHtml (string) {
-  return String(string).replace(/[&<>"'`=\/]/g, function (s) {
-          return entityMap[s];
-    });
-}
-
 // Turns a json representation of a template into XML, suitable for importing into the Intermine QB.
 function json2xml(t){
     var so = t.orderBy.reduce(function(s,x){ 
@@ -1244,12 +1227,13 @@ function json2xml(t){
         return s + `${k} ${v} `;
     }, "");
 
+    var esc = function(s){ return s.replace(/</g, "&lt;").replace(/"/g, "&quot;").replace(/&/g, "&amp;"); };
     function c2xml(c){
         var g;
         if (c.ctype === "value" || c.ctype === "lookup" || c.ctype === "list")
-            g = `path="${c.path}" op="${escapeHtml(c.op)}" value="${escapeHtml(c.value)}" code="${c.code}" editable="${c.editable}"`
+            g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.value)}" code="${c.code}" editable="${c.editable}"`
         else if (c.ctype === "multivalue")
-            g = `path="${c.path}" op="${escapeHtml(c.op)}" value="${escapeHtml(c.values)}" code="${c.code}" editable="${c.editable}"`
+            g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.values)}" code="${c.code}" editable="${c.editable}"`
         else if (c.ctype === "subclass")
             g = `path="${c.path}" type="${c.type}" editable="false"`
         else if (c.ctype === "null")
@@ -1262,7 +1246,7 @@ function json2xml(t){
       name="${t.name}"
       model="${t.model.name}"
       view="${t.select.join(' ')}"
-      longDescription="${escapeHtml(t.description)}"
+      longDescription="${esc(t.description)}"
       sortOrder="${so}"
       constraintLogic="${t.constraintLogic}"
       >
@@ -1272,8 +1256,8 @@ function json2xml(t){
     var tmplt = 
     `<template
       name="${t.name}"
-      title="${escapeHtml(t.title)}"
-      comment="${escapeHtml(t.comment)}"
+      title="${esc(t.title)}"
+      comment="${esc(t.comment)}"
       >
      ${qtmplt}
      </template>
@@ -1284,7 +1268,10 @@ function json2xml(t){
 //
 function updateTtext(){
   var txt = json2xml(uncompileTemplate(currTemplate));
-  var linkurl = currMine.url + "loadQuery.do?skipBuilder=true&method=xml&query=" + encodeURI(txt);
+  var linkurl = currMine.url + "loadQuery.do?skipBuilder=true&method=xml&trail=%7Cquery&query=" 
+      + encodeURIComponent(txt);
+  d3.select('#ttext [name="runquery"]')
+      .attr("href", linkurl);
   d3.select("#ttext textarea") 
       //.text(JSON.stringify(uncompileTemplate(currTemplate)));
       //.text(encodeURI(linkurl))

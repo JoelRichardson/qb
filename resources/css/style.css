@@ -16,8 +16,27 @@ label {
     font-weight: bold;
 }
 
+#ttext {
+    display: flex;
+    flex-direction: column;
+}
+
 #ttext textarea {
     width: 500px;
     height: 200px;
+}
+
+#ttext [name="runquery"] {
+    background-color: green;
+    color: white;
+    padding: 22px;
+    width: 125px;
+    border-radius: 20px;
+    text-decoration: none;
+    text-align: center;
+}
+
+#ttext [name="runquery"]:hover {
+    color: orange;
 }
 
