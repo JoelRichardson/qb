@@ -19,6 +19,7 @@ label {
 #ttext {
     display: flex;
     flex-direction: column;
+    backgrund-color: lightsteelblue;
 }
 
 #ttext textarea {

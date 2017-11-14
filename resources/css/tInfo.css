@@ -1,6 +1,7 @@
 #tInfo {
     display: flex;
     flex-direction: column;
+    backgrund-color: lightsteelblue;
 }
 
 #tInfo > div {
