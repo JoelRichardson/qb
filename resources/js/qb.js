@@ -15,6 +15,10 @@
 import parser from './parser.js';
 import { mines } from './mines.js';
 import { NUMERICTYPES, NULLABLETYPES, OPS, OPINDEX } from './ops.js';
+import { d3jsonPromise } from './utils.js';
+
+d3jsonPromise("http://www.mousemine.org/mousemine/service/version")
+ .then(function(json){console.log(json)});
 
 var name2mine;
 var currMine;
@@ -97,16 +101,18 @@ function selectedMine(mname){
     currMine = name2mine[mname]
     if(!currMine) return;
     var url = currMine.url;
-    var turl, murl;
+    var turl, murl, lurl;
     currMine.tnames = []
     currMine.templates = []
     if (mname === "testing") { 
         turl = url + "templates.json"
         murl = url + "model.json"
+        lurl = url + "lists.json"
     }
     else {
         turl = url + "service/templates?format=json";
         murl = url + "service/model?format=json";
+        lurl = url + "service/lists?format=json";
     }
     // get the model
     console.log("Loading resources:", murl, turl)
@@ -134,7 +140,7 @@ function selectedMine(mname){
             tl.enter().append('option')
             tl.exit().remove()
             tl.attr("value", function(d){ return d.name; })
-              .text(function(d){return d.name;});
+              .text(function(d){return d.title;});
             d3.select("#tlist").on("change", function(){ selectedTemplate(this.value); });
             selectedTemplate(currMine.tlist[0].name);
             })
@@ -289,6 +295,8 @@ function compileTemplate(template, model) {
         else
             n.constraints = [c];
     })
+
+    //
     t.select && t.select.forEach(function(p){
         var n = addPath(t, p, model);
         n.view = true;
@@ -582,7 +590,7 @@ function selectedTemplate (tname) {
 function setLogicExpression(ex, tmplt){
     var ast;
     try {
-        ast = parser.parse(ex);
+        ast = ex ? parser.parse(ex) : null;
     }
     catch (err) {
         alert(err);
@@ -600,7 +608,7 @@ function setLogicExpression(ex, tmplt){
         return cms.length === 0 ? "" : lev === 0 || cms.length === 1 ? cmss : "(" + cmss + ")"
     }
     //
-    var lex = reach(ast,0);
+    var lex = ast ? reach(ast,0) : "";
     // if any constraint codes in the template were not seen in the expression,
     // AND them into the expression (except ISA constraints).
     var toAdd = Object.keys(tmplt.code2c).filter(function(c){
