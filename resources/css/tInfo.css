@@ -63,6 +63,7 @@
     height: 150px;
 }
 
+
 #biggreenbutton {
     background-color: green;
     color: white;
@@ -71,11 +72,16 @@
     border-radius: 20px;
     text-decoration: none;
     text-align: center;
-    position: fixed;
-    top: 250px;
+    position: absolute ;
+    top: 20px;
     left: 20px;
 }
 
 #biggreenbutton:hover {
     color: orange;
+}
+
+/* this rule is so that the biggreenbutton positions correctly */
+#svgContainer {
+    position: relative;
 }
