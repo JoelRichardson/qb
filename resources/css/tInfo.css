@@ -1,7 +1,21 @@
+#topCtrlBar {
+    display: flex;
+    flex-direction: row;
+}
+
+#topCtrlBar > * {
+    margin: 10px;
+}
+
+#tInfoBar {
+    background-color: lightsteelblue;
+    display: flex;
+    flex-direction: row;
+}
+
 #tInfo {
     display: flex;
     flex-direction: column;
-    backgrund-color: lightsteelblue;
 }
 
 #tInfo > div {
@@ -12,7 +26,16 @@
 #tInfo >  div > div {
     display: flex;
     flex-direction: column;
-    padding: 4px;
+    padding: 8px;
+    flex-grow: 1;
+}
+
+#tInfo [name="title"] {
+    flex-grow: 5;
+}
+
+#tInfo [name="logicExpression"] {
+    flex-grow: 0;
 }
 
 #tInfo > div > * {
@@ -26,3 +49,32 @@
 #tInfo .title input {
 }
 
+#ttext {
+    display: flex;
+    padding: 12px;
+    flex-direction: column;
+    align-items: center;
+    background-color: lightsteelblue;
+}
+
+#ttext textarea {
+    width: 300px;
+    height: 150px;
+}
+
+#biggreenbutton {
+    background-color: green;
+    color: white;
+    padding: 22px;
+    width: 125px;
+    border-radius: 20px;
+    text-decoration: none;
+    text-align: center;
+    position: fixed;
+    top: 250px;
+    right: 20px;
+}
+
+#biggreenbutton:hover {
+    color: orange;
+}

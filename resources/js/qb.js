@@ -17,9 +17,6 @@ import { mines } from './mines.js';
 import { NUMERICTYPES, NULLABLETYPES, OPS, OPINDEX } from './ops.js';
 import { d3jsonPromise } from './utils.js';
 
-d3jsonPromise("http://www.mousemine.org/mousemine/service/version")
- .then(function(json){console.log(json)});
-
 var name2mine;
 var currMine;
 var m;
@@ -50,15 +47,12 @@ function setup(){
         .projection(function(d) { return [d.y, d.x]; });
 
     // create the SVG container
-    vis = d3.select("#body").append("svg:svg")
+    vis = d3.select("#svgContainer svg")
         .attr("width", w + m[1] + m[3])
         .attr("height", h + m[0] + m[2])
+        .on("click", hideDialog)
       .append("svg:g")
         .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
-    //
-    d3.select("#body").select("svg")
-        .on("click", hideDialog)
-        ;
     // populate the option list of mines
     var ml = d3.select("#mlist").selectAll("option").data(mines);
     ml.enter().append("option")
@@ -1278,7 +1272,7 @@ function updateTtext(){
   var txt = json2xml(uncompileTemplate(currTemplate));
   var linkurl = currMine.url + "loadQuery.do?skipBuilder=true&method=xml&trail=%7Cquery&query=" 
       + encodeURIComponent(txt);
-  d3.select('#ttext [name="runquery"]')
+  d3.select('#biggreenbutton')
       .attr("href", linkurl);
   d3.select("#ttext textarea") 
       //.text(JSON.stringify(uncompileTemplate(currTemplate)));
