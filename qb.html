@@ -13,18 +13,25 @@
 
         <div id="topCtrlBar">
             <!-- The list of available mines. -->
-            <select id="mlist">
-            </select>
+            <div>
+                <label>Mine</label>
+                <select id="mlist"></select>
+            </div>
 
             <!-- Selected template from the currently selected mine. -->
-            <select id="tlist">
-            </select>
+            <div>
+                <label>Template</label>
+                <select id="tlist"></select>
+            </div>
 
             <!-- Two ways of drawing the tree. Why? Because we can! (It's D3 after all.)-->
-            <select id="layoutstyle">
-                <option>tree</option>
-                <option>dendrogram</option>
-            </select>
+            <div>
+                <label>Layout</label>
+                <select id="layoutstyle">
+                    <option>tree</option>
+                    <option>dendrogram</option>
+                </select>
+            </div>
         </div>
 
         <!-- Template info section. Shows template's name, description, etc. -->
