@@ -31,8 +31,9 @@
 
 #mineLogo {
     position: absolute;
-    top: 55px;
+    top: 120px;
     left: 10px;
+    height: 45px;
 }
 
 #tInfoBar.closed {
