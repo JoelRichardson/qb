@@ -11,8 +11,22 @@ body {
   font-family: "Helvetica Neue", Helvetica;
 }
 
-
 label {
     font-weight: bold;
+}
+
+.flexrow {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+.flexcolumn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-wrap: nowrap;
 }
 

@@ -10,7 +10,7 @@
 </head>
 <body>
     <div id="body">
-        <div id="titleBar">
+        <div id="titleBar" class="flexrow">
             <!-- A cute little mascot. -->
             <img name="qblogo" title="QB" src="./resources/images/QB-logo.png"></img>
             <span name="title">QB: A Query Builder for Intermine</span>
@@ -18,12 +18,11 @@
         </div> <!-- end of titleBar -->
 
         <!-- Template info section. Shows template's name, description, etc. -->
-        <div id="tInfoBar">
+        <div id="tInfoBar" class="flexcolumn">
         <i class="material-icons button" name="open">add</i>
         <i class="material-icons button" name="close">clear</i>
-        <div id="tInfo">
-            <!-- The list of available mines. -->
-            <div name="mineCtrls">
+            <div name="mineCtrls" class="flexrow">
+                <!-- The list of available mines. -->
                 <div>
                     <label>Mine</label>
                     <select id="mlist"></select>
@@ -34,40 +33,57 @@
                     <label>Template</label>
                     <select id="tlist"></select>
                 </div>
+
+                <!-- User authentication token. -->
+                <div>
+                    <label>Token</label>
+                    <input id="token" type="text" placeholder="Enter authentication token."></input>
+                </div>
+
             </div>
 
+            <div class="flexrow">
+            <div id="tInfo" class="flexcolumn">
             <div>
+                <!-- Name of current template -->
                 <div name="name">
                     <label>Name</label>
                     <input type="text" ></input>
                 </div>
+                <!-- Title of current template -->
                 <div name="title">
                     <label>Title</label>
                     <input type="text" ></input>
                 </div>
             </div>
             <div>
+                <!-- Description text -->
                 <div name="description">
                     <label>Description</label>
                     <textarea cols="40" rows="4"></textarea>
                 </div>
+                <!-- Comment text -->
                 <div name="comment">
                     <label>Comment</label>
                     <textarea cols="40" rows="4"></textarea>
                 </div>
             </div>    
             <div>
+                <!-- Constraint logic expression -->
                 <div name="logicExpression">
                     <label>Logic expression</label>
                     <input size="40" type="text" ></input>
                 </div>
             </div>
-        </div>
-        <!-- Where the query text is dumped with every update. -->
-        <div id="ttext">
-            <label>Query XML</label>
-            <textarea></textarea>
-        </div>
+            </div>
+
+            <!-- Where the query text is dumped with every update. -->
+            <div id="ttext">
+                <label>Query XML</label>
+                <textarea></textarea>
+            </div>
+            </div>
+
         </div> <!-- end of tInfoBar -->
 
         <!-- The container where the SVG drawing goes. -->

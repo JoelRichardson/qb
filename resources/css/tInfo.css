@@ -1,7 +1,4 @@
 #titleBar {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
     background-color: lightsteelblue;
     position: fixed;
     top: 0px;
@@ -26,8 +23,6 @@
 
 #tInfoBar {
     background-color: #ccc;
-    display: flex;
-    flex-direction: row;
     position: relative;
     top: 45px;
     z-index: 90;
@@ -67,15 +62,21 @@
     display: none;
 }
 
+#tInfoBar [name="mineCtrls"] {
+    padding-left: 80px;
+}
+#tInfoBar [name="mineCtrls"] > div {
+    padding: 4px;
+    margin-top: 8px;
+}
 
 #tInfo {
-    display: flex;
-    flex-direction: column;
 }
 
 #tInfo > div {
     display: flex;
     flex-direction: row;
+    width: 100%;
 }
 
 #tInfo >  div > div {

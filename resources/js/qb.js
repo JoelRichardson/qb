@@ -955,19 +955,29 @@ function showDialog(n, elt, refreshOnly){
   //
   var dbb = dialog[0][0].getBoundingClientRect();
   var ebb = elt.getBoundingClientRect();
-  var bbb = d3.select("body")[0][0].getBoundingClientRect();
+  var bbb = d3.select("#body")[0][0].getBoundingClientRect();
   var t = (ebb.top - bbb.top) + ebb.width/2;
+  var b = (bbb.bottom - ebb.bottom) + ebb.width/2;
   var l = (ebb.left - bbb.left) + ebb.height/2;
+  var dir = "d" ; // "d" or "u"
 
   //
   dialog
-      .style("top", t+"px")
       .style("left", l+"px")
       .style("transform", refreshOnly?"scale(1)":"scale(1e-6)")
-      .style("transform-origin", "0% 0%")
       .classed("hidden", false)
       .classed("isroot", isroot)
       ;
+  if (dir === "d")
+      dialog
+          .style("top", t+"px")
+          .style("bottom", null)
+          .style("transform-origin", "0% 0%") ;
+  else
+      dialog
+          .style("top", null)
+          .style("bottom", b+"px")
+          .style("transform-origin", "0% 100%") ;
 
   // Set the dialog title to node name
   dialog.select('[name="header"] [name="dialogTitle"] span')
