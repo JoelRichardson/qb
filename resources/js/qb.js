@@ -67,6 +67,7 @@ function setup(){
         var ml = d3.select("#mlist").selectAll("option").data(mines);
         ml.enter().append("option")
             .attr("value", function(d){return d.name;})
+            .attr("selected", function(d){return d.name==="MouseMine" || null;})
             .text(function(d){ return d.name; });
         //
         // when a mine is selected from the list
@@ -96,7 +97,7 @@ function setup(){
             });
 
         // start with the first mine by default.
-        selectedMine(mines[0].name);
+        selectedMine("MouseMine");
       });
 
 }

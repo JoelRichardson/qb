@@ -48,6 +48,6 @@ path.link {
 
 .link.outer {
     stroke: orange;
-    stroke-dasharray: 3 3;
+    stroke-dasharray: 5 2;
 }
 
