@@ -13,8 +13,8 @@
  *
  */
 import parser from './parser.js';
-import { mines } from './mines.js';
-import { NUMERICTYPES, NULLABLETYPES, OPS, OPINDEX } from './ops.js';
+//import { mines } from './mines.js';
+import { NUMERICTYPES, NULLABLETYPES, LEAFTYPES, OPS, OPINDEX } from './ops.js';
 import { d3jsonPromise } from './utils.js';
 
 var name2mine;
@@ -33,11 +33,6 @@ var layoutStyle = "tree";
 var animationDuration = 250; // ms
 
 function setup(){
-    name2mine = {};
-    mines.forEach(function(m){ name2mine[m.name] = m; });
-    currMine = mines[0];
-    currTemplate = null;
-
     m = [20, 120, 20, 120]
     w = 1280 - m[1] - m[3]
     h = 800 - m[0] - m[2]
@@ -53,39 +48,57 @@ function setup(){
         .on("click", hideDialog)
       .append("svg:g")
         .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
-    // populate the option list of mines
-    var ml = d3.select("#mlist").selectAll("option").data(mines);
-    ml.enter().append("option")
-        .attr("value", function(d){return d.name;})
-        .text(function(d){ return d.name; });
-    // when a mine is selected from the list
-    d3.select("#mlist")
-        .on("change", function(){ selectedMine(this.value); });
     //
-    var dg = d3.select("#dialog");
-    dg.classed("hidden",true)
-    dg.select(".button.close").on("click", hideDialog);
-    dg.select(".button.remove").on("click", removeNode);
-
-    // 
-    //
-    d3.select("#layoutstyle")
-        .on("change", function () { setLayout(this.value); })
-        ;
-
-    //
-    d3.select("#dialog .subclassConstraint select")
-        .on("change", function(){ setSubclassConstraint(currNode, this.value); });
-    //
-    d3.select("#dialog .select-ctrl")
-        .on("click", function() {
-            currNode.view = !currNode.view;
-            update(currNode);
-            d3.select("#dialog .select-ctrl").classed("selected", currNode.view);
+    d3.selectAll("#tInfoBar > i.button")
+        .on("click", function(){ 
+            var t = d3.select("#tInfoBar");
+            var isClosed = t.classed("closed");
+            t.classed("closed", !isClosed);
         });
 
-    // start with the first mine by default.
-    selectedMine(mines[0].name);
+    d3jsonPromise("./resources/testdata/registry.json")
+      .then(function(j_mines){
+        var mines = j_mines.instances;
+        name2mine = {};
+        mines.forEach(function(m){ name2mine[m.name] = m; });
+        currMine = mines[0];
+        currTemplate = null;
+
+        var ml = d3.select("#mlist").selectAll("option").data(mines);
+        ml.enter().append("option")
+            .attr("value", function(d){return d.name;})
+            .text(function(d){ return d.name; });
+        //
+        // when a mine is selected from the list
+        d3.select("#mlist")
+            .on("change", function(){ selectedMine(this.value); });
+        //
+        var dg = d3.select("#dialog");
+        dg.classed("hidden",true)
+        dg.select(".button.close").on("click", hideDialog);
+        dg.select(".button.remove").on("click", removeNode);
+
+        // 
+        //
+        d3.select("#layoutstyle")
+            .on("change", function () { setLayout(this.value); })
+            ;
+
+        //
+        d3.select("#dialog .subclassConstraint select")
+            .on("change", function(){ setSubclassConstraint(currNode, this.value); });
+        //
+        d3.select("#dialog .select-ctrl")
+            .on("click", function() {
+                currNode.view = !currNode.view;
+                update(currNode);
+                d3.select("#dialog .select-ctrl").classed("selected", currNode.view);
+            });
+
+        // start with the first mine by default.
+        selectedMine(mines[0].name);
+      });
+
 }
 
 // Called when user selects a mine from the option list
@@ -95,50 +108,65 @@ function selectedMine(mname){
     currMine = name2mine[mname]
     if(!currMine) return;
     var url = currMine.url;
-    var turl, murl, lurl;
+    var turl, murl, lurl, burl;
     currMine.tnames = []
     currMine.templates = []
-    if (mname === "testing") { 
-        turl = url + "templates.json"
-        murl = url + "model.json"
-        lurl = url + "lists.json"
+    if (mname === "test") { 
+        turl = url + "/templates.json";
+        murl = url + "/model.json";
+        lurl = url + "/lists.json";
+        burl = url + "/branding.json";
     }
     else {
-        turl = url + "service/templates?format=json";
-        murl = url + "service/model?format=json";
-        lurl = url + "service/lists?format=json";
+        turl = url + "/service/templates?format=json";
+        murl = url + "/service/model?format=json";
+        lurl = url + "/service/lists?format=json";
+        burl = url + "/service/branding";
     }
     // get the model
-    console.log("Loading resources:", murl, turl)
-    d3.json(murl, function(model) {
-        if( ! model || ! model.wasSuccessful ){
-            alert("Could not load model from resource: " + murl);
-            return;
-        }
-        compileModel(model)
-        currMine.model = model;
-        // get the templates
-        d3.json(turl, function(json) {
-            if( ! json || ! json.wasSuccessful ){
-                alert("Could not load templates from resource: " + turl);
-                return;
-            }
-            currMine.templates = json.templates;
-            currMine.tlist = obj2array(currMine.templates)
-            currMine.tlist.sort(function(a,b){ 
-                return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
-            });
-            currMine.tnames = Object.keys( currMine.templates );
-            currMine.tnames.sort();
-            var tl = d3.select("#tlist").selectAll('option').data( currMine.tlist );
-            tl.enter().append('option')
-            tl.exit().remove()
-            tl.attr("value", function(d){ return d.name; })
-              .text(function(d){return d.title;});
-            d3.select("#tlist").on("change", function(){ selectedTemplate(this.value); });
-            selectedTemplate(currMine.tlist[0].name);
-            })
-    })
+    console.log("Loading resources from " + url );
+    Promise.all([
+        d3jsonPromise(murl),
+        d3jsonPromise(turl),
+        d3jsonPromise(lurl),
+        d3jsonPromise(burl)
+    ]).then( function(data) {
+        console.log("Promises fulfilled:", data)
+        var j_model = data[0];
+        var j_templates = data[1];
+        var j_lists = data[2];
+        var j_branding = data[3];
+        //
+        currMine.model = compileModel(j_model)
+        currMine.templates = j_templates.templates;
+        currMine.lists = j_lists.lists;
+        currMine.branding = j_branding.properties;
+        //
+        currMine.tlist = obj2array(currMine.templates)
+        currMine.tlist.sort(function(a,b){ 
+            return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
+        });
+        currMine.tnames = Object.keys( currMine.templates );
+        currMine.tnames.sort();
+        // Fill in the selection list of templates for this mine.
+        var tl = d3.select("#tlist").selectAll('option').data( currMine.tlist );
+        tl.enter().append('option')
+        tl.exit().remove()
+        tl.attr("value", function(d){ return d.name; })
+          .text(function(d){return d.title;});
+        d3.select("#tlist").on("change", function(){ selectedTemplate(this.value); });
+        selectedTemplate(currMine.tlist[0].name);
+        // Apply branding
+        var clrs = currMine.branding.colors;
+        var bgc = clrs.header?clrs.header.main:clrs.main.fg;
+        var txc = clrs.header?clrs.header.text:clrs.main.bg;
+        d3.select("#tInfoBar")
+            .style("background-color", bgc)
+            .style("color", txc);
+        d3.select("#mineLogo")
+            .attr("src", currMine.branding.images.logo);
+
+    });
 }
 
 // Returns an array containing the item values from the given object.
@@ -171,6 +199,18 @@ function obj2array(o, nameAttr){
 // Also adds arrays for convenience for accessing all classes or all attributes of a class.
 //
 function compileModel(model){
+    // First add classes that represent the basic type
+    LEAFTYPES.forEach(function(n){
+        model.model.classes[n] = {
+            isLeafType: true,
+            name: n,
+            displayName: n,
+            attributes: [],
+            references: [],
+            collections: [],
+            extends: []
+        }
+    });
     //
     model.model.allClasses = obj2array(model.model.classes)
     var cns = Object.keys(model.model.classes);
@@ -208,11 +248,18 @@ function compileModel(model){
             c.type = model.model.classes[c.referencedType]
         });
     });
-    console.log(model)
+    return model;
 }
 
+// Returns a list of all the superclasses of the given class.
+// (
+// The returned list does *not* contain cls.)
+// Args:
+//    cls (object)  A class from a compiled model
+// Returns:
+//    list of class objects, sorted by class name
 function getSuperclasses(cls){
-    if (!cls["extends"] || cls["extends"].length == 0) return [];
+    if (typeof(cls) === "string" || !cls["extends"] || cls["extends"].length == 0) return [];
     var anc = cls["extends"].map(function(sc){ return getSuperclasses(sc); });
     var all = cls["extends"].concat(anc.reduce(function(acc, elt){ return acc.concat(elt); }, []));
     var ans = all.reduce(function(acc,elt){ acc[elt.name] = elt; return acc; }, {});
@@ -220,16 +267,37 @@ function getSuperclasses(cls){
 }
 
 // Returns a list of all the subclasses of the given class.
+// (The returned list does *not* contain cls.)
 // Args:
 //    cls (object)  A class from a compiled model
 // Returns:
 //    list of class objects, sorted by class name
 function getSubclasses(cls){
-    if (!cls.extendedBy || cls.extendedBy.length == 0) return [];
+    if (typeof(cls) === "string" || !cls.extendedBy || cls.extendedBy.length == 0) return [];
     var desc = cls.extendedBy.map(function(sc){ return getSubclasses(sc); });
     var all = cls.extendedBy.concat(desc.reduce(function(acc, elt){ return acc.concat(elt); }, []));
     var ans = all.reduce(function(acc,elt){ acc[elt.name] = elt; return acc; }, {});
     return obj2array(ans);
+}
+
+// Returns true iff sub is a subclass of sup.
+function isSubclass(sub,sup) {
+    if (typeof(sub) === "string" || !sub["extends"] || sub["extends"].length == 0) return false;
+    var r = sub["extends"].filter(function(x){ return x===sup || isSubclass(x, sup); });
+    return r.length > 0;
+}
+
+// Returns true iff the given list is valid as a list constraint option for
+// the node n. A list is valid to use in a list constraint at node n iff
+//     * the list's type is equal to or a subclass of the node's type
+//     * the list's type is a superclass of the node's type. In this case,
+//       elements in the list that are not compatible with the node's type
+//       are automatically filtered out.
+function isValidListConstraint(list, n){
+    var nt = n.subtypeConstraint || n.ptype;
+    if (typeof(nt) === "string" ) return false;
+    var lt = currMine.model.model.classes[list.type];
+    return lt === nt || isSubclass(lt, nt) || isSubclass(nt, lt);
 }
 
 // Compiles a "raw" template - such as one returned by the /templates web service - against
@@ -250,6 +318,9 @@ function compileTemplate(template, model) {
     t.qtree = null;
     // index of code to constraint gors here.
     t.code2c = {}
+    // normalize things that may be undefined
+    t.comment = t.comment || "";
+    t.description = t.description || "";
     //
     var subclassCs = [];
     t.where && t.where.forEach(function(c){
@@ -656,14 +727,16 @@ function selectedNext(currNode,p,mode){
     }, animationDuration);
     
 }
-
 // Returns a text representation of a constraint
 //
 function constraintText(c) {
    var t = "";
    if (!c) return "";
-   if (c.op === "ISA"){
+   if (c.ctype === "isa"){
        t = "ISA " + (c.type || "?");
+   }
+   else if (c.ctype === "list") {
+       t = c.op + " " + c.value;
    }
    else if (c.value !== undefined){
        t = c.op + (c.op.includes("NULL") ? "" : " " + c.value)
@@ -693,6 +766,16 @@ function opValidFor(op, n){
     return true;
 }
 
+function updateCEinputs(c, op){
+    // Just set all the values. Setting the ones not being displayed doesn't matter.
+    d3.select('#constraintEditor [name="op"]')[0][0].value = op || c.op;
+    d3.select('#constraintEditor [name="value"]')[0][0].value = c.ctype==="null" ? "" : c.value;
+    d3.select('#constraintEditor [name="values"]')[0][0].value = deepc(c.values);
+    d3.select('#constraintEditor [name="list"]')[0][0].value = c.value
+    d3.select('#constraintEditor [name="type"]')[0][0].value = c.type;
+    d3.select('#constraintEditor [name="code"]').text(c.code);
+}
+
 function openConstraintEditor(c, n){
 
     var isroot = ! n.parent;
@@ -707,7 +790,7 @@ function openConstraintEditor(c, n){
     var cbb = cdiv.getBoundingClientRect();
     // bounding box of the app's main body element
     var dbb = d3.select("#body")[0][0].getBoundingClientRect();
-
+    // position the constraint editor over the constraint in the dialog
     var ced = d3.select("#constraintEditor")
         .attr("class", c.ctype)
         .classed("open", true)
@@ -715,6 +798,8 @@ function openConstraintEditor(c, n){
         .style("left", (cbb.left - dbb.left)+"px")
         ;
 
+    // Populate the operator select list with ops appropriate for the path
+    // at this node.
     var o2; 
     var cops = d3.select('#constraintEditor select[name="op"]')
         .selectAll("option")
@@ -742,18 +827,30 @@ function openConstraintEditor(c, n){
         .attr("selected","true")
         ;
 
-    d3.select('#constraintEditor [name="op"]')[0][0].value = c.op;
-    d3.select('#constraintEditor [name="value"]')[0][0].value = c.ctype==="null" ? "" : c.value;
-    d3.select('#constraintEditor [name="values"]')[0][0].value = deepc(c.values);
-    d3.select('#constraintEditor [name="type"]')[0][0].value = c.type;
-    d3.select('#constraintEditor [name="code"]').text(c.code);
+    // Populate the list constraint options.
+    var ll = currMine.lists.filter(function (l) { return isValidListConstraint(l, currNode); });
+    if (ll.length === 0) {
+        ll.push({ title: "No lists for this type.", disabled: true });
+    }
+    var lsts = d3.select('#constraintEditor select[name="list"]')
+        .selectAll("option")
+        .data(ll);
+    lsts.enter().append("option");
+    lsts.exit().remove();
+    lsts
+        .text(function(l){return l.title;})
+        .attr("disabled", function(l){ return l.disabled ? true : null; })
+        ;
+
+    updateCEinputs(c);
 
     // When user selects an operator, add a class to the c.e.'s container
     d3.select('#constraintEditor [name="op"]')
-        .on("change", function(c){
+        .on("change", function(){
             var op = OPINDEX[this.value];
             d3.select("#constraintEditor")
                 .attr("class", "open " + op.ctype)
+            updateCEinputs(c, op.op);
         })
         ;
 
@@ -814,9 +911,11 @@ function removeConstraint(c, n){
 }
 //
 function saveConstraintEdits(n, c){
+    // get all the current visible constraint input elements
     var xs = d3.selectAll("#constraintEditor .in")[0]
         .filter(function(x){ return d3.select(x).style("display") !== "none"; })
         ;
+    // use the name of each one to set the corresponding attribute in the constraint
     xs.forEach(function(x){ c[x.name] = x.value; });
     c.ctype = OPINDEX[c.op].ctype;
     if (c.ctype === "null") 
@@ -824,6 +923,9 @@ function saveConstraintEdits(n, c){
     else if (c.ctype === "subclass"){
         setSubclassConstraint(n, c.type)
         c.value = n.subclassConstraint.name;
+    }
+    else if (c.ctype === "list") {
+        c.value = c.list;
     }
     hideConstraintEditor();
     update(n);
@@ -884,7 +986,6 @@ function showDialog(n, elt, refreshOnly){
         .on("click", function(){ addConstraint(n, true); });
 
   // Fill out the constraints section
-  // (Don't list ISA constraint here. It is handled separately.)
   var constrs = dialog.select(".constraintSection")
       .selectAll(".constraint")
       .data(n.constraints);
@@ -1235,7 +1336,7 @@ function json2xml(t){
         if (c.ctype === "value" || c.ctype === "lookup" || c.ctype === "list")
             g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.value)}" code="${c.code}" editable="${c.editable}"`
         else if (c.ctype === "multivalue")
-            g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.values)}" code="${c.code}" editable="${c.editable}"`
+            g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.values.join(', '))}" code="${c.code}" editable="${c.editable}"`
         else if (c.ctype === "subclass")
             g = `path="${c.path}" type="${c.type}" editable="false"`
         else if (c.ctype === "null")
@@ -1270,7 +1371,7 @@ function json2xml(t){
 //
 function updateTtext(){
   var txt = json2xml(uncompileTemplate(currTemplate));
-  var linkurl = currMine.url + "loadQuery.do?skipBuilder=true&method=xml&trail=%7Cquery&query=" 
+  var linkurl = currMine.url + "/loadQuery.do?skipBuilder=true&method=xml&trail=%7Cquery&query=" 
       + encodeURIComponent(txt);
   d3.select('#biggreenbutton')
       .attr("href", linkurl);

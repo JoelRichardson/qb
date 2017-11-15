@@ -38,29 +38,26 @@
     color: #ccc;
 }
 
-/* If editing ISA, only show the type input. */
-#constraintEditor.subclass [name="value"], #constraintEditor.subclass [name="values"], #constraintEditor.subclass [name="code"] {
+/* The following rules make the right subset of controls appear in the constrain editor,
+ * based on the selected operator. */
+#constraintEditor .in {
     display: none;
 }
-
-/* If editing LOOKUP, only show value input. */
-#constraintEditor.lookup [name="values"], #constraintEditor.lookup [name="type"] {
-    display: none;
+#constraintEditor .in[name="op"] {
+    display: block;
 }
-
-/* If editing a value constraint, only show value input. */
-/* #constraintEditor.value .values, #constraintEditor.value .type {*/
-#constraintEditor.value [name="values"], #constraintEditor.value [name="type"] {
-    display: none;
+#constraintEditor.list [name="list"] {
+    display: block;
 }
-
-/* If editing a multivalue constraint, only show multivalue input. */
-#constraintEditor.multivalue [name="value"], #constraintEditor.multivalue [name="type"] {
-    display: none;
+#constraintEditor.subclass [name="type"] {
+    display: block;
 }
-
-/* If editing a null constraint, only show the operator. */
-#constraintEditor.null [name="value"], #constraintEditor.null [name="values"], #constraintEditor.null [name="type"] {
-    display: none;
+#constraintEditor.lookup [name="value"] {
+    display: block;
 }
-
+#constraintEditor.value [name="value"] {
+    display: block;
+}
+#constraintEditor.multivalue [name="values"] {
+    display: block;
+}

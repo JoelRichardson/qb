@@ -10,37 +10,32 @@
 </head>
 <body>
     <div id="body">
-
-
-        <div id="topCtrlBar">
+        <div id="titleBar">
             <!-- A cute little mascot. -->
-            <img id="qblogo" src="./resources/images/QB-logo.png"></img>
+            <img name="qblogo" title="QB" src="./resources/images/QB-logo.png"></img>
+            <span name="title">QB: A Query Builder for Intermine</span>
 
-            <!-- The list of available mines. -->
-            <div>
-                <label>Mine</label>
-                <select id="mlist"></select>
-            </div>
-
-            <!-- Selected template from the currently selected mine. -->
-            <div>
-                <label>Template</label>
-                <select id="tlist"></select>
-            </div>
-
-            <!-- Two ways of drawing the tree. Why? Because we can! (It's D3 after all.)-->
-            <div>
-                <label>Layout</label>
-                <select id="layoutstyle">
-                    <option>tree</option>
-                    <option>dendrogram</option>
-                </select>
-            </div>
-        </div>
+        </div> <!-- end of titleBar -->
 
         <!-- Template info section. Shows template's name, description, etc. -->
         <div id="tInfoBar">
+        <i class="material-icons button" name="open">add</i>
+        <i class="material-icons button" name="close">clear</i>
         <div id="tInfo">
+            <!-- The list of available mines. -->
+            <div name="mineCtrls">
+                <div>
+                    <label>Mine</label>
+                    <select id="mlist"></select>
+                </div>
+
+                <!-- Selected template from the currently selected mine. -->
+                <div>
+                    <label>Template</label>
+                    <select id="tlist"></select>
+                </div>
+            </div>
+
             <div>
                 <div name="name">
                     <label>Name</label>
@@ -73,12 +68,25 @@
             <label>Query XML</label>
             <textarea></textarea>
         </div>
-        </div>
+        </div> <!-- end of tInfoBar -->
 
         <!-- The container where the SVG drawing goes. -->
         <div id="svgContainer">
             <a id="biggreenbutton" name="runquery" href="" target="_blank">Run this query</a>
+            <img id="mineLogo" src=""></img>
             <svg></svg>
+        </div>
+
+        <!-- The footer -->
+        <div id="footer">
+            <!-- Two ways of drawing the tree. Why? Because we can! (It's D3 after all.)-->
+            <div>
+                <label>Layout</label>
+                <select id="layoutstyle">
+                    <option>tree</option>
+                    <option>dendrogram</option>
+                </select>
+            </div>
         </div>
 
 
@@ -135,6 +143,7 @@
             <select class="in" name="op" placeholder="constraint operator"></select>
             <input class="in" name="value" type="text" placeholder="value"></input>
             <input class="in" name="values" type="text" placeholder="multivalued constraint" ></input>
+            <select class="in" name="list" placeholder="list constraint"></select>
             <select class="in" name="type" type="text" placeholder="subclass constraint"></select>
             <div name="code"></div>
             <i class="material-icons button save" title="Save changes">check</i>

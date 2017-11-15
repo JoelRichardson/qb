@@ -1,0 +1,3 @@
+{"properties":
+{"images":{"small":"http://intermine.readthedocs.org/en/latest/_static/img/logo.png","logo":"http://www.mousemine.org/mousemine/model/images/mouse_logo.png","main":"http://intermine.github.io/intermine.org/img/logo.png"},"defaults":{"identifiers":"Pax6, Bmp4, Foxg1","extraValue":{"extraFor":"SequenceFeature","path":"organism.taxonId","class":"Organism","value":"10090"},"class":"Gene","value":"Pax6"},"colors":{"header":{"main":"#6eccf8","text":"#000"},"focus":{"fg":"#fff","bg":"#829b02"},"main":{"fg":"#595455","bg":"#fff"}}}
+,"executionTime":"2017.11.15 10:02::05","wasSuccessful":true,"error":null,"statusCode":200}

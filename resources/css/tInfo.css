@@ -1,18 +1,72 @@
-#topCtrlBar {
+#titleBar {
     display: flex;
     flex-direction: row;
-    background-color: #9E9E9E;
+    align-items: center;
+    background-color: lightsteelblue;
+    position: fixed;
+    top: 0px;
+    width: 100%;
+    z-index: 100;
 }
 
-#topCtrlBar > * {
+#titleBar [name="title"] {
+    font-size: 24px;
+    color: #555;
+}
+
+#titleBar [name="qblogo"] {
+    width: 35px;
+    height: 40px;
+    margin: 3px;
+}
+
+#titleBar > * {
     margin: 10px;
 }
 
 #tInfoBar {
-    background-color: lightsteelblue;
+    background-color: #ccc;
     display: flex;
     flex-direction: row;
+    position: relative;
+    top: 45px;
+    z-index: 90;
+    width: 100%;
 }
+
+#mineLogo {
+    position: absolute;
+    top: 55px;
+    left: 10px;
+}
+
+#tInfoBar.closed {
+    height: 25px;
+}
+#tInfoBar.closed:hover {
+    cursor: pointer;
+}
+#tInfoBar.closed > div {
+    display: none;
+}
+#tInfoBar > i.button {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+}
+#tInfoBar > i[name="open"] {
+    display: none;
+}
+#tInfoBar > i[name="close"] {
+    display: block;
+}
+#tInfoBar.closed > i[name="open"] {
+    display: block;
+}
+#tInfoBar.closed > i[name="close"] {
+    display: none;
+}
+
 
 #tInfo {
     display: flex;
@@ -55,7 +109,6 @@
     padding: 12px;
     flex-direction: column;
     align-items: center;
-    background-color: lightsteelblue;
 }
 
 #ttext textarea {
@@ -73,7 +126,7 @@
     text-decoration: none;
     text-align: center;
     position: absolute ;
-    top: 20px;
+    top: 60px;
     right: 20px;
 }
 
@@ -85,3 +138,17 @@
 #svgContainer {
     position: relative;
 }
+
+#footer {
+    height: 35px;
+    width: 100%;
+    background: lightsteelblue;
+    position: fixed;
+    bottom: 0px;
+    z-index: 100;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 6px;
+}
+

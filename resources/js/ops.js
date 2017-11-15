@@ -41,6 +41,21 @@ var NULLABLETYPES= [
     "java.lang.Boolean"
 ];
 
+var LEAFTYPES= [
+    "int", "java.lang.Integer",
+    "short", "java.lang.Short",
+    "long", "java.lang.Long",
+    "float", "java.lang.Float",
+    "double", "java.lang.Double",
+    "java.math.BigDecimal",
+    "java.util.Date",
+    "java.lang.String",
+    "java.lang.Boolean",
+    "java.lang.Object",
+    "Object"
+]
+
+
 var OPS = [
 
     // Valid for any attribute
@@ -198,4 +213,4 @@ var OPINDEX = OPS.reduce(function(x,o){
     return x;
 }, {});
 
-module.exports = { NUMERICTYPES, NULLABLETYPES, OPS, OPINDEX };
+module.exports = { NUMERICTYPES, NULLABLETYPES, LEAFTYPES, OPS, OPINDEX };
