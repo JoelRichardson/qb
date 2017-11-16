@@ -1,2 +1,3 @@
 # qb
-QB is a query builder for InterMine.
+QB is a query builder for InterMine that uses D3 to draw the query's structures.
+<a href="https://joelrichardson.github.io/qb/">Check it out</a>.
