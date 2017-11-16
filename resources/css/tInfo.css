@@ -79,6 +79,7 @@
 
 #tInfoBar [name="mineCtrls"] {
     padding-left: 80px;
+    border-bottom: thin solid;
 }
 #tInfoBar [name="mineCtrls"] > div {
     padding: 4px;
