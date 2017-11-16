@@ -1,5 +1,6 @@
 #titleBar {
-    background-color: lightsteelblue;
+    background-color: #617896;
+    color: #fff;
     position: fixed;
     top: 0px;
     width: 100%;
@@ -8,7 +9,6 @@
 
 #titleBar [name="title"] {
     font-size: 24px;
-    color: #555;
 }
 
 #titleBar [name="qblogo"] {
@@ -51,7 +51,7 @@
 }
 
 #tInfoBar.closed {
-    height: 25px;
+    height: 30px;
 }
 #tInfoBar.closed:hover {
     cursor: pointer;
@@ -161,7 +161,8 @@
 #footer {
     height: 35px;
     width: 100%;
-    background: lightsteelblue;
+    background-color: #617896;
+    color: #fff;
     position: fixed;
     bottom: 0px;
     z-index: 100;
