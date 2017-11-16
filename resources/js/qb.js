@@ -868,6 +868,16 @@ function openConstraintEditor(c, n){
     d3.select("#constraintEditor .button.save")
         .on("click", function(){ saveConstraintEdits(n, c) });
 
+    d3.select("#constraintEditor .button.sync")
+        .on("click", function(){ generateOptionList(n, c) });
+
+}
+//
+function generateOptionList(n, c){
+    var p = n.parent.ptype.name + "." + n.name;
+    var url = currMine.url + "/service/path/values?path=" + p;
+    console.log("Getting unique values for: " + p);
+    d3jsonPromise(url).then(function(json){console.log("Unique values:",json);})
 }
 //
 function hideConstraintEditor(){

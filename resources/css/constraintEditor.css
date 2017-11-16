@@ -10,15 +10,15 @@
     margin: 4px;
 }
 
-#constraintEditor .material-icons.save:hover {
+#constraintEditor .button:hover {
     color: white;
     background-color: black;
 }
 
-#constraintEditor .material-icons.close:hover {
-    color: white;
-    background-color: black;
+#constraintEditor .button.sync {
+    display: none
 }
+
 #constraintEditor.open {
     display: flex;
     flex-direction: row;
@@ -57,6 +57,9 @@
 }
 #constraintEditor.value [name="value"] {
     display: block;
+}
+#constraintEditor.value .button.sync {
+    /*display: block*/
 }
 #constraintEditor.multivalue [name="values"] {
     display: block;
