@@ -19,12 +19,15 @@
 
         <!-- Template info section. Shows template's name, description, etc. -->
         <div id="tInfoBar" class="flexcolumn">
-        <i class="material-icons button" name="open">add</i>
-        <i class="material-icons button" name="close">clear</i>
+
+            <i class="material-icons button" name="open">add</i>
+            <i class="material-icons button" name="close">clear</i>
+
             <div name="summary" class="flexrow">
-                <span name="mine">currmine</span>
-                <span name="template">currtemplate</span>
+                <div name="mine">currmine</div>
+                <div name="template">currtemplate</div>
             </div>
+
             <div name="mineCtrls" class="flexrow">
                 <!-- The list of available mines. -->
                 <div>
@@ -84,7 +87,8 @@
             <!-- Where the query text is dumped with every update. -->
             <div id="ttext">
                 <label>Query XML</label>
-                <textarea></textarea>
+                <div id="ttextdiv" tabindex="-1"> <!-- tabindex makes it focusable-->
+                </div>
             </div>
             </div>
 
@@ -98,7 +102,7 @@
         </div>
 
         <!-- The footer -->
-        <div id="footer">
+        <div id="footer" class="flexrow">
             <!-- Two ways of drawing the tree. Why? Because we can! (It's D3 after all.)-->
             <div>
                 <label>Layout</label>
@@ -108,7 +112,7 @@
                 </select>
             </div>
             <div>
-                <span>Powered by InterMine and D3.</span>
+                <span>Powered by <a href="http://intermine.org">InterMine</a> and <a href="https://d3js.org/">D3</a>.</span>
             </div>
         </div>
 

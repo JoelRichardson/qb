@@ -15,7 +15,7 @@
 import parser from './parser.js';
 //import { mines } from './mines.js';
 import { NUMERICTYPES, NULLABLETYPES, LEAFTYPES, OPS, OPINDEX } from './ops.js';
-import { d3jsonPromise } from './utils.js';
+import { d3jsonPromise, selectText } from './utils.js';
 
 var name2mine;
 var currMine;
@@ -158,15 +158,17 @@ function selectedMine(mname){
         d3.select("#tlist").on("change", function(){ selectedTemplate(this.value); });
         selectedTemplate(currMine.tlist[0].name);
         // Apply branding
-        var clrs = currMine.branding.colors;
+        var clrs = (currMine.branding.colors || currMine.branding.colours);
         var bgc = clrs.header?clrs.header.main:clrs.main.fg;
-        var txc = clrs.header?clrs.header.text:clrs.main.bg;
+        var txc = clrs.header?clrs.header.text:(clrs.main.bg || clrs.main.bkg);
         d3.select("#tInfoBar")
             .style("background-color", bgc)
             .style("color", txc);
         d3.select("#mineLogo")
             .attr("src", currMine.branding.images.logo);
 
+    }, function(error){
+        alert(`Could not access ${currMine.name}. Status=${error.status}. Error=${error.statusText}. (If there is no error message, then its probably a CORS issue.)`);
     });
 }
 
@@ -632,6 +634,11 @@ function selectedTemplate (tname) {
             xfer("constraintLogic", this)
         });
 
+    //
+    d3.select('#tInfoBar [name="summary"] [name="mine"]')
+        .text(currMine.name) ;
+    d3.select('#tInfoBar [name="summary"] [name="template"]')
+        .text(currTemplate.title || currTemplate.name || "") ;
     //
     hideDialog();
     update(root);
@@ -1386,12 +1393,9 @@ function updateTtext(){
       + encodeURIComponent(txt);
   d3.select('#biggreenbutton')
       .attr("href", linkurl);
-  d3.select("#ttext textarea") 
-      //.text(JSON.stringify(uncompileTemplate(currTemplate)));
-      //.text(encodeURI(linkurl))
-      //.text(linkurl)
+  d3.select("#ttextdiv") 
       .text(txt)
-      .on("focus", function(){ this.select() });
+      .on("focus", function(){ selectText("ttextdiv"); });
 }
 
 //

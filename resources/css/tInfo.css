@@ -24,7 +24,7 @@
 #tInfoBar {
     background-color: #ccc;
     position: relative;
-    top: 45px;
+    top: 49px;
     z-index: 90;
     width: 100%;
 }
@@ -34,6 +34,20 @@
     top: 50px;
     left: 2px;
     height: 45px;
+}
+
+#tInfoBar [name="summary"] {
+    display: none;
+    padding-left: 60px;
+}
+#tInfoBar [name="summary"] > * {
+    padding: 6px;
+}
+#tInfoBar.closed [name="summary"] {
+    display: flex;
+}
+#tInfoBar [name="summary"] [name="mine"]::after {
+    content: " ::";
 }
 
 #tInfoBar.closed {
@@ -113,9 +127,12 @@
     align-items: center;
 }
 
-#ttext textarea {
-    width: 300px;
+#ttextdiv {
+    width: 600px;
     height: 150px;
+    font-family: monospace;
+    white-space: pre;
+    overflow: scroll;
 }
 
 
@@ -148,9 +165,11 @@
     position: fixed;
     bottom: 0px;
     z-index: 100;
-    display: flex;
-    flex-direction: row;
     align-items: center;
-    padding: 6px;
+    padding: 6px 18px;
+    justify-content: space-between;
+}
+#footer > div:last-child {
+    padding-right: 30px;
 }
 
