@@ -1166,6 +1166,7 @@ function showDialog(n, elt, refreshOnly){
   dialog.transition()
       .duration(animationDuration)
       .style("transform","scale(1.0)");
+
   //
   var t = n.pcomp.type;
   if (typeof(t) === "string") {
