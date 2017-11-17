@@ -11,6 +11,10 @@
     font-size: 24px;
 }
 
+#titleBar [name="version"] {
+    font-size: 14px;
+}
+
 #titleBar [name="qblogo"] {
     width: 35px;
     height: 40px;

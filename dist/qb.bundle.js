@@ -142,9 +142,16 @@ function setup(){
         currTemplate = null;
 
         var ml = d3.select("#mlist").selectAll("option").data(mines);
+        var selectMine = "PhytoMine";
         ml.enter().append("option")
             .attr("value", function(d){return d.name;})
-            .attr("selected", function(d){return d.name==="MouseMine" || null;})
+            .attr("disabled", function(d){
+                var w = window.location.href.startsWith("https");
+                var m = d.url.startsWith("https");
+                var v = (w && !m) || null;
+                return v;
+            })
+            .attr("selected", function(d){ return d.name===selectMine || null; })
             .text(function(d){ return d.name; });
         //
         // when a mine is selected from the list
@@ -174,7 +181,7 @@ function setup(){
             });
 
         // start with the first mine by default.
-        selectedMine("MouseMine");
+        selectedMine(selectMine);
       });
 
 }
