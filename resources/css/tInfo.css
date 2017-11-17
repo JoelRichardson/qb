@@ -178,4 +178,8 @@
 #footer > div:last-child {
     padding-right: 30px;
 }
+#footer a {
+    color: white;
+    text-decoration: none;
+}
 
