@@ -65,7 +65,8 @@ function setup(){
         currTemplate = null;
 
         var ml = d3.select("#mlist").selectAll("option").data(mines);
-        var selectMine = "PhytoMine";
+        //var selectMine = "PhytoMine";
+        var selectMine = "MouseMine";
         ml.enter().append("option")
             .attr("value", function(d){return d.name;})
             .attr("disabled", function(d){
@@ -749,9 +750,9 @@ function selectedNext(currNode,p,mode){
 // Returns a text representation of a constraint
 //
 function constraintText(c) {
-   var t = "";
-   if (!c) return "";
-   if (c.ctype === "isa"){
+   var t = "?";
+   if (!c) return t;
+   if (c.ctype === "subclass"){
        t = "ISA " + (c.type || "?");
    }
    else if (c.ctype === "list") {
@@ -795,10 +796,15 @@ function updateCEinputs(c, op){
     d3.select('#constraintEditor [name="code"]').text(c.code);
 }
 
+// Opens the constraint editor for constraint c of node n.
+//
 function openConstraintEditor(c, n){
 
+    // Note if this is happening at the root node
     var isroot = ! n.parent;
  
+    // Find the div for constraint c in the dialog listing. We will
+    // open the constraint editor on top of it.
     var cdiv;
     d3.selectAll("#dialog .constraint")
         .each(function(cc){
@@ -833,6 +839,7 @@ function openConstraintEditor(c, n){
     // Fill in the subclass constraint selection list.
     // First find all the subclasses of the node's class.
     var scs = isroot ? [] : getSubclasses(n.pcomp.kind ? n.pcomp.type : n.pcomp);
+    // Create an option list of all these class names
     var scOpts = d3.select('#constraintEditor select[name="type"]')
         .selectAll("option")
         .data(scs) ;
@@ -841,10 +848,12 @@ function openConstraintEditor(c, n){
     scOpts.exit().remove();
     scOpts
         .attr("value", function(d,i){ return d.name; })
-        .text(function(d){ return d.name; });
-    scOpts.filter(function(d){ return d.name === ((n.subclassConstraint || n.ptype).name || n.ptype); })
-        .attr("selected","true")
-        ;
+        .text(function(d){ return d.name; })
+        .attr("selected",function(d){ return
+            // Find the one whose name matches the node's type and set its selected attribute
+            var matches = d.name === ((n.subclassConstraint || n.ptype).name || n.ptype);
+            return matches || null;
+            });
 
     // Populate the list constraint options.
     var ll = currMine.lists.filter(function (l) { return isValidListConstraint(l, currNode); });
@@ -1113,11 +1122,11 @@ function showDialog(n, elt, refreshOnly){
                   name: comp.name,
                   cls: ''
                   },{
-                  name: '<i class="material-icons">play_arrow</i>',
+                  name: '<i class="material-icons" title="Select this attribute">play_arrow</i>',
                   cls: 'selectsimple',
                   click: function (){selectedNext(currNode,comp.name,"selected"); }
                   },{
-                  name: '<i class="material-icons">play_arrow</i>',
+                  name: '<i class="material-icons" title="Constrain this attribute">play_arrow</i>',
                   cls: 'constrainsimple',
                   click: function (){selectedNext(currNode,comp.name,"constrained"); }
                   }];
@@ -1127,7 +1136,7 @@ function showDialog(n, elt, refreshOnly){
                   name: comp.name,
                   cls: ''
                   },{
-                  name: '<i class="material-icons">play_arrow</i>',
+                  name: `<i class="material-icons" title="Follow this ${comp.kind}">play_arrow</i>`,
                   cls: 'opennext',
                   click: function (){selectedNext(currNode,comp.name,"open"); }
                   },{
