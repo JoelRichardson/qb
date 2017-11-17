@@ -3,7 +3,9 @@
 //
 // Accepts expressions like "A and (B or C)" 
 // Adapted from the example here: https://pegjs.org/online
-// Returns the abstract syntax tree
+// Returns the abstract syntax tree. 
+// Nodes are either strings (constraint codes), or operator nodes
+// that look like: {"op":string, "children": [ <nodes> ]}
 //
 
 {

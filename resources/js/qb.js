@@ -668,14 +668,7 @@ function selectedTemplate (tname) {
 //   the "corrected" expression
 //   
 function setLogicExpression(ex, tmplt){
-    var ast;
-    try {
-        ast = ex ? parser.parse(ex) : null;
-    }
-    catch (err) {
-        alert(err);
-        return tmplt.constraintLogic;
-    }
+    var ast; // abstract syntax tree
     var seen = [];
     function reach(n,lev){
         if (typeof(n) === "string" ){
@@ -687,15 +680,26 @@ function setLogicExpression(ex, tmplt){
         var cmss = cms.join(" "+n.op+" ");
         return cms.length === 0 ? "" : lev === 0 || cms.length === 1 ? cmss : "(" + cmss + ")"
     }
+    try {
+        ast = ex ? parser.parse(ex) : null;
+    }
+    catch (err) {
+        alert(err);
+        return tmplt.constraintLogic;
+    }
     //
     var lex = ast ? reach(ast,0) : "";
     // if any constraint codes in the template were not seen in the expression,
     // AND them into the expression (except ISA constraints).
     var toAdd = Object.keys(tmplt.code2c).filter(function(c){
         return seen.indexOf(c) === -1 && c.op !== "ISA";
-    });
-
-    lex = (lex ? [lex]:[]).concat(toAdd).join(" and ")
+        });
+    if (toAdd.length > 0) {
+         if(ast && ast.op && ast.op === "or")
+             lex = `(${lex})`;
+         if (lex) toAdd.unshift(lex);
+         lex = toAdd.join(" and ");
+    }
     //
     tmplt.constraintLogic = lex;
 
