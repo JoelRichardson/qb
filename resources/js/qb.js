@@ -335,22 +335,17 @@ function compileTemplate(template, model) {
     //
     var subclassCs = [];
     t.where && t.where.forEach(function(c){
-        if (c.code) t.code2c[c.code] = c;
         if (c.type) {
-            c.ctype = "subclass";
             c.op = "ISA"
             subclassCs.push(c);
         }
-        else if (c.op === "LOOKUP")
-            c.ctype = "lookup";
-        else if (c.op === "IN" || c.op === "NOT IN")
-            c.ctype = "list";
-        else if (c.op === "IS NULL" || c.op === "IS NOT NULL")
-            c.ctype = "null"
-        else if (c.op === "ONE OF" || c.op === "NONE OF")
-            c.ctype = "multivalue";
-        else
-            c.ctype = "value";
+        c.ctype = OPINDEX[c.op].ctype;
+        if (c.code) t.code2c[c.code] = c;
+        if (c.ctype === "null"){
+            // With null/not-null constraints, IM has a weird convention of filling the value 
+            // field with the operator value
+            c.value = "";
+        }
     })
     // must process any subclass constraints first, from shortest to longest path
     subclassCs
@@ -830,7 +825,10 @@ function initOptionList(selector, data, cfg){
 
 //
 function initCEinputs(n, ctype, c) {
-    if (ctype === "subclass") {
+    if (ctype === "lookup") {
+        d3.select('#constraintEditor input[name="value"]')[0][0].value = c.value;
+    }
+    else if (ctype === "subclass") {
         // Create an option list of subclass names
         initOptionList(
             '#constraintEditor select[name="values"]',
@@ -855,7 +853,6 @@ function initCEinputs(n, ctype, c) {
             { multiple: true, value: d => d, title: d => d });
     } else if (ctype === "value") {
         d3.select('#constraintEditor input[name="value"]')[0][0].value = c.value;
-
     }
 }
 
@@ -925,18 +922,46 @@ function openConstraintEditor(c, n){
 //   n  (node)  The node we're working on
 //   c  (constraint) The constraint to generate the list for
 function generateOptionList(n, c){
-    var j = uncompileTemplate(currTemplate);
-    var x = json2xml(j, true);
-    var e = encodeURIComponent(x);
-    var p = getPath(n);
+    // To get the list, we have to run the current query with an additional parameter, 
+    // summaryPath, which is the path we want distinct values for. 
+    // BUT NOTE, we have to run the query *without* constraint c!!
+    // Example: suppose we have a query with a constraint alleleType=Targeted,
+    // and we want to change it to Spontaneous. We open the c.e., and then click the
+    // sync button to get a list. If we run the query with c intact, we'll get a list
+    // containint only "Targeted". Doh!
+    // ANOTHER NOTE: the path in summaryPath must *already* be part of the query.
 
-    var url = `${currMine.url}/service/query/results?summaryPath=${p}&format=jsonrows&query=${e}`
-    c.summarizePath = true;
-    d3.select('#constraintEditor')
-        .classed("summarized", true);
+    let p = getPath(n); // what we want to summarize
+    let lex = currTemplate.constraintLogic; // save this
+    removeConstraint(n, c, false); // temporarilt remove the constraint
+    let j = uncompileTemplate(currTemplate);
+    j.select.push(p); // make sure p is part of the query
+    currTemplate.constraintLogic = lex; // restore this
+    addConstraint(n, false, c); // re-add the constraint
+
+    let x = json2xml(j, true);
+    let e = encodeURIComponent(x);
+
+    let url = `${currMine.url}/service/query/results?summaryPath=${p}&format=jsonrows&query=${e}`
     console.log("Getting unique values for: " + p);
+    let threshold = 250;
+    d3.select("#constraintEditor")
+        .classed("summarizing", true);
     d3jsonPromise(url).then(function(json){
-        var opts = d3.select('#constraintEditor [name="values"]')
+        d3.select("#constraintEditor")
+            .classed("summarizing", false);
+        if (json.results.length > threshold) {
+            //let ans = alert(`Threshold exceeded: showing ${threshold} of ${json.results.length} results.`);
+            let ans = prompt(`There are ${json.results.length} results, which exceeds the threshold of ${threshold}. How many do you want to show?`, threshold);
+            if (ans === null) return;
+            ans = parseInt(ans);
+            if (isNaN(ans) || ans <= 0) return;
+            json.results = json.results.slice(0, ans);
+        }
+        c.summarizePath = true;
+        d3.select('#constraintEditor')
+            .classed("summarized", true);
+        let opts = d3.select('#constraintEditor [name="values"]')
             .selectAll('option')
             .data(json.results);
         opts.enter().append("option");
@@ -965,9 +990,16 @@ function nextAvailableCode(tmplt){
     return null;
 }
 
+// Adds a new constraint to a node and returns it.
+// Args:
+//   n (node) The node to add the constraint to. Required.
+//   updateUI (boolean) If true, update the display. If false or not specified, no update.
+//   c (constraint) If given, use that constraint. Otherwise autogenerate.
+// Returns:
+//   The new constraint.
 //
-function addConstraint(n, updateUI) {
-    var c = newConstraint(n);
+function addConstraint(n, updateUI, c) {
+    c = c ? c : newConstraint(n);
     n.constraints.push(c);
     currTemplate.where.push(c);
     currTemplate.code2c[c.code] = c;
@@ -983,15 +1015,18 @@ function addConstraint(n, updateUI) {
 }
 
 //
-function removeConstraint(c, n){
+function removeConstraint(n, c, updateUI){
     n.constraints = n.constraints.filter(function(cc){ return cc !== c; });
     currTemplate.where = currTemplate.where.filter(function(cc){ return cc !== c; });
     delete currTemplate.code2c[c.code];
     if (c.ctype === "subclass") n.subclassConstraint = null;
     setLogicExpression(currTemplate.constraintLogic, currTemplate);
     //
-    update(n);
-    showDialog(n, null, true);
+    if (updateUI) {
+        update(n);
+        showDialog(n, null, true);
+    }
+    return c;
 }
 //
 function saveConstraintEdits(n, c){
@@ -1002,21 +1037,28 @@ function saveConstraintEdits(n, c){
     c.op = o;
     c.ctype = OPINDEX[o].ctype;
     if (c.ctype === "null"){
-        c.value = c.op; // because Intermine wants it that way
-        c.type = c.values = null;
+        c.value = c.type = c.values = null;
     }
     else if (c.ctype === "subclass") {
         c.type = vs
         c.value = c.values = null;
         setSubclassConstraint(n, c.type)
     }
-    else if (c.ctype === "multivalue") {
-        c.values = [].concat(vs);
-        c.value = c.type = null;
+    else if (c.ctype === "lookup") {
+        c.value = v;
+        c.values = c.type = null;
     }
     else if (c.ctype === "list") {
         c.value = vs;
         c.values = c.type = null;
+    }
+    else if (c.ctype === "multivalue") {
+        c.values = [].concat(vs);
+        c.value = c.type = null;
+    }
+    else if (c.ctype === "range") {
+        c.values = [].concat(vs);
+        c.value = c.type = null;
     }
     else if (c.ctype === "value") {
         c.value = z ? vs : v;
@@ -1141,7 +1183,7 @@ function showDialog(n, elt, refreshOnly){
       });
   constrs.select("i.cancel")
       .on("click", function(c){ 
-          removeConstraint(c, n);
+          removeConstraint(n, c, true);
       })
 
 

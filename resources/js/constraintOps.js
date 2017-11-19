@@ -1,3 +1,15 @@
+// QB groups operators in classes called ctype's:
+//      ctype           ops
+//      =====           ===
+//      null            IS NULL, IS NOT NULL
+//      lookup          LOOKUP
+//      subclass        ISA (*)
+//      loop            LOOP (*)
+//      list            IN, NOT IN
+//      value           =, !=, <, <=, >, >=, CONTAINS, DOES NOT CONTAIN, LIKE, NOT LIKE
+//      multivalue      ONE OF, NONE OF
+//      range           WITHIN, OVERLAPS, OUTSIDE, DOES NOT OVERLAP
+//
 // Constraints on attributes:
 // - value (comparing an attribute to a value, using an operator)
 //      > >= < <= = != LIKE NOT-LIKE CONTAINS DOES-NOT-CONTAIN
