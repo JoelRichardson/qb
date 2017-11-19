@@ -23,7 +23,28 @@ function selectText(containerid) {
     }
 }
 
+// xml2jsonobj
+function xml2jsonobj(xml){
+    let parser = new DOMParser();
+    let dom = parser.parseFromString(xml);
+
+    var tmplt = dom.getElementsByTagName("template")[0];
+    var query = dom.getElementsByTagName("query")[0];
+
+}
+
+// Returns a deep copy of object o. 
+// Args:
+//   o  (object) Must be a JSON object (no curcular refs, no functions).
+// Returns:
+//   a deep copy of o
+function deepc(o) {
+    if (!o) return o;
+    return JSON.parse(JSON.stringify(o));
+}
+
 module.exports = {
     d3jsonPromise,
-    selectText
+    selectText,
+    deepc
 }

@@ -15,10 +15,6 @@
     background-color: black;
 }
 
-#constraintEditor .button.sync {
-    display: none
-}
-
 #constraintEditor.open {
     display: flex;
     flex-direction: row;
@@ -39,28 +35,41 @@
 }
 
 /* The following rules make the right subset of controls appear in the constrain editor,
- * based on the selected operator. */
-#constraintEditor .in {
+ * based on the selected operator. 
+ * */
+
+#constraintEditor .button.sync,
+#constraintEditor input[name="value"],
+#constraintEditor select[name="values"] {
     display: none;
 }
-#constraintEditor .in[name="op"] {
+
+#constraintEditor.list select[name="values"],
+#constraintEditor.subclass select[name="values"],
+#constraintEditor.multivalue select[name="values"],
+#constraintEditor.summarized select[name="values"]{
     display: block;
 }
-#constraintEditor.list [name="list"] {
+#constraintEditor.lookup input[name="value"],
+#constraintEditor.value:not(.summarized) input[name="value"] {
     display: block;
 }
-#constraintEditor.subclass [name="type"] {
+#constraintEditor.value .button.sync,
+#constraintEditor.multivalue .button.sync {
     display: block;
 }
-#constraintEditor.lookup [name="value"] {
-    display: block;
+#constraintEditor.subclass [name="code"] {
+    display: none;
 }
-#constraintEditor.value [name="value"] {
+
+/* special rule for null constraints. Still need *something* to take up space where
+ * the input/select go. 
+ * Solution: still display the input box but make it invisible.
+ */
+#constraintEditor.null input[name="value"] {
     display: block;
-}
-#constraintEditor.value .button.sync {
-    /*display: block*/
-}
-#constraintEditor.multivalue [name="values"] {
-    display: block;
+    opacity: 0;
+    z-index: -1;
+    width: 10px;
+    flex-grow: 100;
 }

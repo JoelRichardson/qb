@@ -138,10 +138,16 @@ var OPS = [
     },{
     op: "ONE OF",
     ctype: "multivalue",
+    validForClass: false,
+    validForAttr: true,
+    validForRoot: false,
     validTypes: ["java.lang.String"]
     },{
     op: "NONE OF",
     ctype: "multivalue",
+    validForClass: false,
+    validForAttr: true,
+    validForRoot: false,
     validTypes: ["java.lang.String"]
     },
     

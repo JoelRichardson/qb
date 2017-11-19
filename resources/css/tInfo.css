@@ -40,29 +40,7 @@
     height: 45px;
 }
 
-#tInfoBar [name="summary"] {
-    display: none;
-    padding-left: 60px;
-}
-#tInfoBar [name="summary"] > * {
-    padding: 6px;
-}
-#tInfoBar.closed [name="summary"] {
-    display: flex;
-}
-#tInfoBar [name="summary"] [name="mine"]::after {
-    content: " ::";
-}
-
-#tInfoBar.closed {
-    height: 30px;
-}
-#tInfoBar.closed:hover {
-    cursor: pointer;
-}
-#tInfoBar.closed > div {
-    display: none;
-}
+/* Open/close buttons on the info bar */
 #tInfoBar > i.button {
     position: absolute;
     top: 3px;
@@ -71,39 +49,54 @@
 #tInfoBar > i[name="open"] {
     display: none;
 }
-#tInfoBar > i[name="close"] {
+#tInfoBar.closed > i[name="open"] {
     display: block;
 }
-#tInfoBar.closed > i[name="open"] {
+#tInfoBar > i[name="close"] {
     display: block;
 }
 #tInfoBar.closed > i[name="close"] {
     display: none;
 }
 
+#tInfoBar.closed [name="details"] {
+    display:none;
+}
+/* Top control bar */
 #tInfoBar [name="mineCtrls"] {
     padding-left: 80px;
     border-bottom: thin solid;
+}
+#tInfoBar.closed [name="mineCtrls"] {
+    border-bottom: none;
 }
 #tInfoBar [name="mineCtrls"] > div {
     padding: 4px;
     margin-top: 8px;
 }
-
-#tInfo {
+#tInfoBar [name="details"] {
+    align-items: flex-start;
+    overflow: hidden;
+}
+#tInfoBar.closed [name="details"] * {
+    opacity:0;
 }
 
+/* The template info bar */
+#tInfo .flexrow {
+    align-items: flex-start;
+}
 #tInfo > div {
-    display: flex;
-    flex-direction: row;
     width: 100%;
 }
 
 #tInfo >  div > div {
-    display: flex;
-    flex-direction: column;
     padding: 8px;
     flex-grow: 1;
+}
+
+#tInfo input {
+    width: 100%;
 }
 
 #tInfo [name="title"] {
@@ -138,6 +131,11 @@
     font-family: monospace;
     white-space: pre;
     overflow: scroll;
+    transition: height 0.5s;
+}
+
+#ttextdiv:focus {
+    height: 400px;
 }
 
 

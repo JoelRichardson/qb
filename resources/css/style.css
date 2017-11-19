@@ -30,3 +30,9 @@ label {
     flex-wrap: nowrap;
 }
 
+#svgContainer [name="spacebar"] {
+    height: 75px;
+    width: 100%;
+    opacity: 0;
+}
+

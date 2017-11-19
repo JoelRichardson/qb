@@ -25,11 +25,6 @@
             <i class="material-icons button" name="open">add</i>
             <i class="material-icons button" name="close">clear</i>
 
-            <div name="summary" class="flexrow">
-                <div name="mine">currmine</div>
-                <div name="template">currtemplate</div>
-            </div>
-
             <div name="mineCtrls" class="flexrow">
                 <!-- The list of available mines. -->
                 <div>
@@ -51,47 +46,52 @@
 
             </div>
 
-            <div class="flexrow">
-            <div id="tInfo" class="flexcolumn">
-            <div>
-                <!-- Name of current template -->
-                <div name="name">
-                    <label>Name</label>
-                    <input type="text" ></input>
+            <div name="details" class="flexrow">
+                <div id="tInfo" class="flexcolumn">
+                    <div class="flexrow">
+                        <!-- Name of current template -->
+                        <div name="name" class="flexcolumn">
+                            <label>Name</label>
+                            <input type="text" ></input>
+                        </div>
+                        <!-- Title of current template -->
+                        <div name="title" class="flexcolumn">
+                            <label>Title</label>
+                            <input type="text" ></input>
+                        </div>
+                    </div>
+                    <div class="flexrow">
+                        <!-- Description text -->
+                        <div name="description" class="flexcolumn">
+                            <label>Description</label>
+                            <textarea cols="40" rows="4"></textarea>
+                        </div>
+                        <!-- Comment text -->
+                        <div name="comment" class="flexcolumn">
+                            <label>Comment</label>
+                            <textarea cols="40" rows="4"></textarea>
+                        </div>
+                    </div>    
+                    <div class="flexrow">
+                        <!-- Constraint logic expression -->
+                        <div name="logicExpression" class="flexcolumn">
+                            <label>Logic expression</label>
+                            <input size="40" type="text" ></input>
+                        </div>
+                        <!-- spacer -->
+                        <div class="flexcolumn">
+                            <span>&nbsp;</span>
+                            <span>&nbsp;</span>
+                        </div>
+                    </div>
                 </div>
-                <!-- Title of current template -->
-                <div name="title">
-                    <label>Title</label>
-                    <input type="text" ></input>
-                </div>
-            </div>
-            <div>
-                <!-- Description text -->
-                <div name="description">
-                    <label>Description</label>
-                    <textarea cols="40" rows="4"></textarea>
-                </div>
-                <!-- Comment text -->
-                <div name="comment">
-                    <label>Comment</label>
-                    <textarea cols="40" rows="4"></textarea>
-                </div>
-            </div>    
-            <div>
-                <!-- Constraint logic expression -->
-                <div name="logicExpression">
-                    <label>Logic expression</label>
-                    <input size="40" type="text" ></input>
-                </div>
-            </div>
-            </div>
 
-            <!-- Where the query text is dumped with every update. -->
-            <div id="ttext">
-                <label>Query XML</label>
-                <div id="ttextdiv" tabindex="-1"> <!-- tabindex makes it focusable-->
+                <!-- Where the query text is dumped with every update. -->
+                <div id="ttext" class="flexcolumn">
+                    <label>Query XML</label>
+                    <div id="ttextdiv" tabindex="-1"> <!-- tabindex makes it focusable-->
+                    </div>
                 </div>
-            </div>
             </div>
 
         </div> <!-- end of tInfoBar -->
@@ -101,6 +101,7 @@
             <a id="biggreenbutton" name="runquery" href="" target="_blank">Run this query</a>
             <img id="mineLogo" src=""></img>
             <svg></svg>
+            <div name="spacebar"></div>
         </div>
 
         <!-- The footer -->
@@ -170,22 +171,19 @@
 
         <!-- Constraint editor. The little popup you get when you edit a constraint at a node. -->
         <div id="constraintEditor">
-            <!-- All the potential inputs. For a given constraint, only a subset are displayed,
-                 depending on the operator (all done thru css). -->
+            <i class="material-icons button sync" title="Generate option list" >sync</i>
             <select class="in" name="op" placeholder="constraint operator"></select>
+            <!-- -->
             <input class="in" name="value" type="text" placeholder="value"></input>
-            <input class="in" name="values" type="text" placeholder="multivalued constraint" ></input>
-            <select class="in" name="list" placeholder="list constraint"></select>
-            <select class="in" name="type" type="text" placeholder="subclass constraint"></select>
+            <select class="in" name="values"></select>
             <div name="code"></div>
+            <!-- -->
             <i class="material-icons button save" title="Save changes">check</i>
             <i class="material-icons button close" title="Cancel" >close</i>
-            <i class="material-icons button sync" title="Generate option list" >sync</i>
         </div>
 
     </div>  
 
-    <!--<script type="text/javascript" src="./resources/js/qb.js"> </script>-->
     <script type="text/javascript" src="./dist/qb.bundle.js"> </script>
 
 </body>
