@@ -31,6 +31,8 @@ var currTemplate;
 var currNode;
 var layoutStyle = "tree";
 var animationDuration = 250; // ms
+let defaultColors = { header: { main: "#595455", text: "#fff" } };
+let defaultLogo = "http://intermine.readthedocs.org/en/latest/_static/img/logo.png";
 
 function setup(){
     m = [20, 120, 20, 120]
@@ -65,7 +67,6 @@ function setup(){
         currTemplate = null;
 
         var ml = d3.select("#mlist").selectAll("option").data(mines);
-        //var selectMine = "PhytoMine";
         var selectMine = "MouseMine";
         ml.enter().append("option")
             .attr("value", function(d){return d.name;})
@@ -149,7 +150,6 @@ function selectedMine(mname){
         currMine.model = compileModel(j_model)
         currMine.templates = j_templates.templates;
         currMine.lists = j_lists.lists;
-        currMine.branding = j_branding.properties;
         //
         currMine.tlist = obj2array(currMine.templates)
         currMine.tlist.sort(function(a,b){ 
@@ -166,14 +166,15 @@ function selectedMine(mname){
         d3.select("#tlist").on("change", function(){ selectedTemplate(this.value); });
         selectedTemplate(currMine.tlist[0].name);
         // Apply branding
-        var clrs = (currMine.branding.colors || currMine.branding.colours);
-        var bgc = clrs.header?clrs.header.main:clrs.main.fg;
-        var txc = clrs.header?clrs.header.text:(clrs.main.bg || clrs.main.bkg);
+        let clrs = currMine.colors || defaultColors;
+        let bgc = clrs.header ? clrs.header.main : clrs.main.fg;
+        let txc = clrs.header ? clrs.header.text : clrs.main.bg;
+        let logo = currMine.images.logo || defaultLogo;
         d3.select("#tInfoBar")
             .style("background-color", bgc)
             .style("color", txc);
         d3.select("#mineLogo")
-            .attr("src", currMine.branding.images.logo);
+            .attr("src", logo);
 
     }, function(error){
         alert(`Could not access ${currMine.name}. Status=${error.status}. Error=${error.statusText}. (If there is no error message, then its probably a CORS issue.)`);
@@ -792,7 +793,7 @@ function initOptionList(selector, data, cfg){
     
     var ident = (x=>x);
     var opts;
-    if(data.length > 0){
+    if(data && data.length > 0){
         opts = d3.select(selector)
             .selectAll("option")
             .data(data);
@@ -857,6 +858,10 @@ function initCEinputs(n, ctype, c) {
             { multiple: true, value: d => d, title: d => d });
     } else if (ctype === "value") {
         d3.select('#constraintEditor input[name="value"]')[0][0].value = c.value;
+    } else if (ctype === "null") {
+    }
+    else {
+        throw "Unrecognized ctype: " + ctype
     }
 }
 
@@ -897,6 +902,7 @@ function openConstraintEditor(c, n){
         '#constraintEditor select[name="op"]', 
         OPS.filter(function(op){ return opValidFor(op, n); }),
         { multiple: false, value: d => d.op, title: d => d.op, selected:c.op });
+    initCEinputs(n, c.ctype, c);
 
     // When user selects an operator, add a class to the c.e.'s container
     d3.select('#constraintEditor [name="op"]')
@@ -909,7 +915,6 @@ function openConstraintEditor(c, n){
             initCEinputs(n, op.ctype, c);
         })
         ;
-    initCEinputs(n, c.ctype, c);
 
     d3.select("#constraintEditor .button.close")
         .on("click", hideConstraintEditor);
@@ -1057,7 +1062,13 @@ function saveConstraintEdits(n, c){
         c.values = c.type = null;
     }
     else if (c.ctype === "multivalue") {
-        c.values = [].concat(vs);
+        let vals = [];
+        d3.select('#constraintEditor [name="values"]')
+            .selectAll("option")
+            .each( function() {
+                if (this.selected) vals.push(this.value);
+            });
+        c.values = vals;
         c.value = c.type = null;
     }
     else if (c.ctype === "range") {
