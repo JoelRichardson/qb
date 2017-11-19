@@ -825,6 +825,10 @@ function initOptionList(selector, data, cfg){
 
 //
 function initCEinputs(n, ctype, c) {
+
+    d3.select('#constraintEditor select[name="values"]')
+        .attr("multiple", function(){ return ctype === "multivalue" || null; });
+
     if (ctype === "lookup") {
         d3.select('#constraintEditor input[name="value"]')[0][0].value = c.value;
     }
