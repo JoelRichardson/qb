@@ -106,18 +106,25 @@
 
         <!-- The footer -->
         <div id="footer" class="flexrow">
-            <!-- Two ways of drawing the tree. Why? Because we can! (It's D3 after all.)-->
-            <div>
-                <label>Layout</label>
-                <select id="layoutstyle">
-                    <option>tree</option>
-                    <option>dendrogram</option>
-                </select>
+            <div class="flexrow left" >
+
+                <!--
+                <i id="undoButton" title="Undo" class="material-icons button undo">undo</i>
+                <i id="redoButton" title="Redo" class="material-icons button redo">redo</i>
+                -->
+
+                <div class="flexcol">
+                    <label>Layout</label>
+                    <select id="layoutstyle">
+                        <option>tree</option>
+                        <option>dendrogram</option>
+                    </select>
+                </div>
             </div>
-            <div>
+            <div class="center">
                 <a target="_blank" href="https://github.com/JoelRichardson/qb">QB@GitHub</a>
             </div>
-            <div>
+            <div class="right">
                 <span>Powered by <a target="_blank" href="http://intermine.org">InterMine</a> and <a target="_blank" href="https://d3js.org/">D3</a>.</span>
             </div>
         </div>
@@ -180,8 +187,9 @@
             <!-- -->
             <i class="material-icons button save" title="Save changes">check</i>
             <i class="material-icons button close" title="Cancel" >close</i>
-            <div name="overlay"></a>
+            <div name="overlay"></div>
         </div>
+
 
     </div>  
 

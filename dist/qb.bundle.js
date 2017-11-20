@@ -524,7 +524,7 @@ function newConstraint(n) {
         code: nextAvailableCode(currTemplate),
         path: getPath(n),
         summarizePath : false,
-        value: "IS NOT NULL",
+        value: null,
         values: null,
         type: null
     }
@@ -860,9 +860,10 @@ function updateCEinputs(c, op){
 //   cfg (object) Additional optional configs:
 //       title - function or literal for setting the text of the option. 
 //       value - function or literal setting the value of the option
-//       selected - function or array for deciding which option(s) are selected
+//       selected - function or array or string for deciding which option(s) are selected
 //          If function, called for each option.
 //          If array, specifies the values the select.
+//          If string, specifies which value is selected
 //       emptyMessage - a message to show if the data list is empty
 //       multiple - if true, make it a multi-select list
 //
@@ -879,13 +880,20 @@ function initOptionList(selector, data, cfg){
         //
         opts.attr("value", cfg.value || ident)
             .text(cfg.title || ident)
-            .attr("selected", null);
-        if (typeof(cfg.selected) === "function")
+            .attr("selected", null)
+            .attr("disabled", null);
+        if (typeof(cfg.selected) === "function"){
+            // selected if the function says so
             opts.attr("selected", d => cfg.selected(d)||null);
-        else if (Array.isArray(cfg.selected))
-            opts.attr("selected", d => cfg.selected.indexof((cfg.value || ident)(d)) != -1 || null);
-        else if (cfg.selected)
+        }
+        else if (Array.isArray(cfg.selected)) {
+            // selected if the opt's value is in the array
+            opts.attr("selected", d => cfg.selected.indexOf((cfg.value || ident)(d)) != -1 || null);
+        }
+        else if (cfg.selected) {
+            // selected if the opt's value matches
             opts.attr("selected", d => ((cfg.value || ident)(d) === cfg.selected) || null);
+        }
     }
     else {
         opts = d3.select(selector)
@@ -901,9 +909,13 @@ function initOptionList(selector, data, cfg){
     return opts;
 }
 
+// Initializes the input elements in the constraint editor from the given constraint.
 //
-function initCEinputs(n, ctype, c) {
+function initCEinputs(n, c, ctype) {
 
+    ctype = ctype || c.ctype;
+
+    // set/remove the "multiple" attribute of the select element according to ctyoe
     d3.select('#constraintEditor select[name="values"]')
         .attr("multiple", function(){ return ctype === "multivalue" || null; });
 
@@ -915,24 +927,39 @@ function initCEinputs(n, ctype, c) {
         initOptionList(
             '#constraintEditor select[name="values"]',
             n.parent ? getSubclasses(n.pcomp.kind ? n.pcomp.type : n.pcomp) : [],
-            { multiple: false, value: d => d.name, title: d => d.name, emptyMessage: "(No subclasses)" }
-        ).attr("selected",function(d){ 
-            // Find the one whose name matches the node's type and set its selected attribute
-            var matches = d.name === ((n.subclassConstraint || n.ptype).name || n.ptype);
-            return matches || null;
+            { multiple: false,
+            value: d => d.name,
+            title: d => d.name,
+            emptyMessage: "(No subclasses)",
+            selected: function(d){ 
+                // Find the one whose name matches the node's type and set its selected attribute
+                var matches = d.name === ((n.subclassConstraint || n.ptype).name || n.ptype);
+                return matches || null;
+                }
             });
     }
     else if (ctype === "list") {
         initOptionList(
             '#constraintEditor select[name="values"]',
             currMine.lists.filter(function (l) { return isValidListConstraint(l, currNode); }),
-            { multiple: false, value: d => d.title, title: d => d.title , emptyMessage: "(No lists)"});
+            { multiple: false,
+            value: d => d.title,
+            title: d => d.title,
+            emptyMessage: "(No lists)",
+            selected: c.value,
+            });
     }
     else if (ctype === "multivalue") {
+        let vals = c.ctype === "multivalue" ? c.values : [c.value]
         initOptionList(
             '#constraintEditor select[name="values"]',
-            c.values,
-            { multiple: true, value: d => d, title: d => d });
+            vals,
+            {
+            multiple: true,
+            value: d => d,
+            title: d => d,
+            selected: vals
+            });
     } else if (ctype === "value") {
         d3.select('#constraintEditor input[name="value"]')[0][0].value = c.value;
     } else if (ctype === "null") {
@@ -979,7 +1006,7 @@ function openConstraintEditor(c, n){
         '#constraintEditor select[name="op"]', 
         __WEBPACK_IMPORTED_MODULE_1__ops_js__["OPS"].filter(function(op){ return opValidFor(op, n); }),
         { multiple: false, value: d => d.op, title: d => d.op, selected:c.op });
-    initCEinputs(n, c.ctype, c);
+    initCEinputs(n, c);
 
     // When user selects an operator, add a class to the c.e.'s container
     d3.select('#constraintEditor [name="op"]')
@@ -989,7 +1016,7 @@ function openConstraintEditor(c, n){
             var smzd = ce.classed("summarized");
             ce.attr("class", "open " + op.ctype)
                 .classed("summarized", smzd);
-            initCEinputs(n, op.ctype, c);
+            initCEinputs(n, c, op.ctype);
         })
         ;
 
@@ -1006,7 +1033,8 @@ function openConstraintEditor(c, n){
 // Generates an option list of distinct values to select from.
 // Args:
 //   n  (node)  The node we're working on
-//   c  (constraint) The constraint to generate the list for
+//   c  (constraint) The constraint to generate the list for.
+// NB: Only value and multivaue constraints can be summarized in this way.  
 function generateOptionList(n, c){
     // To get the list, we have to run the current query with an additional parameter, 
     // summaryPath, which is the path we want distinct values for. 
@@ -1015,29 +1043,45 @@ function generateOptionList(n, c){
     // and we want to change it to Spontaneous. We open the c.e., and then click the
     // sync button to get a list. If we run the query with c intact, we'll get a list
     // containint only "Targeted". Doh!
-    // ANOTHER NOTE: the path in summaryPath must *already* be part of the query.
+    // ANOTHER NOTE: the path in summaryPath must be part of the query proper. The approach
+    // here is to ensure it by adding the path to the view list.
 
+    var cvals;
+    if (c.ctype === "multivalue") {
+        cvals = c.values;
+    }
+    else if (c.ctype === "value") {
+        cvals = [ c.value ];
+    }
+    else
+        cvals = [];
+
+    // build the query
     let p = getPath(n); // what we want to summarize
-    let lex = currTemplate.constraintLogic; // save this
-    removeConstraint(n, c, false); // temporarilt remove the constraint
+    let lex = currTemplate.constraintLogic; // save constraint logic expr
+    removeConstraint(n, c, false); // temporarily remove the constraint
     let j = uncompileTemplate(currTemplate);
     j.select.push(p); // make sure p is part of the query
-    currTemplate.constraintLogic = lex; // restore this
+    currTemplate.constraintLogic = lex; // restore the logic expr
     addConstraint(n, false, c); // re-add the constraint
 
+    // build the url
     let x = json2xml(j, true);
     let e = encodeURIComponent(x);
-
     let url = `${currMine.url}/service/query/results?summaryPath=${p}&format=jsonrows&query=${e}`
-    console.log("Getting unique values for: " + p);
     let threshold = 250;
+
+    // signal that we're starting
     d3.select("#constraintEditor")
         .classed("summarizing", true);
+    // go!
     Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["d3jsonPromise"])(url).then(function(json){
+        // The list of values is in json.reults.
+        // Each list item looks like: { item: "somestring", count: 17 }
+        // (Yes, we get counts for free! Ought to make use of this.)
         d3.select("#constraintEditor")
             .classed("summarizing", false);
         if (json.results.length > threshold) {
-            //let ans = alert(`Threshold exceeded: showing ${threshold} of ${json.results.length} results.`);
             let ans = prompt(`There are ${json.results.length} results, which exceeds the threshold of ${threshold}. How many do you want to show?`, threshold);
             if (ans === null) return;
             ans = parseInt(ans);
@@ -1053,7 +1097,9 @@ function generateOptionList(n, c){
         opts.enter().append("option");
         opts.exit().remove();
         opts.attr("value", function(d){ return d.item; })
-            .text(function(d){ return d.item; });
+            .text(function(d){ return d.item; })
+            .attr("disabled", null)
+            .attr("selected", d => cvals.indexOf(d.item) !== -1 || null);
     })
 }
 //
@@ -1116,44 +1162,47 @@ function removeConstraint(n, c, updateUI){
 }
 //
 function saveConstraintEdits(n, c){
+    //
     let o = d3.select('#constraintEditor [name="op"]')[0][0].value;
-    let v = d3.select('#constraintEditor [name="value"]')[0][0].value;
-    let vs = d3.select('#constraintEditor [name="values"]')[0][0].value;
-    let z = d3.select('#constraintEditor').classed("summarized");
     c.op = o;
     c.ctype = __WEBPACK_IMPORTED_MODULE_1__ops_js__["OPINDEX"][o].ctype;
+    //
+    let val = d3.select('#constraintEditor [name="value"]')[0][0].value;
+    let vals = [];
+    d3.select('#constraintEditor [name="values"]')
+        .selectAll("option")
+        .each( function() {
+            if (this.selected) vals.push(this.value);
+        });
+
+    let z = d3.select('#constraintEditor').classed("summarized");
+
     if (c.ctype === "null"){
         c.value = c.type = c.values = null;
     }
     else if (c.ctype === "subclass") {
-        c.type = vs
+        c.type = vals[0]
         c.value = c.values = null;
         setSubclassConstraint(n, c.type)
     }
     else if (c.ctype === "lookup") {
-        c.value = v;
+        c.value = val;
         c.values = c.type = null;
     }
     else if (c.ctype === "list") {
-        c.value = vs;
+        c.value = vals[0];
         c.values = c.type = null;
     }
     else if (c.ctype === "multivalue") {
-        let vals = [];
-        d3.select('#constraintEditor [name="values"]')
-            .selectAll("option")
-            .each( function() {
-                if (this.selected) vals.push(this.value);
-            });
         c.values = vals;
         c.value = c.type = null;
     }
     else if (c.ctype === "range") {
-        c.values = [].concat(vs);
+        c.values = vals;
         c.value = c.type = null;
     }
     else if (c.ctype === "value") {
-        c.value = z ? vs : v;
+        c.value = z ? vals[0] : val;
         c.type = c.values = null;
     }
     else {
@@ -1579,40 +1628,43 @@ function json2xml(t, qonly){
     var esc = function(s){ return s.replace(/</g, "&lt;").replace(/"/g, "&quot;").replace(/&/g, "&amp;"); };
     // Converts a constraint to xml
     function c2xml(c){
-        var g;
+        let g = '';
+        let h = '';
         if (c.ctype === "value" || c.ctype === "lookup" || c.ctype === "list")
-            g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.value)}" code="${c.code}" editable="${c.editable}"`
-        else if (c.ctype === "multivalue")
-            g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.values.join(', '))}" code="${c.code}" editable="${c.editable}"`
+            g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.value)}" code="${c.code}" editable="${c.editable}"`;
+        else if (c.ctype === "multivalue"){
+            g = `path="${c.path}" op="${esc(c.op)}" code="${c.code}" editable="${c.editable}"`;
+            h = c.values.map( v => `<value>${esc(v)}</value>` ).join('');
+        }
         else if (c.ctype === "subclass")
-            g = `path="${c.path}" type="${c.type}" editable="false"`
+            g = `path="${c.path}" type="${c.type}" editable="false"`;
         else if (c.ctype === "null")
-            g = `path="${c.path}" op="${c.op}" code="${c.code}" editable="${c.editable}"`
-        return `<constraint ${g} />\n`
+            g = `path="${c.path}" op="${c.op}" code="${c.code}" editable="${c.editable}"`;
+        if(h)
+            return `<constraint ${g}>${h}</constraint>\n`;
+        else
+            return `<constraint ${g} />\n`;
     }
 
     // the query part
     var qpart = 
-    `<query
-      name="${t.name}"
-      model="${t.model.name}"
-      view="${t.select.join(' ')}"
-      longDescription="${esc(t.description)}"
-      sortOrder="${so}"
-      constraintLogic="${t.constraintLogic}"
-      >
-      ${t.where.map(c2xml).join(" ")}
-    </query>
-`;
+`<query
+  name="${t.name}"
+  model="${t.model.name}"
+  view="${t.select.join(' ')}"
+  longDescription="${esc(t.description)}"
+  sortOrder="${so}"
+  constraintLogic="${t.constraintLogic}">
+  ${t.where.map(c2xml).join(" ")}
+</query>`;
     // the whole template
     var tmplt = 
-    `<template
-      name="${t.name}"
-      title="${esc(t.title)}"
-      comment="${esc(t.comment)}"
-      >
-     ${qpart}
-     </template>
+`<template
+  name="${t.name}"
+  title="${esc(t.title)}"
+  comment="${esc(t.comment)}">
+ ${qpart}
+</template>
 `;
     return qonly ? qpart : tmplt
 }
