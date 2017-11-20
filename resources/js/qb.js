@@ -163,8 +163,8 @@ function selectedMine(mname){
         tl.exit().remove()
         tl.attr("value", function(d){ return d.name; })
           .text(function(d){return d.title;});
-        d3.select("#tlist").on("change", function(){ selectedTemplate(this.value); });
-        selectedTemplate(currMine.tlist[0].name);
+        d3.select("#tlist").on("change", function(){ editTemplate(currMine.templates[this.value]); });
+        editTemplate(currMine.templates[currMine.tlist[0].name]);
         // Apply branding
         let clrs = currMine.colors || defaultColors;
         let bgc = clrs.header ? clrs.header.main : clrs.main.fg;
@@ -587,14 +587,11 @@ function removeNode() {
 // Gets the template from the current mine and builds a set of nodes
 // for d3 tree display.
 //
-function selectedTemplate (tname) {
-    var t = currMine.templates[tname];
-    if (!t) {
-        return;
-    }
+function editTemplate (t) {
     // Make sure the editor works on a copy of the template.
     //
     currTemplate = deepc(t);
+    //
     root = compileTemplate(currTemplate, currMine.model).qtree
     root.x0 = h / 2;
     root.y0 = 0;

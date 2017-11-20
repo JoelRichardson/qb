@@ -162,7 +162,7 @@
 }
 
 #footer {
-    height: 5px;
+    height: 18px;
     width: 100%;
     background-color: #617896;
     color: #fff;
@@ -172,10 +172,6 @@
     align-items: center;
     padding: 6px 18px;
     justify-content: space-between;
-    transition: height 0.25s;
-}
-#footer:hover {
-    height: 35px;
 }
 #footer > div:last-child {
     padding-right: 30px;
