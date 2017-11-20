@@ -32,7 +32,7 @@ var currNode;
 var layoutStyle = "tree";
 var animationDuration = 250; // ms
 let defaultColors = { header: { main: "#595455", text: "#fff" } };
-let defaultLogo = "http://intermine.readthedocs.org/en/latest/_static/img/logo.png";
+let defaultLogo = "https://cdn.rawgit.com/intermine/design-materials/78a13db5/logos/intermine/squareish/45x45.png";
 
 function setup(){
     m = [20, 120, 20, 120]
@@ -838,7 +838,7 @@ function initCEinputs(n, ctype, c) {
         initOptionList(
             '#constraintEditor select[name="values"]',
             n.parent ? getSubclasses(n.pcomp.kind ? n.pcomp.type : n.pcomp) : [],
-            { multiple: false, value: d => d.name, title: d => d.name }
+            { multiple: false, value: d => d.name, title: d => d.name, emptyMessage: "(No subclasses)" }
         ).attr("selected",function(d){ 
             // Find the one whose name matches the node's type and set its selected attribute
             var matches = d.name === ((n.subclassConstraint || n.ptype).name || n.ptype);
@@ -849,7 +849,7 @@ function initCEinputs(n, ctype, c) {
         initOptionList(
             '#constraintEditor select[name="values"]',
             currMine.lists.filter(function (l) { return isValidListConstraint(l, currNode); }),
-            { multiple: false, value: d => d.title, title: d => d.title , emptyMessage: "No lists for this type."});
+            { multiple: false, value: d => d.title, title: d => d.title , emptyMessage: "(No lists)"});
     }
     else if (ctype === "multivalue") {
         initOptionList(
@@ -1284,7 +1284,6 @@ function showDialog(n, elt, refreshOnly){
 //  Sets currNode to null.
 //
 function hideDialog(){
-    console.log("boo!");
   currNode = null;
   var dialog = d3.select("#dialog")
       .classed("hidden", true)
