@@ -1546,6 +1546,10 @@ function json2xml(t, qonly){
 
     // Function to escape '<' '"' and '&' characters
     var esc = function(s){ return s.replace(/</g, "&lt;").replace(/"/g, "&quot;").replace(/&/g, "&amp;"); };
+    // Converts an outer join path to xml.
+    function oj2xml(oj){
+        return `<join path="${oj}" style="OUTER" />`;
+    }
     // Converts a constraint to xml
     function c2xml(c){
         let g = '';
@@ -1575,6 +1579,7 @@ function json2xml(t, qonly){
   longDescription="${esc(t.description)}"
   sortOrder="${so}"
   constraintLogic="${t.constraintLogic}">
+  ${t.joins.map(oj2xml).join(" ")}
   ${t.where.map(c2xml).join(" ")}
 </query>`;
     // the whole template
