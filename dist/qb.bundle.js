@@ -218,7 +218,6 @@ function selectedMine(mname){
         Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["d3jsonPromise"])(lurl),
         Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["d3jsonPromise"])(burl)
     ]).then( function(data) {
-        console.log("Promises fulfilled:", data)
         var j_model = data[0];
         var j_templates = data[1];
         var j_lists = data[2];
@@ -252,6 +251,8 @@ function selectedMine(mname){
             .style("color", txc);
         d3.select("#mineLogo")
             .attr("src", logo);
+        d3.select('#svgContainer [name="minename"]')
+            .text(currMine.name);
 
     }, function(error){
         alert(`Could not access ${currMine.name}. Status=${error.status}. Error=${error.statusText}. (If there is no error message, then its probably a CORS issue.)`);
@@ -790,7 +791,7 @@ function selectedNext(currNode,p,mode){
     var n = addPath(currTemplate, p.join("."), currMine.model );
     if (mode === "selected")
         n.view = true;
-    if (mode === "constrained" && n.constraints.length === 0) {
+    if (mode === "constrained") {
         cc = addConstraint(n, false)
     }
     hideDialog();
@@ -910,8 +911,22 @@ function initOptionList(selector, data, cfg){
 //
 function initCEinputs(n, c, ctype) {
 
+    // Populate the operator select list with ops appropriate for the path
+    // at this node.
+    if (!ctype) 
+      initOptionList(
+        '#constraintEditor select[name="op"]', 
+        __WEBPACK_IMPORTED_MODULE_1__ops_js__["OPS"].filter(function(op){ return opValidFor(op, n); }),
+        { multiple: false,
+        value: d => d.op,
+        title: d => d.op,
+        selected:c.op
+        });
+    //
+    //
     ctype = ctype || c.ctype;
-
+ 
+    //
     // set/remove the "multiple" attribute of the select element according to ctyoe
     d3.select('#constraintEditor select[name="values"]')
         .attr("multiple", function(){ return ctype === "multivalue" || null; });
@@ -947,23 +962,20 @@ function initCEinputs(n, c, ctype) {
             });
     }
     else if (ctype === "multivalue") {
-        let vals = c.ctype === "multivalue" ? c.values : [c.value]
-        initOptionList(
-            '#constraintEditor select[name="values"]',
-            vals,
-            {
-            multiple: true,
-            value: d => d,
-            title: d => d,
-            selected: vals
-            });
+        generateOptionList(n, c);
     } else if (ctype === "value") {
-        d3.select('#constraintEditor input[name="value"]')[0][0].value = c.value;
+        let attr = (n.parent.subclassConstraint || n.parent.ptype).name + "." + n.pcomp.name;
+        let acs = Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["getLocal"])("autocomplete", true, []);
+        if (acs.indexOf(attr) !== -1)
+            generateOptionList(n, c)
+        else
+            d3.select('#constraintEditor input[name="value"]')[0][0].value = c.value;
     } else if (ctype === "null") {
     }
     else {
         throw "Unrecognized ctype: " + ctype
     }
+    
 }
 
 // Opens the constraint editor for constraint c of node n.
@@ -984,7 +996,7 @@ function openConstraintEditor(c, n){
     // bounding box of the constraint's container div
     var cbb = cdiv.getBoundingClientRect();
     // bounding box of the app's main body element
-    var dbb = d3.select("#body")[0][0].getBoundingClientRect();
+    var dbb = d3.select("#qb")[0][0].getBoundingClientRect();
     // position the constraint editor over the constraint in the dialog
     var ced = d3.select("#constraintEditor")
         .attr("class", c.ctype)
@@ -997,12 +1009,6 @@ function openConstraintEditor(c, n){
     d3.select('#constraintEditor [name="code"]')
         .text(c.code);
 
-    // Populate the operator select list with ops appropriate for the path
-    // at this node.
-    initOptionList(
-        '#constraintEditor select[name="op"]', 
-        __WEBPACK_IMPORTED_MODULE_1__ops_js__["OPS"].filter(function(op){ return opValidFor(op, n); }),
-        { multiple: false, value: d => d.op, title: d => d.op, selected:c.op });
     initCEinputs(n, c);
 
     // When user selects an operator, add a class to the c.e.'s container
@@ -1017,8 +1023,8 @@ function openConstraintEditor(c, n){
         })
         ;
 
-    d3.select("#constraintEditor .button.close")
-        .on("click", hideConstraintEditor);
+    d3.select("#constraintEditor .button.cancel")
+        .on("click", function(){ cancelConstraintEditor(n, c) });
 
     d3.select("#constraintEditor .button.save")
         .on("click", function(){ saveConstraintEdits(n, c) });
@@ -1043,18 +1049,25 @@ function generateOptionList(n, c){
     // ANOTHER NOTE: the path in summaryPath must be part of the query proper. The approach
     // here is to ensure it by adding the path to the view list.
 
-    var cvals;
+    let cvals = [];
     if (c.ctype === "multivalue") {
         cvals = c.values;
     }
     else if (c.ctype === "value") {
         cvals = [ c.value ];
     }
-    else
-        cvals = [];
+
+    // Save this choice in localStorage
+    let attr = (n.parent.subclassConstraint || n.parent.ptype).name + "." + n.pcomp.name;
+    let key = "autocomplete";
+    let lst;
+    lst = Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["getLocal"])(key, true, []);
+    if(lst.indexOf(attr) === -1) lst.push(attr);
+    Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["setLocal"])(key, lst, true);
 
     // build the query
     let p = getPath(n); // what we want to summarize
+    //
     let lex = currTemplate.constraintLogic; // save constraint logic expr
     removeConstraint(n, c, false); // temporarily remove the constraint
     let j = uncompileTemplate(currTemplate);
@@ -1064,6 +1077,7 @@ function generateOptionList(n, c){
 
     // build the url
     let x = json2xml(j, true);
+    console.log("SUMMARIZE QUERY", x);
     let e = encodeURIComponent(x);
     let url = `${currMine.url}/service/query/results?summaryPath=${p}&format=jsonrows&query=${e}`
     let threshold = 250;
@@ -1076,8 +1090,7 @@ function generateOptionList(n, c){
         // The list of values is in json.reults.
         // Each list item looks like: { item: "somestring", count: 17 }
         // (Yes, we get counts for free! Ought to make use of this.)
-        d3.select("#constraintEditor")
-            .classed("summarizing", false);
+        //
         if (json.results.length > threshold) {
             let ans = prompt(`There are ${json.results.length} results, which exceeds the threshold of ${threshold}. How many do you want to show?`, threshold);
             if (ans === null) return;
@@ -1085,7 +1098,7 @@ function generateOptionList(n, c){
             if (isNaN(ans) || ans <= 0) return;
             json.results = json.results.slice(0, ans);
         }
-        c.summarizePath = true;
+        c.summarizePath = true;  // 
         d3.select('#constraintEditor')
             .classed("summarized", true);
         let opts = d3.select('#constraintEditor [name="values"]')
@@ -1097,9 +1110,18 @@ function generateOptionList(n, c){
             .text(function(d){ return d.item; })
             .attr("disabled", null)
             .attr("selected", d => cvals.indexOf(d.item) !== -1 || null);
+        // Signal that we're done.
+        d3.select("#constraintEditor")
+            .classed("summarizing", false);
     })
 }
 //
+function cancelConstraintEditor(n, c){
+    if (c.new) {
+        removeConstraint(n, c, true);
+    }
+    hideConstraintEditor();
+}
 function hideConstraintEditor(){
     d3.select("#constraintEditor").classed("open", null);
 }
@@ -1128,7 +1150,10 @@ function nextAvailableCode(tmplt){
 //   The new constraint.
 //
 function addConstraint(n, updateUI, c) {
-    c = c ? c : newConstraint(n);
+    if (!c) {
+        c = newConstraint(n);
+        c.new = true;
+    }
     n.constraints.push(c);
     currTemplate.where.push(c);
     currTemplate.code2c[c.code] = c;
@@ -1163,6 +1188,7 @@ function saveConstraintEdits(n, c){
     let o = d3.select('#constraintEditor [name="op"]')[0][0].value;
     c.op = o;
     c.ctype = __WEBPACK_IMPORTED_MODULE_1__ops_js__["OPINDEX"][o].ctype;
+    c.new = false;
     //
     let val = d3.select('#constraintEditor [name="value"]')[0][0].value;
     let vals = [];
@@ -1232,7 +1258,7 @@ function showDialog(n, elt, refreshOnly){
   //
   var dbb = dialog[0][0].getBoundingClientRect();
   var ebb = elt.getBoundingClientRect();
-  var bbb = d3.select("#body")[0][0].getBoundingClientRect();
+  var bbb = d3.select("#qb")[0][0].getBoundingClientRect();
   var t = (ebb.top - bbb.top) + ebb.width/2;
   var b = (bbb.bottom - ebb.bottom) + ebb.width/2;
   var l = (ebb.left - bbb.left) + ebb.height/2;
@@ -1622,7 +1648,7 @@ function json2xml(t, qonly){
     }, "");
 
     // Function to escape '<' '"' and '&' characters
-    var esc = function(s){ return s.replace(/</g, "&lt;").replace(/"/g, "&quot;").replace(/&/g, "&amp;"); };
+    var esc = function(s){ return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); };
     // Converts an outer join path to xml.
     function oj2xml(oj){
         return `<join path="${oj}" style="OUTER" />`;
@@ -1634,7 +1660,7 @@ function json2xml(t, qonly){
         if (c.ctype === "value" || c.ctype === "lookup" || c.ctype === "list")
             g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.value)}" code="${c.code}" editable="${c.editable}"`;
         else if (c.ctype === "multivalue"){
-            g = `path="${c.path}" op="${esc(c.op)}" code="${c.code}" editable="${c.editable}"`;
+            g = `path="${c.path}" op="${c.op}" code="${c.code}" editable="${c.editable}"`;
             h = c.values.map( v => `<value>${esc(v)}</value>` ).join('');
         }
         else if (c.ctype === "subclass")
@@ -2665,10 +2691,34 @@ function deepc(o) {
     return JSON.parse(JSON.stringify(o));
 }
 
+//
+let PREFIX="org.mgi.apps.qb";
+function testLocal(attr) {
+    return (PREFIX+"."+attr) in localStorage;
+}
+function setLocal(attr, val, encode){
+    localStorage[PREFIX+"."+attr] = encode ? JSON.stringify(val) : val;
+}
+function getLocal(attr, decode, dflt){
+    let key = PREFIX+"."+attr;
+    if (key in localStorage){
+        let v = localStorage[key];
+        if (decode) v = JSON.parse(v);
+        return v;
+    }
+    else {
+        return dflt;
+    }
+}
+
+//
 module.exports = {
     d3jsonPromise,
     selectText,
-    deepc
+    deepc,
+    getLocal,
+    setLocal,
+    testLocal
 }
 
 

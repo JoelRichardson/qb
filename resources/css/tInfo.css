@@ -27,17 +27,9 @@
 
 #tInfoBar {
     background-color: #ccc;
-    position: relative;
-    top: 49px;
     z-index: 90;
     width: 100%;
-}
-
-#mineLogo {
-    position: absolute;
-    top: 50px;
-    left: 2px;
-    height: 40px;
+    position: relative;
 }
 
 /* Open/close buttons on the info bar */
@@ -139,6 +131,13 @@
 }
 
 
+#mineLogo {
+    position: absolute;
+    top: 10px;
+    left: 2px;
+    height: 40px;
+}
+
 #biggreenbutton {
     background-color: green;
     color: white;
@@ -148,7 +147,7 @@
     text-decoration: none;
     text-align: center;
     position: absolute ;
-    top: 60px;
+    top: 20px;
     left: 12px;
 }
 

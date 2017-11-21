@@ -9,11 +9,11 @@
 
 </head>
 <body>
-    <div id="body">
+    <div id="qb">
         <div id="titleBar" class="flexrow">
             <!-- A cute little mascot. -->
             <img name="qblogo" title="QB" src="./resources/images/QB-logo.png"></img>
-            <span name="title">QB: A Query Builder for Intermine
+            <span name="title">QB: A Query Builder for InterMine
                 <span name="version">(v0.1.0)</span>
             </span>
 
@@ -98,7 +98,8 @@
 
         <!-- The container where the SVG drawing goes. -->
         <div id="svgContainer">
-            <a id="biggreenbutton" name="runquery" href="" target="_blank">Run this query</a>
+            <a id="biggreenbutton" name="runquery" href="" target="_blank">Run this query at
+            <span name="minename"></span></a>
             <img id="mineLogo" src=""></img>
             <svg></svg>
             <div name="spacebar"></div>
@@ -184,7 +185,7 @@
             <div name="code"></div>
             <!-- -->
             <i class="material-icons button save" title="Save changes">check</i>
-            <i class="material-icons button close" title="Cancel" >close</i>
+            <i class="material-icons button cancel" title="Cancel" >close</i>
             <div name="overlay"></div>
         </div>
 

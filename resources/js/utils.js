@@ -43,8 +43,32 @@ function deepc(o) {
     return JSON.parse(JSON.stringify(o));
 }
 
+//
+let PREFIX="org.mgi.apps.qb";
+function testLocal(attr) {
+    return (PREFIX+"."+attr) in localStorage;
+}
+function setLocal(attr, val, encode){
+    localStorage[PREFIX+"."+attr] = encode ? JSON.stringify(val) : val;
+}
+function getLocal(attr, decode, dflt){
+    let key = PREFIX+"."+attr;
+    if (key in localStorage){
+        let v = localStorage[key];
+        if (decode) v = JSON.parse(v);
+        return v;
+    }
+    else {
+        return dflt;
+    }
+}
+
+//
 module.exports = {
     d3jsonPromise,
     selectText,
-    deepc
+    deepc,
+    getLocal,
+    setLocal,
+    testLocal
 }
