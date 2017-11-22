@@ -25,17 +25,12 @@
             <i class="material-icons button" name="open">add</i>
             <i class="material-icons button" name="close">clear</i>
 
+            <!-- Select a mine and set your API token here. -->
             <div name="mineCtrls" class="flexrow">
                 <!-- The list of available mines. -->
                 <div>
                     <label>Mine</label>
                     <select id="mlist"></select>
-                </div>
-
-                <!-- Selected template from the currently selected mine. -->
-                <div>
-                    <label>Template</label>
-                    <select id="tlist"></select>
                 </div>
 
                 <!-- API token. -->
@@ -46,6 +41,17 @@
 
             </div>
 
+            <!-- Here live the controls for starting a new query. -->
+            <div name="editTarget" class="flexrow">
+                <!-- The list of saved templates. -->
+                <div>
+                    <label>Template</label>
+                    <select id="tlist"></select>
+                </div>
+
+            </div>
+
+            <!-- Details of the current query, e.g. name, description, etc. -->
             <div name="details" class="flexrow">
                 <div id="tInfo" class="flexcolumn">
                     <div class="flexrow">

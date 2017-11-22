@@ -51,19 +51,23 @@
     display: none;
 }
 
-#tInfoBar.closed [name="details"] {
+#tInfoBar.closed [name="details"],
+#tInfoBar.closed [name="editTarget"] {
     display:none;
 }
 /* Top control bar */
 #tInfoBar [name="mineCtrls"] {
     padding-left: 80px;
+    padding-right: 50px;
+    padding-bottom: 10px;
+    justify-content: space-between;
     border-bottom: thin solid;
 }
 #tInfoBar.closed [name="mineCtrls"] {
     border-bottom: none;
 }
 #tInfoBar [name="mineCtrls"] > div {
-    padding: 4px;
+    padding: 4px 30px;
     margin-top: 8px;
 }
 #tInfoBar [name="details"] {
@@ -72,6 +76,11 @@
 }
 #tInfoBar.closed [name="details"] * {
     opacity:0;
+}
+
+#tInfoBar [name="editTarget"] {
+    padding: 10px;
+    border-bottom: thin solid;
 }
 
 /* The template info bar */
