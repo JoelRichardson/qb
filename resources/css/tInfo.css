@@ -138,10 +138,10 @@
     height: 40px;
 }
 
-#biggreenbutton {
-    background-color: green;
+.fab {
+    background-color: gray;
     color: white;
-    padding: 22px;
+    padding: 16px 28px;
     width: 125px;
     border-radius: 20px;
     text-decoration: none;
@@ -151,11 +151,24 @@
     left: 12px;
 }
 
-#biggreenbutton:hover {
+.fab:hover {
+    color: blue;
+    cursor: pointer;
+}
+
+#runatmine {
+    background-color: green;
+}
+
+#runatmine:hover {
     color: orange;
 }
 
-/* this rule is so that the biggreenbutton positions correctly */
+#editatmine { 
+    top: 100px;
+}
+
+/* this rule is so that the floating action buttons (fab's) positions correctly */
 #svgContainer {
     position: relative;
 }

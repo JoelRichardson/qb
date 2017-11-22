@@ -251,7 +251,7 @@ function selectedMine(mname){
             .style("color", txc);
         d3.select("#mineLogo")
             .attr("src", logo);
-        d3.select('#svgContainer [name="minename"]')
+        d3.selectAll('#svgContainer [name="minename"]')
             .text(currMine.name);
 
     }, function(error){
@@ -1700,10 +1700,15 @@ function json2xml(t, qonly){
 //
 function updateTtext(){
   var txt = json2xml(uncompileTemplate(currTemplate));
-  var linkurl = currMine.url + "/loadQuery.do?skipBuilder=true&method=xml&trail=%7Cquery&query=" 
-      + encodeURIComponent(txt);
-  d3.select('#biggreenbutton')
-      .attr("href", linkurl);
+  var urlTxt = encodeURIComponent(txt);
+  var linkurl = currMine.url + "/loadQuery.do?trail=%7Cquery&method=xml";
+  var editurl = linkurl + "&query=" + urlTxt;
+  var runurl = linkurl + "&skipBuilder=true&query=" + urlTxt;
+  //var linkurl = currMine.url + "/loadQuery.do?skipBuilder=true&method=xml&trail=%7Cquery&query=" + encodeURIComponent(txt);
+  d3.select('#runatmine')
+      .attr("href", runurl);
+  d3.select('#editatmine')
+      .attr("href", editurl);
   d3.select("#ttextdiv") 
       .text(txt)
       .on("focus", function(){ Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["selectText"])("ttextdiv"); });
@@ -2646,6 +2651,11 @@ module.exports = { NUMERICTYPES, NULLABLETYPES, LEAFTYPES, OPS, OPINDEX };
 /* 3 */
 /***/ (function(module, exports) {
 
+// Promisifies a call to d3.json.
+// Args:
+//   url (string) The url of the json resource
+// Returns:
+//   a promise that resolves to the json object value, or rejects with an error
 function d3jsonPromise(url) {
     return new Promise(function(resolve, reject) {
         d3.json(url, function(error, json){

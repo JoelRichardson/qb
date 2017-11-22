@@ -1,3 +1,8 @@
+// Promisifies a call to d3.json.
+// Args:
+//   url (string) The url of the json resource
+// Returns:
+//   a promise that resolves to the json object value, or rejects with an error
 function d3jsonPromise(url) {
     return new Promise(function(resolve, reject) {
         d3.json(url, function(error, json){
