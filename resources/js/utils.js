@@ -67,6 +67,10 @@ function getLocal(attr, decode, dflt){
         return dflt;
     }
 }
+function clearLocal() {
+    let rmv = Object.keys(localStorage).filter(key => key.startsWith(PREFIX));
+    rmv.forEach( k => localStorage.removeItem(k) );
+}
 
 //
 module.exports = {
@@ -75,5 +79,6 @@ module.exports = {
     deepc,
     getLocal,
     setLocal,
-    testLocal
+    testLocal,
+    clearLocal
 }

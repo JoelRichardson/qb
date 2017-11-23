@@ -1020,7 +1020,9 @@ function initCEinputs(n, c, ctype) {
         generateOptionList(n, c);
     } else if (ctype === "value") {
         let attr = (n.parent.subclassConstraint || n.parent.ptype).name + "." + n.pcomp.name;
-        let acs = Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["getLocal"])("autocomplete", true, []);
+        //let acs = getLocal("autocomplete", true, []);
+        // disable this for now.
+        let acs = [];
         if (acs.indexOf(attr) !== -1)
             generateOptionList(n, c)
         else
@@ -1119,6 +1121,8 @@ function generateOptionList(n, c){
     lst = Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["getLocal"])(key, true, []);
     if(lst.indexOf(attr) === -1) lst.push(attr);
     Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["setLocal"])(key, lst, true);
+
+    Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["clearLocal"])();
 
     // build the query
     let p = getPath(n); // what we want to summarize
@@ -2789,6 +2793,10 @@ function getLocal(attr, decode, dflt){
         return dflt;
     }
 }
+function clearLocal() {
+    let rmv = Object.keys(localStorage).filter(key => key.startsWith(PREFIX));
+    rmv.forEach( k => localStorage.removeItem(k) );
+}
 
 //
 module.exports = {
@@ -2797,7 +2805,8 @@ module.exports = {
     deepc,
     getLocal,
     setLocal,
-    testLocal
+    testLocal,
+    clearLocal
 }
 
 

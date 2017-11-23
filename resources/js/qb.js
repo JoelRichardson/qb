@@ -15,7 +15,7 @@
 import parser from './parser.js';
 //import { mines } from './mines.js';
 import { NUMERICTYPES, NULLABLETYPES, LEAFTYPES, OPS, OPINDEX } from './ops.js';
-import { d3jsonPromise, selectText, deepc, getLocal, setLocal, testLocal } from './utils.js';
+import { d3jsonPromise, selectText, deepc, getLocal, setLocal, testLocal, clearLocal } from './utils.js';
 
 var name2mine;
 var currMine;
@@ -943,7 +943,9 @@ function initCEinputs(n, c, ctype) {
         generateOptionList(n, c);
     } else if (ctype === "value") {
         let attr = (n.parent.subclassConstraint || n.parent.ptype).name + "." + n.pcomp.name;
-        let acs = getLocal("autocomplete", true, []);
+        //let acs = getLocal("autocomplete", true, []);
+        // disable this for now.
+        let acs = [];
         if (acs.indexOf(attr) !== -1)
             generateOptionList(n, c)
         else
@@ -1042,6 +1044,8 @@ function generateOptionList(n, c){
     lst = getLocal(key, true, []);
     if(lst.indexOf(attr) === -1) lst.push(attr);
     setLocal(key, lst, true);
+
+    clearLocal();
 
     // build the query
     let p = getPath(n); // what we want to summarize
