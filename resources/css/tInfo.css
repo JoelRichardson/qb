@@ -179,7 +179,19 @@
 }
 
 #editatmine { 
-    top: 100px;
+    top: 120px;
+    display: none;
+}
+
+#querycount {
+    top: 80px;
+    padding-top: 8px;
+    background-color: transparent;
+    color: black;
+}
+#querycount:hover {
+    pointer: default;
+    color: black;
 }
 
 /* this rule is so that the floating action buttons (fab's) positions correctly */

@@ -86,7 +86,7 @@ function setup(){
         var dg = d3.select("#dialog");
         dg.classed("hidden",true)
         dg.select(".button.close").on("click", hideDialog);
-        dg.select(".button.remove").on("click", removeNode);
+        dg.select(".button.remove").on("click", () => removeNode(currNode));
 
         // 
         //
@@ -625,10 +625,10 @@ function setSubclassConstraint(n, scName){
 
 // Removes the current node and all its descendants.
 //
-function removeNode() {
-    var p = currNode.parent;
+function removeNode(n) {
+    var p = n.parent;
     if (p) {
-        p.children.splice(p.children.indexOf(currNode), 1);
+        p.children.splice(p.children.indexOf(n), 1);
         hideDialog();
         update(p);
     }
@@ -1059,7 +1059,6 @@ function generateOptionList(n, c){
 
     // build the url
     let x = json2xml(j, true);
-    console.log("SUMMARIZE QUERY", x);
     let e = encodeURIComponent(x);
     let url = `${currMine.url}/service/query/results?summaryPath=${p}&format=jsonrows&query=${e}`
     let threshold = 250;
@@ -1466,8 +1465,7 @@ function doLayout(root){
 // Updates the SVG, using n as the source of any entering/exiting animations.
 //
 function update(source) {
-  // User can slow things down by holding the altKey on clicks and such.
-  var duration = animationDuration * (d3.event && d3.event.altKey ? 10 : 1);
+  var duration = animationDuration;
 
 
   var nl = doLayout(root);
@@ -1521,7 +1519,7 @@ function update(source) {
       .classed("selected", function(n){ return n.view; })
       .classed("constrained", function(n){ return n.constraints.length > 0; })
       .transition()
-      .duration(duration)
+      .duration(animationDuration)
       .attr("transform", function(n) { return "translate(" + n.y + "," + n.x + ")"; })
       ;
 
@@ -1570,7 +1568,7 @@ function update(source) {
   //
   // Transition exiting nodes to the parent's new position.
   var nodeExit = nodeGrps.exit().transition()
-      .duration(duration)
+      .duration(animationDuration)
       .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
       .remove()
       ;
@@ -1597,27 +1595,35 @@ function update(source) {
         var o = {x: source.x0, y: source.y0};
         return diagonal({source: o, target: o});
       })
-      .classed("attribute", function(n) { return n.target.pcomp.kind === "attribute"; })
+      .classed("attribute", function(l) { return l.target.pcomp.kind === "attribute"; })
       .on("click", function(l){ 
-          if (l.target.pcomp.kind == "attribute") return;
-          l.target.join = (l.target.join ? null : "outer");
-          update(l.source);
+          if (d3.event.altKey) {
+              // a shift-click cuts the tree at this edge
+              removeNode(l.target)
+          }
+          else {
+              if (l.target.pcomp.kind == "attribute") return;
+              // regular click on a non-attribute edge inverts whether
+              // the join is inner or outer
+              l.target.join = (l.target.join ? null : "outer");
+              update(l.source);
+          }
       })
     .transition()
-      .duration(duration)
+      .duration(animationDuration)
       .attr("d", diagonal)
       ;
 
   // Transition links to their new position.
   link.classed("outer", function(n) { return n.target.join === "outer"; })
       .transition()
-      .duration(duration)
+      .duration(animationDuration)
       .attr("d", diagonal)
       ;
 
   // Transition exiting nodes to the parent's new position.
   link.exit().transition()
-      .duration(duration)
+      .duration(animationDuration)
       .attr("d", function(d) {
         var o = {x: source.x, y: source.y};
         return diagonal({source: o, target: o});
@@ -1695,12 +1701,13 @@ function json2xml(t, qonly){
 
 //
 function updateTtext(){
-  var txt = json2xml(uncompileTemplate(currTemplate));
+  var uct = uncompileTemplate(currTemplate);
+  var txt = json2xml(uct);
   var urlTxt = encodeURIComponent(txt);
   var linkurl = currMine.url + "/loadQuery.do?trail=%7Cquery&method=xml";
   var editurl = linkurl + "&query=" + urlTxt;
   var runurl = linkurl + "&skipBuilder=true&query=" + urlTxt;
-  //var linkurl = currMine.url + "/loadQuery.do?skipBuilder=true&method=xml&trail=%7Cquery&query=" + encodeURIComponent(txt);
+
   d3.select('#runatmine')
       .attr("href", runurl);
   d3.select('#editatmine')
@@ -1708,8 +1715,18 @@ function updateTtext(){
   d3.select("#ttextdiv") 
       .text(txt)
       .on("focus", function(){ selectText("ttextdiv"); });
+
+  updateCount();
 }
 
-//
+function updateCount(){
+  var uct = uncompileTemplate(currTemplate);
+  var qtxt = json2xml(uct, true);
+  var urlTxt = encodeURIComponent(qtxt);
+  var countUrl = currMine.url + `/service/query/results?query=${urlTxt}&format=count`;
+  d3jsonPromise(countUrl).then( n => d3.select('#querycount span').text(n) );
+}
+
+// The call that gets it all going...
 setup()
 //
