@@ -43,21 +43,36 @@
 
             <!-- Here live the controls for starting a new query. -->
             <div name="editTarget" class="flexrow">
+                <div id="editSourceSelector" class="flexcolumn">
+                    <label>Query</label>
+                    <select name="in">
+                      <option value="newqclist">Start new</option>
+                      <option value="tlist">Edit saved</option>
+                      <option value="importxml">Import XML</option>
+                      <option value="importjson">Import JSON</option>
+                    </select>
+                </div>
                 <!-- The list of saved templates. -->
-                <div class="flexcolumn">
-                    <label><input type="radio" name="queryinputselector"></input>Template</label>
-                    <select id="tlist"></select>
+                <div id="tlist" class="flexcolumn option">
+                    <label>Select saved query</label>
+                    <select name="in"></select>
                 </div>
                 <!-- Start from scratch. List of classes. -->
-                <div class="flexcolumn">
-                    <label><input type="radio" name="queryinputselector"></input>New Query</label>
-                    <select id="newqclist"></select>
+                <div id="newqclist" class="flexcolumn option">
+                    <label>Select starting class</label>
+                    <select name="in"></select>
                 </div>
 
                 <!-- Import from XML -->
-                <div class="flexcolumn">
-                    <label><input type="radio" name="queryinputselector"></input>Import from XML</label>
-                    <textarea id="importxml"></textarea>
+                <div id="importxml" class="flexcolumn option">
+                    <label>Paste query XML</label>
+                    <textarea  name="in" cols=40 rows=2 disabled>Not implemented</textarea>
+                </div>
+
+                <!-- Import from JSON -->
+                <div id="importjson" class="flexcolumn option">
+                    <label>Paste query JSON</label>
+                    <textarea  name="in" cols=40 rows=2 >Not implemented</textarea>
                 </div>
 
             </div>

@@ -81,6 +81,11 @@
 #tInfoBar [name="editTarget"] {
     padding: 10px;
     border-bottom: thin solid;
+    align-items: flex-start;
+}
+
+#tInfoBar [name="editTarget"] > div {
+    padding: 0px 14px;
 }
 
 /* The template info bar */

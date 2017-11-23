@@ -146,7 +146,7 @@ function selectedMine(mname){
         var j_lists = data[2];
         var j_branding = data[3];
         //
-        currMine.model = compileModel(j_model)
+        currMine.model = compileModel(j_model.model)
         currMine.templates = j_templates.templates;
         currMine.lists = j_lists.lists;
         //
@@ -157,12 +157,15 @@ function selectedMine(mname){
         currMine.tnames = Object.keys( currMine.templates );
         currMine.tnames.sort();
         // Fill in the selection list of templates for this mine.
-        var tl = d3.select("#tlist").selectAll('option').data( currMine.tlist );
+        var tl = d3.select("#tlist select")
+            .selectAll('option')
+            .data( currMine.tlist );
         tl.enter().append('option')
         tl.exit().remove()
         tl.attr("value", function(d){ return d.name; })
           .text(function(d){return d.title;});
-        d3.select("#tlist").on("change", function(){ editTemplate(currMine.templates[this.value]); });
+        d3.selectAll('[name="editTarget"] [name="in"]')
+            .on("change", startEdit);
         editTemplate(currMine.templates[currMine.tlist[0].name]);
         // Apply branding
         let clrs = currMine.colors || defaultColors;
@@ -176,10 +179,45 @@ function selectedMine(mname){
             .attr("src", logo);
         d3.selectAll('#svgContainer [name="minename"]')
             .text(currMine.name);
+        // populate class list 
+        let clist = Object.keys(currMine.model.classes);
+        clist.sort();
+        initOptionList("#newqclist select", clist);
+        d3.select('#editSourceSelector [name="in"]')
+            .call(function(){ this[0][0].selectedIndex = 1; })
+            .on("change", function(){ selectedEditSource(this.value); startEdit(); });
+        selectedEditSource( "tlist" );
 
     }, function(error){
         alert(`Could not access ${currMine.name}. Status=${error.status}. Error=${error.statusText}. (If there is no error message, then its probably a CORS issue.)`);
     });
+}
+
+//
+function startEdit() {
+    let srcSelector = d3.selectAll('[name="editTarget"] [name="in"]');
+    let inputId = srcSelector[0][0].value;
+    let val = d3.select(`#${inputId} [name="in"]`)[0][0].value
+    if (inputId === "tlist") {
+        editTemplate(currMine.templates[val]);
+    }
+    else if (inputId === "newqclist") {
+        let nt = newTemplate();
+        nt.select.push(val+".id");
+        editTemplate(nt);
+    }
+    else if (inputId === "importxml") {
+    }
+    else if (inputId === "importjson") {
+    }
+    else
+        throw "Unknown edit source."
+}
+
+// 
+function selectedEditSource(show){
+    d3.selectAll('[name="editTarget"] > div.option')
+        .style("display", function(){ return this.id === show ? null : "none"; });
 }
 
 // Returns an array containing the item values from the given object.
@@ -214,7 +252,7 @@ function obj2array(o, nameAttr){
 function compileModel(model){
     // First add classes that represent the basic type
     LEAFTYPES.forEach(function(n){
-        model.model.classes[n] = {
+        model.classes[n] = {
             isLeafType: true,
             name: n,
             displayName: n,
@@ -225,11 +263,11 @@ function compileModel(model){
         }
     });
     //
-    model.model.allClasses = obj2array(model.model.classes)
-    var cns = Object.keys(model.model.classes);
+    model.allClasses = obj2array(model.classes)
+    var cns = Object.keys(model.classes);
     cns.sort()
     cns.forEach(function(cn){
-        var cls = model.model.classes[cn];
+        var cls = model.classes[cn];
         cls.allAttributes = obj2array(cls.attributes)
         cls.allReferences = obj2array(cls.references)
         cls.allCollections = obj2array(cls.collections)
@@ -238,10 +276,10 @@ function compileModel(model){
         cls.allCollections.forEach(function(x){ x.kind = "collection"; });
         cls.allParts = cls.allAttributes.concat(cls.allReferences).concat(cls.allCollections);
         cls.allParts.sort(function(a,b){ return a.name < b.name ? -1 : a.name > b.name ? 1 : 0; });
-        model.model.allClasses.push(cls);
+        model.allClasses.push(cls);
         //
         cls["extends"] = cls["extends"].map(function(e){
-            var bc = model.model.classes[e];
+            var bc = model.classes[e];
             if (bc.extendedBy) {
                 bc.extendedBy.push(cls);
             }
@@ -253,12 +291,12 @@ function compileModel(model){
         //
         Object.keys(cls.references).forEach(function(rn){
             var r = cls.references[rn];
-            r.type = model.model.classes[r.referencedType]
+            r.type = model.classes[r.referencedType]
         });
         //
         Object.keys(cls.collections).forEach(function(cn){
             var c = cls.collections[cn];
-            c.type = model.model.classes[c.referencedType]
+            c.type = model.classes[c.referencedType]
         });
     });
     return model;
@@ -309,7 +347,7 @@ function isSubclass(sub,sup) {
 function isValidListConstraint(list, n){
     var nt = n.subtypeConstraint || n.ptype;
     if (typeof(nt) === "string" ) return false;
-    var lt = currMine.model.model.classes[list.type];
+    var lt = currMine.model.classes[list.type];
     return lt === nt || isSubclass(lt, nt) || isSubclass(nt, lt);
 }
 
@@ -356,7 +394,7 @@ function compileTemplate(template, model) {
         })
         .forEach(function(c){
              var n = addPath(t, c.path, model);
-             var cls = model.model.classes[c.type];
+             var cls = model.classes[c.type];
              if (!cls) throw "Could not find class " + c.type;
              n.subclassConstraint = cls;
         });
@@ -441,6 +479,21 @@ function newNode(name, pcomp, ptype){
     };
 }
 
+function newTemplate() {
+    return {
+        model: { name: "genomic" },
+        name: "",
+        title: "",
+        description: "",
+        comment: "",
+        select: [],
+        where: [],
+        constraintLogic: "",
+        tags: [],
+        orderBy: []
+    }
+}
+
 function newConstraint(n) {
     return {
         ctype: "null",  // one of: null, value, multivalue, subclass, lookup, list
@@ -467,7 +520,7 @@ function newConstraint(n) {
 function addPath(template, path, model){
     if (typeof(path) === "string")
         path = path.split(".");
-    var classes = model.model.classes;
+    var classes = model.classes;
     var lastt = null
     var n = template.qtree;  // current node pointer
 
@@ -540,7 +593,7 @@ function setSubclassConstraint(n, scName){
     n.constraints = n.constraints.filter(function (c){ return c.ctype !== "subclass"; });
     n.subclassConstraint = null;
     if (scName){
-        let cls = currMine.model.model.classes[scName];
+        let cls = currMine.model.classes[scName];
         if(!cls) throw "Could not find class " + scName;
         n.constraints.push({ ctype:"subclass", op:"ISA", path:getPath(n), type:cls.name });
         n.subclassConstraint = cls;
@@ -790,6 +843,8 @@ function updateCEinputs(c, op){
 //
 function initOptionList(selector, data, cfg){
     
+    cfg = cfg || {};
+
     var ident = (x=>x);
     var opts;
     if(data && data.length > 0){
@@ -1466,9 +1521,22 @@ function update(source) {
       .attr("transform", function(n) { return "translate(" + n.y + "," + n.x + ")"; })
       ;
 
-  nodeGrps.selectAll("text.constraint").remove();
 
   // Add text for constraints
+  let ct = nodeGrps.selectAll("text.constraint")
+      .data(function(n){ return n.constraints; });
+  ct.enter().append("svg:text").attr("class", "constraint");
+  ct.exit().remove();
+  ct.text( c => constraintText(c) )
+       .attr("x", 0)
+       .attr("dy", (c,i) => `${(i+1)*1.7}em`)
+       .attr("text-anchor","start")
+       ;
+
+
+
+  /*
+  nodeGrps.selectAll("text.constraint").remove();
   nodeGrps.append("svg:text")
        .attr("x", 0)
        .attr("dy", "1.7em")
@@ -1479,6 +1547,7 @@ function update(source) {
            return strs.join(' / ');
        })
        ;
+       */
 
   // Transition circles to full size
   nodeUpdate.select("circle")
