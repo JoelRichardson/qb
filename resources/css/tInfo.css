@@ -178,16 +178,15 @@
     color: orange;
 }
 
-#editatmine { 
-    top: 120px;
-    display: none;
-}
-
 #querycount {
     top: 80px;
     padding-top: 8px;
     background-color: transparent;
     color: black;
+    width: auto;
+}
+#querycount label {
+    font-weight: normal;
 }
 #querycount:hover {
     pointer: default;

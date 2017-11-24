@@ -130,21 +130,17 @@
 
         <!-- The container where the SVG drawing goes. -->
         <div id="svgContainer">
-            <div id="runatmine" class="fab" title="Alt-click to open in editor instead.">Run this query at <span name="minename"></span></div>
-            <!--
-            <a id="xrunatmine" class="fab" href="" target="_blank">
-                Run this query at <span name="minename"></span>
-            </a>
-            <a id="editatmine" class="fab" href="" target="_blank">
-                Edit this query at <span name="minename"></span>
-            </a>
-            -->
-            <div id="querycount" class="fab">
+            <svg></svg>
+            <div id="runatmine" class="fab" title="Alt-click to open in editor instead.">
+                Run this query at
+                <span name="minename"></span>
+            </div>
+            <div id="querycount" class="fab flexrow">
+                <i class="material-icons button sync">sync</i>
                 <label>Count:</label>
                 <span></span>
             </div>
             <img id="mineLogo" src=""></img>
-            <svg></svg>
             <div name="spacebar"></div>
         </div>
 

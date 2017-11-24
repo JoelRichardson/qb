@@ -1537,22 +1537,6 @@ function update(source) {
        .attr("text-anchor","start")
        ;
 
-
-
-  /*
-  nodeGrps.selectAll("text.constraint").remove();
-  nodeGrps.append("svg:text")
-       .attr("x", 0)
-       .attr("dy", "1.7em")
-       .attr("text-anchor","start")
-       .attr("class","constraint")
-       .html(function(d){
-           var strs = (d.constraints || []).map(constraintText);
-           return strs.join(' / ');
-       })
-       ;
-       */
-
   // Transition circles to full size
   nodeUpdate.select("circle")
       .attr("r", 8.5 )
@@ -1591,8 +1575,18 @@ function update(source) {
       ;
 
   // Enter any new links at the parent's previous position.
-  link.enter().insert("svg:path", "g")
-      .attr("class", "link")
+  let newPaths = link.enter().insert("svg:path", "g");
+  let linkTitle = function(l){
+      let click = "";
+      if (l.target.pcomp.kind !== "attribute"){
+          click = `Click to make this relationship ${l.target.join ? "REQUIRED" : "OPTIONAL"}. `;
+      }
+      let altclick = "Alt-click to cut link.";
+      return click + altclick;
+  }
+  // set the tooltip
+  newPaths.append("svg:title").text(linkTitle);
+  newPaths.attr("class", "link")
       .attr("d", function(d) {
         var o = {x: source.x0, y: source.y0};
         return diagonal({source: o, target: o});
@@ -1605,17 +1599,20 @@ function update(source) {
           }
           else {
               if (l.target.pcomp.kind == "attribute") return;
-              // regular click on a non-attribute edge inverts whether
-              // the join is inner or outer
+              // regular click on a relationship edge inverts whether
+              // the join is inner or outer. 
               l.target.join = (l.target.join ? null : "outer");
+              // re-set the tooltip
+              d3.select(this).select("title").text(linkTitle);
               update(l.source);
           }
       })
-    .transition()
-      .duration(animationDuration)
-      .attr("d", diagonal)
+      .transition()
+        .duration(animationDuration)
+        .attr("d", diagonal)
       ;
-
+ 
+  
   // Transition links to their new position.
   link.classed("outer", function(n) { return n.target.join === "outer"; })
       .transition()

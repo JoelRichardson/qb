@@ -41,8 +41,6 @@ path.link {
 }
 
 .link.attribute {
-    cursor: default;
-    stroke-width: 3px;
     stroke: #ccc;
 }
 
