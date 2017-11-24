@@ -186,6 +186,8 @@ function setup(){
         selectedMine(selectMine);
       });
 
+    d3.select('#runatmine')
+        .on('click', runatmine);
 }
 
 // Called when user selects a mine from the option list
@@ -1778,17 +1780,8 @@ function json2xml(t, qonly){
 
 //
 function updateTtext(){
-  var uct = uncompileTemplate(currTemplate);
-  var txt = json2xml(uct);
-  var urlTxt = encodeURIComponent(txt);
-  var linkurl = currMine.url + "/loadQuery.do?trail=%7Cquery&method=xml";
-  var editurl = linkurl + "&query=" + urlTxt;
-  var runurl = linkurl + "&skipBuilder=true&query=" + urlTxt;
-
-  d3.select('#runatmine')
-      .attr("href", runurl);
-  d3.select('#editatmine')
-      .attr("href", editurl);
+  let uct = uncompileTemplate(currTemplate);
+  let txt = json2xml(uct);
   d3.select("#ttextdiv") 
       .text(txt)
       .on("focus", function(){ Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["selectText"])("ttextdiv"); });
@@ -1796,11 +1789,21 @@ function updateTtext(){
   updateCount();
 }
 
+function runatmine() {
+  let uct = uncompileTemplate(currTemplate);
+  let txt = json2xml(uct);
+  let urlTxt = encodeURIComponent(txt);
+  let linkurl = currMine.url + "/loadQuery.do?trail=%7Cquery&method=xml";
+  let editurl = linkurl + "&query=" + urlTxt;
+  let runurl = linkurl + "&skipBuilder=true&query=" + urlTxt;
+  window.open( d3.event.altKey ? editurl : runurl, '_blank' );
+}
+
 function updateCount(){
-  var uct = uncompileTemplate(currTemplate);
-  var qtxt = json2xml(uct, true);
-  var urlTxt = encodeURIComponent(qtxt);
-  var countUrl = currMine.url + `/service/query/results?query=${urlTxt}&format=count`;
+  let uct = uncompileTemplate(currTemplate);
+  let qtxt = json2xml(uct, true);
+  let urlTxt = encodeURIComponent(qtxt);
+  let countUrl = currMine.url + `/service/query/results?query=${urlTxt}&format=count`;
   Object(__WEBPACK_IMPORTED_MODULE_2__utils_js__["d3jsonPromise"])(countUrl).then( n => d3.select('#querycount span').text(n) );
 }
 
