@@ -60,11 +60,21 @@ function setup(){
       .append("svg:g")
         .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
     //
-    d3.selectAll("#tInfoBar > i.button")
+    d3.select('#tInfoBar > i.button[name="openclose"]')
         .on("click", function(){ 
-            var t = d3.select("#tInfoBar");
-            var isClosed = t.classed("closed");
-            t.classed("closed", !isClosed);
+            let t = d3.select("#tInfoBar");
+            let wasClosed = t.classed("closed");
+            let isClosed = !wasClosed;
+            let d = d3.select('#drawer')[0][0]
+            if (isClosed)
+                // save the current height just before closing
+                d.__saved_height = d.getBoundingClientRect().height;
+            else if (d.__saved_height)
+               // on open, restore the saved height
+               d3.select('#drawer').style("height", d.__saved_height);
+                
+            t.classed("closed", isClosed);
+            d3.select(this).text( isClosed ? "add" : "clear" );
         });
 
     d3jsonPromise("./resources/testdata/registry.json")

@@ -22,8 +22,7 @@
         <!-- Template info section. Shows template's name, description, etc. -->
         <div id="tInfoBar" class="flexcolumn">
 
-            <i class="material-icons button" name="open">add</i>
-            <i class="material-icons button" name="close">clear</i>
+            <i class="material-icons button" name="openclose">clear</i>
 
             <!-- Select a mine and set your API token here. -->
             <div name="mineCtrls" class="flexrow">
@@ -41,94 +40,96 @@
 
             </div>
 
-            <!-- Here live the controls for starting a new query. -->
-            <div name="editTarget" class="flexrow">
-                <div id="editSourceSelector" class="flexcolumn">
-                    <label>Query</label>
-                    <select name="in">
-                      <option value="newqclist">Start new</option>
-                      <option value="tlist">Edit saved</option>
-                      <option value="importxml">Import XML</option>
-                      <option value="importjson">Import JSON</option>
-                    </select>
-                </div>
-                <!-- The list of saved templates. -->
-                <div id="tlist" class="flexcolumn option">
-                    <label>Select saved query</label>
-                    <select name="in"></select>
-                </div>
-                <!-- Start from scratch. List of classes. -->
-                <div id="newqclist" class="flexcolumn option">
-                    <label>Select starting class</label>
-                    <select name="in"></select>
-                </div>
+            <div id="drawer" >
 
-                <!-- Import from XML -->
-                <div id="importxml" class="flexcolumn option">
-                    <label>Paste query XML</label>
-                    <textarea  id="xmltextarea" name="in" cols=40 rows=2 ></textarea>
-                </div>
-
-                <!-- Import from JSON -->
-                <div id="importjson" class="flexcolumn option">
-                    <label>Paste query JSON</label>
-                    <textarea  id="jsontextarea" name="in" cols=40 rows=2 ></textarea>
-                </div>
-
-            </div>
-
-            <!-- Details of the current query, e.g. name, description, etc. -->
-            <div name="details" class="flexrow">
-                <div id="tInfo" class="flexcolumn">
-                    <div class="flexrow">
-                        <!-- Name of current template -->
-                        <div name="name" class="flexcolumn">
-                            <label>Name</label>
-                            <input type="text" ></input>
-                        </div>
-                        <!-- Title of current template -->
-                        <div name="title" class="flexcolumn">
-                            <label>Title</label>
-                            <input type="text" ></input>
-                        </div>
+                <!-- Here live the controls for starting a new query. -->
+                <div name="editTarget" class="flexrow">
+                    <div id="editSourceSelector" class="flexcolumn">
+                        <label>Query</label>
+                        <select name="in">
+                          <option value="newqclist">Start new</option>
+                          <option value="tlist">Edit saved</option>
+                          <option value="importxml">Import XML</option>
+                          <option value="importjson">Import JSON</option>
+                        </select>
                     </div>
-                    <div class="flexrow">
-                        <!-- Description text -->
-                        <div name="description" class="flexcolumn">
-                            <label>Description</label>
-                            <textarea cols="40" rows="4"></textarea>
-                        </div>
-                        <!-- Comment text -->
-                        <div name="comment" class="flexcolumn">
-                            <label>Comment</label>
-                            <textarea cols="40" rows="4"></textarea>
-                        </div>
-                    </div>    
-                    <div class="flexrow">
-                        <!-- Constraint logic expression -->
-                        <div name="logicExpression" class="flexcolumn">
-                            <label>Logic expression</label>
-                            <input size="40" type="text" ></input>
-                        </div>
-                        <!-- spacer -->
-                        <div class="flexcolumn">
-                            <span>&nbsp;</span>
-                            <span>&nbsp;</span>
-                        </div>
+                    <!-- The list of saved templates. -->
+                    <div id="tlist" class="flexcolumn option">
+                        <label>Select saved query</label>
+                        <select name="in"></select>
                     </div>
+                    <!-- Start from scratch. List of classes. -->
+                    <div id="newqclist" class="flexcolumn option">
+                        <label>Select starting class</label>
+                        <select name="in"></select>
+                    </div>
+
+                    <!-- Import from XML -->
+                    <div id="importxml" class="flexcolumn option">
+                        <label>Paste query XML</label>
+                        <textarea  id="xmltextarea" name="in" cols=40 rows=2 ></textarea>
+                    </div>
+
+                    <!-- Import from JSON -->
+                    <div id="importjson" class="flexcolumn option">
+                        <label>Paste query JSON</label>
+                        <textarea  id="jsontextarea" name="in" cols=40 rows=2 ></textarea>
+                    </div>
+
                 </div>
 
-                <!-- Where the query text is dumped with every update. -->
-                <div id="ttext" class="flexcolumn xml">
-                    <label>Query text:  
-                        <span name="xml">XML</span>
-                        <span name="json">JSON</span>
-                    </label>
-                    <div id="ttextdiv" tabindex="-1"> <!-- tabindex makes it focusable-->
-                    </div>
-                </div>
-            </div>
+                <!-- Details of the current query, e.g. name, description, etc. -->
+                <div name="details" class="flexrow">
+                    <div id="tInfo" class="flexcolumn">
+                        <div class="flexrow">
+                            <!-- Name of current template -->
+                            <div name="name" class="flexcolumn">
+                                <label>Name</label>
+                                <input type="text" ></input>
+                            </div>
+                            <!-- Title of current template -->
+                            <div name="title" class="flexcolumn">
+                                <label>Title</label>
+                                <input type="text" ></input>
+                            </div>
+                        </div>
+                        <div class="flexrow">
+                            <!-- Description text -->
+                            <div name="description" class="flexcolumn">
+                                <label>Description</label>
+                                <textarea cols="40" rows="4"></textarea>
+                            </div>
+                            <!-- Comment text -->
+                            <div name="comment" class="flexcolumn">
+                                <label>Comment</label>
+                                <textarea cols="40" rows="4"></textarea>
+                            </div>
+                        </div>    
+                        <div class="flexrow">
+                            <!-- Constraint logic expression -->
+                            <div name="logicExpression" class="flexcolumn">
+                                <label>Logic expression</label>
+                                <input size="40" type="text" ></input>
+                            </div>
+                            <!-- spacer -->
+                            <div class="flexcolumn">
+                                <span>&nbsp;</span>
+                                <span>&nbsp;</span>
+                            </div>
+                        </div>
+                    </div> <!-- end of tInfo -->
 
+                    <!-- Where the query text is dumped with every update. -->
+                    <div id="ttext" class="flexcolumn xml">
+                        <label>Query text:  
+                            <span name="xml">XML</span>
+                            <span name="json">JSON</span>
+                        </label>
+                        <div id="ttextdiv" tabindex="-1"> <!-- tabindex makes it focusable-->
+                        </div>
+                    </div> <!-- end of ttext -->
+                </div> <!-- end of details -->
+            </div> <!-- end of drawer -->
         </div> <!-- end of tInfoBar -->
 
         <!-- The container where the SVG drawing goes. -->

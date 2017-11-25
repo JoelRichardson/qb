@@ -33,22 +33,10 @@
 }
 
 /* Open/close buttons on the info bar */
-#tInfoBar > i.button {
+#tInfoBar > i.button[name="openclose"] {
     position: absolute;
     top: 8px;
     left: 8px;
-}
-#tInfoBar > i[name="open"] {
-    display: none;
-}
-#tInfoBar.closed > i[name="open"] {
-    display: block;
-}
-#tInfoBar > i[name="close"] {
-    display: block;
-}
-#tInfoBar.closed > i[name="close"] {
-    display: none;
 }
 
 #tInfoBar.closed [name="details"],
@@ -70,6 +58,21 @@
     padding: 4px 30px;
     margin-top: 8px;
 }
+#tInfoBar #drawer {
+    width: 100%;
+    height: 250px;
+    opacity: 1;
+    -webkit-transition: height 0.3s, opacity 0.2s;
+    transition: height 0.3s, opacity 0.2s;
+    overflow: scroll;
+}
+#tInfoBar.closed #drawer {
+    height: 0px;
+    opacity: 0;
+    -webkit-transition: height 0.3s, opacity 1.5s;
+    transition: height 0.3s, opacity 1.5s;
+}
+
 #tInfoBar [name="details"] {
     align-items: flex-start;
     overflow: hidden;
@@ -147,7 +150,7 @@
     overflow: scroll;
     transition: height 0.5s;
 }
-#ttextdiv:focus {
+#ttextdiv:hover {
     height: 400px;
 }
 
