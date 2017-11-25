@@ -130,7 +130,15 @@
     flex-direction: column;
     align-items: center;
 }
-
+#ttext label span {
+    cursor: pointer;
+}
+#ttext.xml label span[name="json"] {
+    opacity: 0.3;
+}
+#ttext.json label span[name="xml"] {
+    opacity: 0.3;
+}
 #ttextdiv {
     width: 600px;
     height: 150px;
@@ -139,7 +147,6 @@
     overflow: scroll;
     transition: height 0.5s;
 }
-
 #ttextdiv:focus {
     height: 400px;
 }

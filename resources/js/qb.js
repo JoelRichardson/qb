@@ -15,7 +15,16 @@
 import parser from './parser.js';
 //import { mines } from './mines.js';
 import { NUMERICTYPES, NULLABLETYPES, LEAFTYPES, OPS, OPINDEX } from './ops.js';
-import { d3jsonPromise, selectText, deepc, getLocal, setLocal, testLocal, clearLocal } from './utils.js';
+import {
+    d3jsonPromise,
+    selectText,
+    deepc,
+    getLocal,
+    setLocal,
+    testLocal,
+    clearLocal,
+    parsePathQuery
+} from './utils.js';
 
 var name2mine;
 var currMine;
@@ -109,8 +118,24 @@ function setup(){
         selectedMine(selectMine);
       });
 
+    d3.selectAll("#ttext label span")
+        .on('click', function(){
+            d3.select('#ttext').attr('class', 'flexcolumn '+this.innerText.toLowerCase());
+            updateTtext();
+        });
     d3.select('#runatmine')
         .on('click', runatmine);
+    d3.select('#querycount .button.sync')
+        .on('click', function(){
+            let t = d3.select(this);
+            t.text( t.text() === "sync" ? "sync_disabled" : "sync" )
+             .attr("title", () => `Count autosync is ${ t.text() === "sync" ? "ON" : "OFF" }.`)
+            t.text() === "sync" && updateCount();
+        });
+    d3.select("#xmltextarea")
+        .on("focus", function(){ this.value && selectText("xmltextarea")});
+    d3.select("#jsontextarea")
+        .on("focus", function(){ this.value && selectText("jsontextarea")});
 }
 
 // Called when user selects a mine from the option list
@@ -189,6 +214,8 @@ function selectedMine(mname){
             .call(function(){ this[0][0].selectedIndex = 1; })
             .on("change", function(){ selectedEditSource(this.value); startEdit(); });
         selectedEditSource( "tlist" );
+        d3.select("#xmltextarea")[0][0].value = "";
+        d3.select("#jsontextarea").value = "";
 
     }, function(error){
         alert(`Could not access ${currMine.name}. Status=${error.status}. Error=${error.statusText}. (If there is no error message, then its probably a CORS issue.)`);
@@ -197,9 +224,13 @@ function selectedMine(mname){
 
 //
 function startEdit() {
+    // selector for choosing edit input source, and the current selection
     let srcSelector = d3.selectAll('[name="editTarget"] [name="in"]');
     let inputId = srcSelector[0][0].value;
-    let val = d3.select(`#${inputId} [name="in"]`)[0][0].value
+    // the query input element corresponding to the selected source
+    let src = d3.select(`#${inputId} [name="in"]`);
+    // the quary starting point
+    let val = src[0][0].value
     if (inputId === "tlist") {
         editTemplate(currMine.templates[val]);
     }
@@ -209,8 +240,10 @@ function startEdit() {
         editTemplate(nt);
     }
     else if (inputId === "importxml") {
+        val && editTemplate(parsePathQuery(val));
     }
     else if (inputId === "importjson") {
+        val && editTemplate(JSON.parse(val));
     }
     else
         throw "Unknown edit source."
@@ -384,8 +417,10 @@ function compileTemplate(template, model) {
         c.ctype = OPINDEX[c.op].ctype;
         if (c.code) t.code2c[c.code] = c;
         if (c.ctype === "null"){
-            // With null/not-null constraints, IM has a weird convention of filling the value 
-            // field with the operator value
+            // With null/not-null constraints, IM has a weird quirk of filling the value 
+            // field with the operator. E.g., for an "IS NOT NULL" opreator, the value field is
+            // also "IS NOT NULL". 
+            // 
             c.value = "";
         }
     })
@@ -424,6 +459,9 @@ function compileTemplate(template, model) {
         var n = addPath(t, p, model);
         n.sort = { dir: dir, level: i };
     });
+    if (!t.qtree) {
+        throw "No paths in query."
+    }
     return t;
 }
 
@@ -462,12 +500,17 @@ function uncompileTemplate(tmplt){
     return t
 }
 
-//
-function newNode(name, pcomp, ptype){
-    return {
+// Args:
+//   parent (object) Parent of the new node.
+//   name (string) Name for the node
+//   pcomp (object) Path component for the root, this is a class. For other nodes, an attribute, 
+//                  reference, or collection decriptor.
+//   ptype (object or string) Type of pcomp.
+function newNode(parent, name, pcomp, ptype){
+    let n = {
         name: name,     // display name
         children: [],   // child nodes
-        parent: null,   // parent node
+        parent: parent,   // parent node
         pcomp: pcomp,   // path component represented by the node. At root, this is
                         // the starting class. Otherwise, points to an attribute (simple, 
                         // reference, or collection).
@@ -479,6 +522,8 @@ function newNode(name, pcomp, ptype){
         constraints: [],// all constraints
         view: false     // attribute to be returned. Note only simple attributes can have view == true.
     };
+    parent && parent.children.push(n);
+    return n;
 }
 
 function newTemplate() {
@@ -498,12 +543,11 @@ function newTemplate() {
 
 function newConstraint(n) {
     return {
-        ctype: "null",  // one of: null, value, multivalue, subclass, lookup, list
-        op: "IS NOT NULL",
+        ctype: "value",  // one of: null, value, multivalue, subclass, lookup, list
+        op: "=",
         code: nextAvailableCode(currTemplate),
         path: getPath(n),
-        summarizePath : false,
-        value: null,
+        value: "",
         values: null,
         type: null
     }
@@ -517,8 +561,7 @@ function newConstraint(n) {
 // Returns:
 //   last path component created. 
 // Side effects:
-//   The path is added, either to an existing trees or as a new tree..
-//
+//   Creates new nodes as needed and adds them to the qtree.
 function addPath(template, path, model){
     if (typeof(path) === "string")
         path = path.split(".");
@@ -543,7 +586,7 @@ function addPath(template, path, model){
                 cls = classes[p];
                 if (!cls)
                    throw "Could not find class: " + p;
-                n = template.qtree = newNode( p, cls, cls );
+                n = template.qtree = newNode( null, p, cls, cls );
             }
         }
         else {
@@ -571,8 +614,7 @@ function addPath(template, path, model){
                     throw "Could not find member named " + p + " in class " + cls.name + ".";
                 }
                 // create new node, add it to n's children
-                nn = newNode(p, x, cls);
-                n.children.push(nn);
+                nn = newNode(n, p, x, cls);
                 n = nn;
             }
         }
@@ -651,7 +693,6 @@ function editTemplate (t) {
     root = compileTemplate(currTemplate, currMine.model).qtree
     root.x0 = h / 2;
     root.y0 = 0;
-    console.log(currTemplate);
 
     // Fill in the basic template information (name, title, description, etc.)
     //
@@ -1076,12 +1117,16 @@ function generateOptionList(n, c){
         //
         if (json.results.length > threshold) {
             let ans = prompt(`There are ${json.results.length} results, which exceeds the threshold of ${threshold}. How many do you want to show?`, threshold);
-            if (ans === null) return;
+            if (ans === null) {
+                // Signal that we're done.
+                d3.select("#constraintEditor")
+                    .classed("summarizing", false);
+                return;
+            }
             ans = parseInt(ans);
             if (isNaN(ans) || ans <= 0) return;
             json.results = json.results.slice(0, ans);
         }
-        c.summarizePath = true;  // 
         d3.select('#constraintEditor')
             .classed("summarized", true);
         let opts = d3.select('#constraintEditor [name="values"]')
@@ -1701,12 +1746,16 @@ function json2xml(t, qonly){
 //
 function updateTtext(){
   let uct = uncompileTemplate(currTemplate);
-  let txt = json2xml(uct);
+  let txt;
+  if( d3.select("#ttext").classed("json") )
+      txt = JSON.stringify(uct, null, 2);
+  else
+      txt = json2xml(uct);
   d3.select("#ttextdiv") 
       .text(txt)
       .on("focus", function(){ selectText("ttextdiv"); });
-
-  updateCount();
+  if (d3.select('#querycount .button.sync').text() === "sync")
+      updateCount();
 }
 
 function runatmine() {
@@ -1724,7 +1773,9 @@ function updateCount(){
   let qtxt = json2xml(uct, true);
   let urlTxt = encodeURIComponent(qtxt);
   let countUrl = currMine.url + `/service/query/results?query=${urlTxt}&format=count`;
-  d3jsonPromise(countUrl).then( n => d3.select('#querycount span').text(n) );
+  d3jsonPromise(countUrl)
+      .then( n => d3.select('#querycount span').text(n) )
+      .catch( e => console.log("ERROR::", qtxt) );
 }
 
 // The call that gets it all going...

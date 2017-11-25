@@ -1,3 +1,4 @@
+
 // Promisifies a call to d3.json.
 // Args:
 //   url (string) The url of the json resource
@@ -28,14 +29,100 @@ function selectText(containerid) {
     }
 }
 
-// xml2jsonobj
-function xml2jsonobj(xml){
+// Converts an InterMine query in PathQuery XML format to a JSON object representation.
+//
+function parsePathQuery(xml){
+    // Turns the quasi-list object returned by some DOM methods into actual lists.
+    function domlist2array(lst) {
+        let a = [];
+        for(let i=0; i<lst.length; i++) a.push(lst[i]);
+        return a;
+    }
+    // parse the XML
     let parser = new DOMParser();
-    let dom = parser.parseFromString(xml);
+    let dom = parser.parseFromString(xml, "text/xml");
 
-    var tmplt = dom.getElementsByTagName("template")[0];
-    var query = dom.getElementsByTagName("query")[0];
+    // get the parts. User may paste in a <template> or a <query>
+    // (i.e., template may be null)
+    let template = dom.getElementsByTagName("template")[0];
+    let title = template && template.getAttribute("title") || "";
+    let comment = template && template.getAttribute("comment") || "";
+    let query = dom.getElementsByTagName("query")[0];
+    let model = { name: query.getAttribute("model") || "genomic" };
+    let name = query.getAttribute("name") || "";
+    let description = query.getAttribute("longDescrition") || "";
+    let select = (query.getAttribute("view") || "").trim().split(/\s+/);
+    let constraints = domlist2array(dom.getElementsByTagName('constraint'));
+    let constraintLogic = query.getAttribute("constraintLogic");
+    let joins = domlist2array(query.getElementsByTagName("join"));
+    let sortOrder = query.getAttribute("sortOrder") || "";
+    //
+    //
+    let where = constraints.map(function(c){
+            let op = c.getAttribute("op");
+            let type = null;
+            if (!op) {
+                type = c.getAttribute("type");
+                op = "ISA";
+            }
+            let vals = domlist2array(c.getElementsByTagName("value")).map( v => v.innerHTML );
+            return {
+                op: op,
+                path: c.getAttribute("path"),
+                value : c.getAttribute("value"),
+                values : vals,
+                type : c.getAttribute("type"),
+                code: c.getAttribute("code"),
+                editable: c.getAttribute("editable") || "true"
+                };
+        });
+    // Check: if there is only one constraint, (and it's not an ISA), sometimes the constraintLogic 
+    // and/or the constraint code are missing.
+    if (where.length === 1 && where[0].op !== "ISA" && !where[0].code){
+        where[0].code = constraintLogic = "A";
+    }
 
+    // outer joins. They look like this:
+    //       <join path="Gene.sequenceOntologyTerm" style="OUTER"/>
+    joins = joins.map( j => j.getAttribute("path") );
+
+    // The json format for orderBy is a bit weird.
+    // If the xml orderBy is: "A.b.c asc A.d.e desc",
+    // the json should be: [ {"A.b.c":"asc"}, {"A.d.e":"desc} ]
+    // 
+    // The orderby string tokens, e.g. ["A.b.c", "asc", "A.d.e", "desc"]
+    let ob = sortOrder.trim().split(/\s+/);
+    // sanity check:
+    if (ob.length % 2 )
+        throw "Could not parse the orderBy clause: " + query.getAttribute("sortOrder");
+    // convert tokens to json orderBy 
+    let orderBy = ob.reduce(function(acc, curr, i){
+        if (i % 2 === 0){
+            // odd. curr is a path. Push it.
+            acc.push(curr)
+        }
+        else {
+            // even. Pop the path, create the {}, and push it.
+            let v = {}
+            let p = acc.pop()
+            v[p] = curr;
+            acc.push(v);
+        }
+        return acc;
+    }, []);
+
+    return {
+        title,
+        comment,
+        model,
+        name,
+        description,
+        constraintLogic,
+        select,
+        where,
+        joins,
+        orderBy
+    };
 }
 
 // Returns a deep copy of object o. 
@@ -80,5 +167,6 @@ module.exports = {
     getLocal,
     setLocal,
     testLocal,
-    clearLocal
+    clearLocal,
+    parsePathQuery
 }

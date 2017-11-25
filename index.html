@@ -66,13 +66,13 @@
                 <!-- Import from XML -->
                 <div id="importxml" class="flexcolumn option">
                     <label>Paste query XML</label>
-                    <textarea  name="in" cols=40 rows=2 disabled>Not implemented</textarea>
+                    <textarea  id="xmltextarea" name="in" cols=40 rows=2 ></textarea>
                 </div>
 
                 <!-- Import from JSON -->
                 <div id="importjson" class="flexcolumn option">
                     <label>Paste query JSON</label>
-                    <textarea  name="in" cols=40 rows=2 >Not implemented</textarea>
+                    <textarea  id="jsontextarea" name="in" cols=40 rows=2 ></textarea>
                 </div>
 
             </div>
@@ -119,8 +119,11 @@
                 </div>
 
                 <!-- Where the query text is dumped with every update. -->
-                <div id="ttext" class="flexcolumn">
-                    <label>Query XML</label>
+                <div id="ttext" class="flexcolumn xml">
+                    <label>Query text:  
+                        <span name="xml">XML</span>
+                        <span name="json">JSON</span>
+                    </label>
                     <div id="ttextdiv" tabindex="-1"> <!-- tabindex makes it focusable-->
                     </div>
                 </div>
@@ -136,7 +139,7 @@
                 <span name="minename"></span>
             </div>
             <div id="querycount" class="fab flexrow">
-                <i class="material-icons button sync">sync</i>
+                <i class="material-icons button sync" title="Count autosync in ON.">sync</i>
                 <label>Count:</label>
                 <span></span>
             </div>
