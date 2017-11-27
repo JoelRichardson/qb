@@ -26,6 +26,8 @@ import {
     parsePathQuery
 } from './utils.js';
 
+import UndoManager from './undoManager.js';
+
 var name2mine;
 var currMine;
 var m;
@@ -42,6 +44,7 @@ var layoutStyle = "tree";
 var animationDuration = 250; // ms
 let defaultColors = { header: { main: "#595455", text: "#fff" } };
 let defaultLogo = "https://cdn.rawgit.com/intermine/design-materials/78a13db5/logos/intermine/squareish/45x45.png";
+let undoMgr = new UndoManager();
 
 function setup(){
     m = [20, 120, 20, 120]
@@ -138,14 +141,40 @@ function setup(){
     d3.select('#querycount .button.sync')
         .on('click', function(){
             let t = d3.select(this);
-            t.text( t.text() === "sync" ? "sync_disabled" : "sync" )
-             .attr("title", () => `Count autosync is ${ t.text() === "sync" ? "ON" : "OFF" }.`)
-            t.text() === "sync" && updateCount();
+            let turnSyncOff = t.text() === "sync";
+            t.text( turnSyncOff ? "sync_disabled" : "sync" )
+             .attr("title", () =>
+                 `Count autosync is ${ turnSyncOff ? "OFF" : "ON" }. Click to ${ turnSyncOff ? "enable" : "disable" }.`);
+            !turnSyncOff && updateCount();
+        d3.select('#querycount').classed("syncoff", turnSyncOff);
         });
     d3.select("#xmltextarea")
         .on("focus", function(){ this.value && selectText("xmltextarea")});
     d3.select("#jsontextarea")
         .on("focus", function(){ this.value && selectText("jsontextarea")});
+    d3.select("#undoButton")
+        .on("click", undo);
+    d3.select("#redoButton")
+        .on("click", redo);
+}
+
+function clearState() {
+    undoMgr.clear();
+}
+function saveState() {
+    let s = JSON.stringify(uncompileTemplate(currTemplate));
+    undoMgr.add(s);
+}
+function undo() { undoredo("undo") }
+function redo() { undoredo("redo") }
+function undoredo(which){
+    try {
+        let s = JSON.parse(undoMgr[which]());
+        editTemplate(s, true);
+    }
+    catch (err) {
+        console.log(err);
+    }
 }
 
 // Called when user selects a mine from the option list
@@ -242,17 +271,21 @@ function startEdit() {
     // the quary starting point
     let val = src[0][0].value
     if (inputId === "tlist") {
+        // a saved query or template
         editTemplate(currMine.templates[val]);
     }
     else if (inputId === "newqclist") {
-        let nt = newTemplate();
+        // a new query from a selected starting class
+        let nt = new Template();
         nt.select.push(val+".id");
         editTemplate(nt);
     }
     else if (inputId === "importxml") {
+        // import xml query
         val && editTemplate(parsePathQuery(val));
     }
     else if (inputId === "importjson") {
+        // import json query
         val && editTemplate(JSON.parse(val));
     }
     else
@@ -433,6 +466,9 @@ function compileTemplate(template, model) {
             // 
             c.value = "";
         }
+        else if (c.ctype === "lookup") {
+            // TODO: deal with extraValue here (?)
+        }
     })
     // must process any subclass constraints first, from shortest to longest path
     subclassCs
@@ -490,7 +526,7 @@ function uncompileTemplate(tmplt){
         where : [],
         joins : [],
         constraintLogic: tmplt.constraintLogic || "",
-        orderBy : deepc(tmplt.orderBy) || []
+        orderBy : []
     }
     function reach(n){
         var p = getPath(n)
@@ -504,9 +540,15 @@ function uncompileTemplate(tmplt){
         if (n.join === "outer") {
             t.joins.push(p);
         }
+        if (n.sort) {
+            let s = {}
+            s[p] = n.sort.dir;
+            t.orderBy[n.sort.level] = s;
+        }
         n.children.forEach(reach);
     }
     reach(tmplt.qtree);
+    t.orderBy = t.orderBy.filter(o => o);
     return t
 }
 
@@ -536,30 +578,39 @@ function newNode(parent, name, pcomp, ptype){
     return n;
 }
 
-function newTemplate() {
-    return {
-        model: { name: "genomic" },
-        name: "",
-        title: "",
-        description: "",
-        comment: "",
-        select: [],
-        where: [],
-        constraintLogic: "",
-        tags: [],
-        orderBy: []
+class Template {
+    constructor () {
+        this.model = { name: "genomic" };
+        this.name = "";
+        this.title = "";
+        this.description = "";
+        this.comment = "";
+        this.select = [];
+        this.where = [];
+        this.constraintLogic = "";
+        this.tags = [];
+        this.orderBy = [];
     }
 }
 
-function newConstraint(n) {
-    return {
-        ctype: "value",  // one of: null, value, multivalue, subclass, lookup, list
-        op: "=",
-        code: nextAvailableCode(currTemplate),
-        path: getPath(n),
-        value: "",
-        values: null,
-        type: null
+class Constraint {
+    constructor (n, t) {
+        // one of: null, value, multivalue, subclass, lookup, list
+        this.ctype = n.pcomp.kind === "attribute" ? "value" : "lookup";
+        // used by all except subclass constraints (we set it to "ISA")
+        this.op = this.ctype === "value" ? "=" : "LOOKUP";
+        // used by all except subclass constraints
+        this.code = nextAvailableCode(t);
+        // all constraints have this
+        this.path = getPath(n);
+        // used by value, list
+        this.value = "";
+        // used by LOOKUP on SequenceFeatures
+        this.extraValue = null;
+        // used by multivalue and range constraints
+        this.values = null;
+        // used by subclass contraints
+        this.type = null;
     }
 }
 
@@ -680,6 +731,13 @@ function setSubclassConstraint(n, scName){
 // Removes the current node and all its descendants.
 //
 function removeNode(n) {
+    // First, remove all constraints on n or its descendants
+    function rmc (x) {
+        x.constraints.forEach(c => removeConstraint(x,c));
+        x.children.forEach(rmc);
+    }
+    rmc(n);
+    // Now remove the subtree at n.
     var p = n.parent;
     if (p) {
         p.children.splice(p.children.indexOf(n), 1);
@@ -689,13 +747,15 @@ function removeNode(n) {
     else {
         hideDialog()
     }
+    //
+    saveState();
 }
 
 // Called when the user selects a template from the list.
 // Gets the template from the current mine and builds a set of nodes
 // for d3 tree display.
 //
-function editTemplate (t) {
+function editTemplate (t, nosave) {
     // Make sure the editor works on a copy of the template.
     //
     currTemplate = deepc(t);
@@ -703,6 +763,8 @@ function editTemplate (t) {
     root = compileTemplate(currTemplate, currMine.model).qtree
     root.x0 = h / 2;
     root.y0 = 0;
+
+    if (! nosave) saveState();
 
     // Fill in the basic template information (name, title, description, etc.)
     //
@@ -843,6 +905,10 @@ function constraintText(c) {
    }
    else if (c.ctype === "list") {
        t = c.op + " " + c.value;
+   }
+   else if (c.ctype === "lookup") {
+       t = c.op + " " + c.value;
+       if (c.extraValue) t = t + " (in: " + c.extraValue + ")";
    }
    else if (c.value !== undefined){
        t = c.op + (c.op.includes("NULL") ? "" : " " + c.value)
@@ -1155,7 +1221,7 @@ function generateOptionList(n, c){
 }
 //
 function cancelConstraintEditor(n, c){
-    if (c.new) {
+    if (! c.saved) {
         removeConstraint(n, c, true);
     }
     hideConstraintEditor();
@@ -1189,8 +1255,7 @@ function nextAvailableCode(tmplt){
 //
 function addConstraint(n, updateUI, c) {
     if (!c) {
-        c = newConstraint(n);
-        c.new = true;
+        c = new Constraint(n,currTemplate);
     }
     n.constraints.push(c);
     currTemplate.where.push(c);
@@ -1226,7 +1291,7 @@ function saveConstraintEdits(n, c){
     let o = d3.select('#constraintEditor [name="op"]')[0][0].value;
     c.op = o;
     c.ctype = OPINDEX[o].ctype;
-    c.new = false;
+    c.saved = true;
     //
     let val = d3.select('#constraintEditor [name="value"]')[0][0].value;
     let vals = [];
@@ -1272,6 +1337,7 @@ function saveConstraintEdits(n, c){
     hideConstraintEditor();
     update(n);
     showDialog(n, null, true);
+    saveState();
 }
 
 // Opens a dialog on the specified node.
@@ -1291,9 +1357,9 @@ function showDialog(n, elt, refreshOnly){
   // Set the global currNode
   currNode = n;
   var isroot = ! currNode.parent;
-  //
+  // Make node the data obj for the dialog
   var dialog = d3.select("#dialog").datum(n);
-  //
+  // Calculate dialog's position
   var dbb = dialog[0][0].getBoundingClientRect();
   var ebb = elt.getBoundingClientRect();
   var bbb = d3.select("#qb")[0][0].getBoundingClientRect();
@@ -1301,6 +1367,7 @@ function showDialog(n, elt, refreshOnly){
   var b = (bbb.bottom - ebb.bottom) + ebb.width/2;
   var l = (ebb.left - bbb.left) + ebb.height/2;
   var dir = "d" ; // "d" or "u"
+  // NB: can't get opening up to work, so hard wire it to down. :-\
 
   //
   dialog
@@ -1333,42 +1400,32 @@ function showDialog(n, elt, refreshOnly){
   dialog.select('[name="header"] [name="type"] div')
       .html(tstring);
 
-  //
+  // Wire up add constrain button
   dialog.select("#dialog .constraintSection .add-button")
         .on("click", function(){ addConstraint(n, true); });
 
-  // Fill out the constraints section
+  // Fill out the constraints section. First, select all constraints.
   var constrs = dialog.select(".constraintSection")
       .selectAll(".constraint")
       .data(n.constraints);
-  // Create divs for entering
-  var cdivs = constrs.enter()
-      .append("div")
-      .attr("class","constraint")
-      ;
-  cdivs.append("div")
-      .attr("name", "op")
-      ;
-  cdivs.append("div")
-      .attr("name", "value")
-      ;
-  cdivs.append("div")
-      .attr("name", "code")
-      ;
-  cdivs.append("i")
-      .attr("class", "material-icons edit")
-      .text("mode_edit")
-      ;
-  cdivs.append("i")
-      .attr("class", "material-icons cancel")
-      .text("delete_forever")
-      ;
+  // Enter(): create divs for each constraint to be displayed  (TODO: use an HTML5 template instead)
+  // 1. container
+  var cdivs = constrs.enter().append("div").attr("class","constraint") ;
+  // 2. operator
+  cdivs.append("div").attr("name", "op") ;
+  // 3. value
+  cdivs.append("div").attr("name", "value") ;
+  // 4. constraint code
+  cdivs.append("div").attr("name", "code") ;
+  // 5. button to edit this constraint
+  cdivs.append("i").attr("class", "material-icons edit").text("mode_edit");
+  // 6. button to remove this constraint
+  cdivs.append("i").attr("class", "material-icons cancel").text("delete_forever");
 
   // Remove exiting
-  constrs.exit()
-      .remove() ;
+  constrs.exit().remove() ;
 
-  // Set the text
+  // Set the text for each constraint
   constrs
       .attr("class", function(c) { return "constraint " + c.ctype; });
   constrs.select('[name="code"]')
@@ -1377,6 +1434,7 @@ function showDialog(n, elt, refreshOnly){
       .text(function(c){ return c.op || "ISA"; });
   constrs.select('[name="value"]')
       .text(function(c){
+          // FIXME 
           return c.value || (c.values && c.values.join(",")) || c.type;
       });
   constrs.select("i.edit")
@@ -1713,8 +1771,12 @@ function json2xml(t, qonly){
     function c2xml(c){
         let g = '';
         let h = '';
-        if (c.ctype === "value" || c.ctype === "lookup" || c.ctype === "list")
+        if (c.ctype === "value" || c.ctype === "list")
             g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.value)}" code="${c.code}" editable="${c.editable}"`;
+        else if (c.ctype === "lookup"){
+            let ev = c.extraValue ? `extraValue="${c.extraValue}"` : "";
+            g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.value)}" ${ev} code="${c.code}" editable="${c.editable}"`;
+        }
         else if (c.ctype === "multivalue"){
             g = `path="${c.path}" op="${c.op}" code="${c.code}" editable="${c.editable}"`;
             h = c.values.map( v => `<value>${esc(v)}</value>` ).join('');
@@ -1783,9 +1845,16 @@ function updateCount(){
   let qtxt = json2xml(uct, true);
   let urlTxt = encodeURIComponent(qtxt);
   let countUrl = currMine.url + `/service/query/results?query=${urlTxt}&format=count`;
+  d3.select('#querycount').classed("running", true);
   d3jsonPromise(countUrl)
-      .then( n => d3.select('#querycount span').text(n) )
-      .catch( e => console.log("ERROR::", qtxt) );
+      .then(function(n){
+          d3.select('#querycount').classed("error", false).classed("running", false);
+          d3.select('#querycount span').text(n)
+      })
+      .catch(function(e){
+          d3.select('#querycount').classed("error", true).classed("running", false);
+          console.log("ERROR::", qtxt)
+      });
 }
 
 // The call that gets it all going...

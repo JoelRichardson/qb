@@ -5,5 +5,6 @@ module.exports = {
     output: {
         filename: 'qb.bundle.js',
         path: path.resolve(__dirname, 'dist')
-    }
+    },
+    devtool: 'inline-source-map'
 };

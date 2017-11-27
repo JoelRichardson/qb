@@ -182,7 +182,7 @@ i.material-icons.button:hover {
 
 #dialog table.attributes td {
     padding: 6px;
-    text-align: center;
+    text-align: left;
     vertical-align: middle;
 }
 

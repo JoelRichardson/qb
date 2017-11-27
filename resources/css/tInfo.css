@@ -195,12 +195,27 @@
     color: black;
     width: auto;
 }
+#querycount i.error,
+#querycount.syncoff i.error,
+#querycount.syncoff.error i.error {
+    display: none;
+}
+#querycount.error i.error {
+    display: block;
+    color: red;
+}
+#querycount.error span {
+    text-decoration: line-through;
+}
+#querycount.syncoff label,
+#querycount.syncoff span {
+    color: #ccc;
+}
 #querycount label {
     font-weight: normal;
 }
-#querycount:hover {
-    pointer: default;
-    color: black;
+#querycount.running .button.sync {
+    -webkit-animation: rotation 2s infinite linear;
 }
 
 /* this rule is so that the floating action buttons (fab's) positions correctly */
