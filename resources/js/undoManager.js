@@ -21,19 +21,19 @@ class UndoManager {
         return this.hasState && this.pointer < this.history.length-1;
     }
     add (s) {
-        console.log("ADD");
+        //console.log("ADD");
         this.pointer += 1;
         this.history[this.pointer] = s;
         this.history.splice(this.pointer+1);
     }
     undo () {
-        console.log("UNDO");
+        //console.log("UNDO");
         if (! this.canUndo) throw "No undo."
         this.pointer -= 1;
         return this.history[this.pointer];
     }
     redo () {
-        console.log("REDO");
+        //console.log("REDO");
         if (! this.canRedo) throw "No redo."
         this.pointer += 1;
         return this.history[this.pointer];

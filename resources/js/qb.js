@@ -28,20 +28,21 @@ import {
 
 import UndoManager from './undoManager.js';
 
-var name2mine;
-var currMine;
-var m;
-var w;
-var h;
-var i;
-var root;
-var layoutStyle;
-var diagonal;
-var vis;
-var currTemplate;
-var currNode;
-var layoutStyle = "tree";
-var animationDuration = 250; // ms
+let name2mine;
+let currMine;
+let m;
+let w;
+let h;
+let i;
+let root;
+let diagonal;
+let vis;
+let currTemplate;
+let currNode;
+let nodes;
+let links;
+let layoutStyle = "tree";
+let animationDuration = 250; // ms
 let defaultColors = { header: { main: "#595455", text: "#fff" } };
 let defaultLogo = "https://cdn.rawgit.com/intermine/design-materials/78a13db5/logos/intermine/squareish/45x45.png";
 let undoMgr = new UndoManager();
@@ -125,6 +126,7 @@ function setup(){
                 currNode.view = !currNode.view;
                 update(currNode);
                 d3.select("#dialog .select-ctrl").classed("selected", currNode.view);
+                saveState();
             });
 
         // start with the first mine by default.
@@ -144,7 +146,7 @@ function setup(){
             let turnSyncOff = t.text() === "sync";
             t.text( turnSyncOff ? "sync_disabled" : "sync" )
              .attr("title", () =>
-                 `Count autosync is ${ turnSyncOff ? "OFF" : "ON" }. Click to ${ turnSyncOff ? "enable" : "disable" }.`);
+                 `Count autosync is ${ turnSyncOff ? "OFF" : "ON" }. Click to turn it ${ turnSyncOff ? "ON" : "OFF" }.`);
             !turnSyncOff && updateCount();
         d3.select('#querycount').classed("syncoff", turnSyncOff);
         });
@@ -529,7 +531,7 @@ function uncompileTemplate(tmplt){
         orderBy : []
     }
     function reach(n){
-        var p = getPath(n)
+        var p = n.getPath()
         if (n.view) {
             t.select.push(p);
         }
@@ -552,30 +554,36 @@ function uncompileTemplate(tmplt){
     return t
 }
 
-// Args:
-//   parent (object) Parent of the new node.
-//   name (string) Name for the node
-//   pcomp (object) Path component for the root, this is a class. For other nodes, an attribute, 
-//                  reference, or collection decriptor.
-//   ptype (object or string) Type of pcomp.
-function newNode(parent, name, pcomp, ptype){
-    let n = {
-        name: name,     // display name
-        children: [],   // child nodes
-        parent: parent,   // parent node
-        pcomp: pcomp,   // path component represented by the node. At root, this is
-                        // the starting class. Otherwise, points to an attribute (simple, 
-                        // reference, or collection).
-        ptype : ptype,  // path type. The type of the path at this node, i.e. the type of pcomp. 
-                        // For simple attributes, this is a string. Otherwise,
-                        // points to a class in the model. May be overriden by subclass constraint.
-        subclassConstraint: null, // subclass constraint (if any). Points to a class in the model
-                        // If specified, overrides ptype as the type of the node.
-        constraints: [],// all constraints
-        view: false     // attribute to be returned. Note only simple attributes can have view == true.
-    };
-    parent && parent.children.push(n);
-    return n;
+//
+class Node {
+    // Args:
+    //   parent (object) Parent of the new node.
+    //   name (string) Name for the node
+    //   pcomp (object) Path component for the root, this is a class. For other nodes, an attribute, 
+    //                  reference, or collection decriptor.
+    //   ptype (object or string) Type of pcomp.
+    constructor (parent, name, pcomp, ptype) {
+        this.name = name;     // display name
+        this.children = [];   // child nodes
+        this.parent = parent; // parent node
+        this.pcomp = pcomp;   // path component represented by the node. At root, this is
+                              // the starting class. Otherwise, points to an attribute (simple, 
+                              // reference, or collection).
+        this.ptype  = ptype;  // path type. The type of the path at this node, i.e. the type of pcomp. 
+                              // For simple attributes, this is a string. Otherwise,
+                              // points to a class in the model. May be overriden by subclass constraint.
+        this.subclassConstraint = null; // subclass constraint (if any). Points to a class in the model
+                              // If specified, overrides ptype as the type of the node.
+        this.constraints = [];// all constraints
+        this.view = false;    // attribute to be returned. Note only simple attributes can have view == true.
+        parent && parent.children.push(this);
+        
+        this.id = this.getPath();
+    }
+    //
+    getPath(){
+        return (this.parent ? this.parent.getPath()+"." : "") + this.name;
+    }
 }
 
 class Template {
@@ -602,10 +610,10 @@ class Constraint {
         // used by all except subclass constraints
         this.code = nextAvailableCode(t);
         // all constraints have this
-        this.path = getPath(n);
+        this.path = n.getPath();
         // used by value, list
         this.value = "";
-        // used by LOOKUP on SequenceFeatures
+        // used by LOOKUP on BioEntity and subclasses
         this.extraValue = null;
         // used by multivalue and range constraints
         this.values = null;
@@ -647,7 +655,7 @@ function addPath(template, path, model){
                 cls = classes[p];
                 if (!cls)
                    throw "Could not find class: " + p;
-                n = template.qtree = newNode( null, p, cls, cls );
+                n = template.qtree = new Node( null, p, cls, cls );
             }
         }
         else {
@@ -675,7 +683,7 @@ function addPath(template, path, model){
                     throw "Could not find member named " + p + " in class " + cls.name + ".";
                 }
                 // create new node, add it to n's children
-                nn = newNode(n, p, x, cls);
+                nn = new Node(n, p, x, cls);
                 n = nn;
             }
         }
@@ -685,10 +693,6 @@ function addPath(template, path, model){
     return n;
 }
 
-//
-function getPath(node){
-    return (node.parent ? getPath(node.parent)+"." : "") + node.name;
-}
 
 // Args:
 //   n (node) The node having the constraint.
@@ -700,7 +704,7 @@ function setSubclassConstraint(n, scName){
     if (scName){
         let cls = currMine.model.classes[scName];
         if(!cls) throw "Could not find class " + scName;
-        n.constraints.push({ ctype:"subclass", op:"ISA", path:getPath(n), type:cls.name });
+        n.constraints.push({ ctype:"subclass", op:"ISA", path:n.getPath(), type:cls.name });
         n.subclassConstraint = cls;
     }
     function check(node, removed) {
@@ -724,7 +728,7 @@ function setSubclassConstraint(n, scName){
         window.setTimeout(function(){
             alert("Constraining to subclass " + (scName || n.ptype.name)
             + " caused the following paths to be removed: " 
-            + removed.map(getPath).join(", ")); 
+            + removed.map(n => n.getPath()).join(", ")); 
         }, animationDuration);
 }
 
@@ -887,6 +891,8 @@ function selectedNext(currNode,p,mode){
     }
     hideDialog();
     update(currNode);
+    if (mode !== "open")
+        saveState();
     setTimeout(function(){
         showDialog(n);
         cc && setTimeout(function(){
@@ -1167,7 +1173,7 @@ function generateOptionList(n, c){
     clearLocal();
 
     // build the query
-    let p = getPath(n); // what we want to summarize
+    let p = n.getPath(); // what we want to summarize
     //
     let lex = currTemplate.constraintLogic; // save constraint logic expr
     removeConstraint(n, c, false); // temporarily remove the constraint
@@ -1392,7 +1398,7 @@ function showDialog(n, elt, refreshOnly){
       .text(n.name);
   // Show the full path
   dialog.select('[name="header"] [name="fullPath"] div')
-      .text(getPath(n));
+      .text(n.getPath());
   // Type at this node
   var tp = n.ptype.name || n.ptype;
   var stp = (n.subclassConstraint && n.subclassConstraint.name) || null;
@@ -1400,7 +1406,7 @@ function showDialog(n, elt, refreshOnly){
   dialog.select('[name="header"] [name="type"] div')
       .html(tstring);
 
-  // Wire up add constrain button
+  // Wire up add constraint button
   dialog.select("#dialog .constraintSection .add-button")
         .on("click", function(){ addConstraint(n, true); });
 
@@ -1444,6 +1450,7 @@ function showDialog(n, elt, refreshOnly){
   constrs.select("i.cancel")
       .on("click", function(c){ 
           removeConstraint(n, c, true);
+          saveState();
       })
 
 
@@ -1548,28 +1555,45 @@ function setLayout(style){
 
 function doLayout(root){
   var layout;
+  let leaves = [];
   
   if (layoutStyle === "tree") {
       layout = d3.layout.tree()
           .size([h, w]);
+      // Compute the new layout, and save nodes in global.
+      nodes = layout.nodes(root).reverse();
+      // Normalize for fixed-depth.
+      nodes.forEach(function(d) { d.y = d.depth * 180; });
   }
   else {
+      // dendrogram
       function md (n) { // max depth
+          if (n.children.length === 0) leaves.push(n);
           return 1 + (n.children.length ? Math.max.apply(null, n.children.map(md)) : 0);
       };
-      var maxd = md(root);
+      let maxd = md(root);
       layout = d3.layout.cluster()
+          .separation((a,b) => 1)
           .size([h, maxd * 180]);
+      // Compute the new layout, and save nodes in global.
+      nodes = layout.nodes(root).reverse();
+      // Rearrange the leaf nodes according to 
+      let pos = leaves.map(function(n){ return { x: n.x, x0: n.x0 }; });
+      // sort the leaf array by name
+      leaves.sort(function(a,b) {
+          let na = a.name.toLowerCase();
+          let nb = b.name.toLowerCase();
+          return na < nb ? -1 : na > nb ? 1 : 0;
+      });
+      // reassign the Y positions
+      leaves.forEach(function(n, i){
+          n.x = pos[i].x;
+          n.x0 = pos[i].x0;
+      });
   }
 
-  // Compute the new layout.
-  var nodes = layout.nodes(root).reverse();
-
-  // Normalize for fixed-depth.
-  if (layoutStyle === "tree")
-      nodes.forEach(function(d) { d.y = d.depth * 180; });
-
-  var links = layout.links(nodes);
+  // save links in global
+  links = layout.links(nodes);
 
   return [nodes, links]
 }
@@ -1580,20 +1604,21 @@ function doLayout(root){
 // Updates the SVG, using n as the source of any entering/exiting animations.
 //
 function update(source) {
-  var duration = animationDuration;
+  //
+  doLayout(root);
+  updateNodes(nodes, source);
+  updateLinks(links, source);
+  updateTtext();
+}
 
-
-  var nl = doLayout(root);
-  var nodes = nl[0];
-  var links = nl[1];
-
-  // Update the nodes…
-  var nodeGrps = vis.selectAll("g.nodegroup")
-      .data(nodes, function(d) { return d.id || (d.id = ++i); })
+//
+function updateNodes(nodes, source){
+  let nodeGrps = vis.selectAll("g.nodegroup")
+      .data(nodes, function(n) { return n.id || (n.id = ++i); })
       ;
 
   // Create new nodes at the parent's previous position.
-  var nodeEnter = nodeGrps.enter()
+  let nodeEnter = nodeGrps.enter()
       .append("svg:g")
       .attr("class", "nodegroup")
       .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
@@ -1630,7 +1655,7 @@ function update(source) {
       ;
 
   // Transition nodes to their new position.
-  var nodeUpdate = nodeGrps
+  let nodeUpdate = nodeGrps
       .classed("selected", function(n){ return n.view; })
       .classed("constrained", function(n){ return n.constraints.length > 0; })
       .transition()
@@ -1666,7 +1691,7 @@ function update(source) {
 
   //
   // Transition exiting nodes to the parent's new position.
-  var nodeExit = nodeGrps.exit().transition()
+  let nodeExit = nodeGrps.exit().transition()
       .duration(animationDuration)
       .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
       .remove()
@@ -1681,9 +1706,18 @@ function update(source) {
   nodeExit.select("text")
       .style("fill-opacity", 1e-6)
       ;
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+  //
 
-  // Update the links…
-  var link = vis.selectAll("path.link")
+}
+
+//
+function updateLinks(links, source) {
+  let link = vis.selectAll("path.link")
       .data(links, function(d) { return d.target.id; })
       ;
 
@@ -1743,14 +1777,6 @@ function update(source) {
       .remove()
       ;
 
-  // Stash the old positions for transition.
-  nodes.forEach(function(d) {
-    d.x0 = d.x;
-    d.y0 = d.y;
-  });
-  //
-
-  updateTtext();
 }
 
 // Turns a json representation of a template into XML, suitable for importing into the Intermine QB.
