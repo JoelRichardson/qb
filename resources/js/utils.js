@@ -86,30 +86,33 @@ function parsePathQuery(xml){
     //       <join path="Gene.sequenceOntologyTerm" style="OUTER"/>
     joins = joins.map( j => j.getAttribute("path") );
 
-    // The json format for orderBy is a bit weird.
-    // If the xml orderBy is: "A.b.c asc A.d.e desc",
-    // the json should be: [ {"A.b.c":"asc"}, {"A.d.e":"desc} ]
-    // 
-    // The orderby string tokens, e.g. ["A.b.c", "asc", "A.d.e", "desc"]
-    let ob = sortOrder.trim().split(/\s+/);
-    // sanity check:
-    if (ob.length % 2 )
-        throw "Could not parse the orderBy clause: " + query.getAttribute("sortOrder");
-    // convert tokens to json orderBy 
-    let orderBy = ob.reduce(function(acc, curr, i){
-        if (i % 2 === 0){
-            // odd. curr is a path. Push it.
-            acc.push(curr)
-        }
-        else {
-            // even. Pop the path, create the {}, and push it.
-            let v = {}
-            let p = acc.pop()
-            v[p] = curr;
-            acc.push(v);
-        }
-        return acc;
-    }, []);
+    let orderBy = null;
+    if (sortOrder) {
+        // The json format for orderBy is a bit weird.
+        // If the xml orderBy is: "A.b.c asc A.d.e desc",
+        // the json should be: [ {"A.b.c":"asc"}, {"A.d.e":"desc} ]
+        // 
+        // The orderby string tokens, e.g. ["A.b.c", "asc", "A.d.e", "desc"]
+        let ob = sortOrder.trim().split(/\s+/);
+        // sanity check:
+        if (ob.length % 2 )
+            throw "Could not parse the orderBy clause: " + query.getAttribute("sortOrder");
+        // convert tokens to json orderBy 
+        orderBy = ob.reduce(function(acc, curr, i){
+            if (i % 2 === 0){
+                // odd. curr is a path. Push it.
+                acc.push(curr)
+            }
+            else {
+                // even. Pop the path, create the {}, and push it.
+                let v = {}
+                let p = acc.pop()
+                v[p] = curr;
+                acc.push(v);
+            }
+            return acc;
+            }, []);
+    }
 
     return {
         title,

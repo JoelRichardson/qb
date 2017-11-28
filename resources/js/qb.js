@@ -179,6 +179,7 @@ function undoredo(which){
     }
 }
 
+// <query model="genomic" view="Organism.shortName"></query>
 // Called when user selects a mine from the option list
 // Loads that mine's data model and all its templates.
 // Then initializes display to show the first termplate's query.
