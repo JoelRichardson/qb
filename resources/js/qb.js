@@ -185,8 +185,8 @@ function undoredo(which){
 function selectedMine(mname){
     currMine = name2mine[mname]
     if(!currMine) return;
-    var url = currMine.url;
-    var turl, murl, lurl, burl;
+    let url = currMine.url;
+    let turl, murl, lurl, burl, surl;
     currMine.tnames = []
     currMine.templates = []
     if (mname === "test") { 
@@ -194,12 +194,14 @@ function selectedMine(mname){
         murl = url + "/model.json";
         lurl = url + "/lists.json";
         burl = url + "/branding.json";
+        surl = url + "/summaryfields.json";
     }
     else {
         turl = url + "/service/templates?format=json";
         murl = url + "/service/model?format=json";
         lurl = url + "/service/lists?format=json";
         burl = url + "/service/branding";
+        surl = url + "/service/summaryfields";
     }
     // get the model
     console.log("Loading resources from " + url );
@@ -207,16 +209,19 @@ function selectedMine(mname){
         d3jsonPromise(murl),
         d3jsonPromise(turl),
         d3jsonPromise(lurl),
-        d3jsonPromise(burl)
+        d3jsonPromise(burl),
+        d3jsonPromise(surl)
     ]).then( function(data) {
         var j_model = data[0];
         var j_templates = data[1];
         var j_lists = data[2];
         var j_branding = data[3];
+        var j_summary = data[4];
         //
         currMine.model = compileModel(j_model.model)
         currMine.templates = j_templates.templates;
         currMine.lists = j_lists.lists;
+        currMine.summaryFields = j_summary.classes;
         //
         currMine.tlist = obj2array(currMine.templates)
         currMine.tlist.sort(function(a,b){ 
@@ -584,6 +589,10 @@ class Node {
     getPath(){
         return (this.parent ? this.parent.getPath()+"." : "") + this.name;
     }
+    //
+    getNodeType () {
+        return this.subclassConstraint || this.ptype;
+    }
 }
 
 class Template {
@@ -865,8 +874,8 @@ function setLogicExpression(ex, tmplt){
 // Extends the path from currNode to p
 // Args:
 //   currNode (node) Node to extend from
-//   p (string) Name of an attribute, ref, or collection
 //   mode (string) one of "select", "constrain" or "open"
+//   p (string) Name of an attribute, ref, or collection
 // Returns:
 //   nothing
 // Side effects:
@@ -877,28 +886,38 @@ function setLogicExpression(ex, tmplt){
 //   If the user clicked on a "open+constrain" button, a new constraint is added to the
 //   child, and the constraint editor opened  on that constraint.
 //
-function selectedNext(currNode,p,mode){
-    var cc;
-    p = [ p ]
-    for(var n = currNode; n; n = n.parent){
-        p.unshift(n.name);
+function selectedNext(currNode, mode, p){
+    let n;
+    let cc;
+    let sfs;
+    if (mode === "summaryfields") {
+        sfs = currMine.summaryFields[currNode.getNodeType().name]||[];
+        sfs.forEach(function(sf){
+            sf = sf.replace(/^[^.]+/, currNode.getPath());
+            let m = addPath(currTemplate, sf, currMine.model);
+            m.view = true;
+        });
     }
-    var n = addPath(currTemplate, p.join("."), currMine.model );
-    if (mode === "selected")
-        n.view = true;
-    if (mode === "constrained") {
-        cc = addConstraint(n, false)
+    else {
+        p = currNode.getPath() + "." + p;
+        n = addPath(currTemplate, p, currMine.model );
+        if (mode === "selected")
+            n.view = true;
+        if (mode === "constrained") {
+            cc = addConstraint(n, false)
+        }
     }
     hideDialog();
     update(currNode);
     if (mode !== "open")
         saveState();
-    setTimeout(function(){
-        showDialog(n);
-        cc && setTimeout(function(){
-            editConstraint(cc, n)
+    if (mode !== "summaryfields") 
+        setTimeout(function(){
+            showDialog(n);
+            cc && setTimeout(function(){
+                editConstraint(cc, n)
+            }, animationDuration);
         }, animationDuration);
-    }, animationDuration);
     
 }
 // Returns a text representation of a constraint
@@ -1478,6 +1497,10 @@ function showDialog(n, elt, refreshOnly){
       dialog.select("span.clsName")
           .text(n.pcomp.type ? n.pcomp.type.name : n.pcomp.name);
 
+      // wire up the button to show summary fields
+      dialog.select('#dialog [name="showSummary"]')
+          .on("click", () => selectedNext(currNode, "summaryfields"));
+
       // Fill in the table listing all the attributes/refs/collections.
       var tbl = dialog.select("table.attributes");
       var rows = tbl.selectAll("tr")
@@ -1494,11 +1517,11 @@ function showDialog(n, elt, refreshOnly){
                   },{
                   name: '<i class="material-icons" title="Select this attribute">play_arrow</i>',
                   cls: 'selectsimple',
-                  click: function (){selectedNext(currNode,comp.name,"selected"); }
+                  click: function (){selectedNext(currNode, "selected", comp.name); }
                   },{
                   name: '<i class="material-icons" title="Constrain this attribute">play_arrow</i>',
                   cls: 'constrainsimple',
-                  click: function (){selectedNext(currNode,comp.name,"constrained"); }
+                  click: function (){selectedNext(currNode, "constrained", comp.name); }
                   }];
               }
               else {
@@ -1508,7 +1531,7 @@ function showDialog(n, elt, refreshOnly){
                   },{
                   name: `<i class="material-icons" title="Follow this ${comp.kind}">play_arrow</i>`,
                   cls: 'opennext',
-                  click: function (){selectedNext(currNode,comp.name,"open"); }
+                  click: function (){selectedNext(currNode, "open", comp.name); }
                   },{
                   name: "",
                   cls: ''
@@ -1567,6 +1590,8 @@ function doLayout(root){
   }
   else {
       // dendrogram
+      // Experimenting with rearranging leaves. Rough code ahead...
+
       function md (n) { // max depth
           if (n.children.length === 0) leaves.push(n);
           return 1 + (n.children.length ? Math.max.apply(null, n.children.map(md)) : 0);
@@ -1577,7 +1602,9 @@ function doLayout(root){
           .size([h, maxd * 180]);
       // Compute the new layout, and save nodes in global.
       nodes = layout.nodes(root).reverse();
-      // Rearrange the leaf nodes according to 
+
+      // Rearrange y-positions of leaf nodes. 
+      // NOTE that x and y are reversed at this point
       let pos = leaves.map(function(n){ return { x: n.x, x0: n.x0 }; });
       // sort the leaf array by name
       leaves.sort(function(a,b) {
@@ -1590,6 +1617,41 @@ function doLayout(root){
           n.x = pos[i].x;
           n.x0 = pos[i].x0;
       });
+      // At this point, leaves and root are in position, but intermediate nodes
+      // could use some help. Move them toward their "center of gravity" as defined
+      // by the positions of their children. Apply this recursively up the tree.
+      // 
+      // NOTE that x and y are reversed at this point!
+      //
+      // Maintain a map of occupied positions:
+      let occupied = {} ;  // occupied[x position] == [list of y positions]
+      function cog (n) {
+          if (n.children.length > 0) {
+              // compute my c.o.g. as the average of my kids' positions
+              let myCog = (n.children.map(cog).reduce((t,c) => t+c, 0))/n.children.length;
+              // adjust myCog to avoid collisions
+              let occ = occupied[n.y] || [];
+              let stepSize = 20;
+              let minSep = 80;
+              for( let i = 0; i*stepSize <= h; i += 1 ){
+                  let testPos = myCog + (i % 2 ? -i : +i) * stepSize;
+                  if (testPos > 0
+                  && testPos < h
+                  && occ.filter(ox => Math.abs(ox - testPos) < minSep).length === 0) {
+                      myCog = testPos;
+                      break;
+                  }
+              };
+
+              // if I'm not the root, set my position
+              if (n.parent)
+                  n.x = myCog;
+          }
+          let dd = occupied[n.y] = (occupied[n.y] || []);
+          dd.push(n.x);
+          return n.x;
+      }
+      cog(root);
   }
 
   // save links in global

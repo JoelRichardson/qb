@@ -5,6 +5,7 @@
     display: flex;
     flex-direction: column;
     min-width: 200px;
+    border-radius: 5px;
 }
 
 #dialog [name="header"] {
@@ -152,7 +153,6 @@ i.material-icons.button:hover {
 
 #dialog i.button.remove {
     font-size: 28px;
-    color: red;
 }
 
 #dialog.isroot i.button.remove {
@@ -213,7 +213,6 @@ button {
 }
 
 #dialog .attrContainer {
-    border: thin solid white;
     max-height: 150px;
     overflow: scroll;
 }
@@ -239,3 +238,18 @@ button {
 #dialog i.material-icons {
     font-size: 16px;
 }
+#dialog [name="showSummary"] {
+    color: green;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    width: auto;
+}
+#dialog [name="showSummary"] .button.showSummaryFields {
+    font-size: 28px;
+}
+#dialog [name="showSummary"]:hover {
+    color: white;
+    background-color: green;
+}
+
