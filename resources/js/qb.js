@@ -1596,7 +1596,7 @@ function doLayout(root){
           if (n.children.length === 0) leaves.push(n);
           return 1 + (n.children.length ? Math.max.apply(null, n.children.map(md)) : 0);
       };
-      let maxd = md(root);
+      let maxd = md(root); // max depth, 1-based
       layout = d3.layout.cluster()
           .separation((a,b) => 1)
           .size([h, maxd * 180]);
@@ -1617,41 +1617,29 @@ function doLayout(root){
           n.x = pos[i].x;
           n.x0 = pos[i].x0;
       });
-      // At this point, leaves and root are in position, but intermediate nodes
-      // could use some help. Move them toward their "center of gravity" as defined
+      // At this point, leaves have been rearranged, but the interior nodes haven't.
+      // Her we move interior nodes toward their "center of gravity" as defined
       // by the positions of their children. Apply this recursively up the tree.
       // 
-      // NOTE that x and y are reversed at this point!
+      // NOTE that x and y coordinates are opposite at this point!
       //
       // Maintain a map of occupied positions:
-      let occupied = {} ;  // occupied[x position] == [list of y positions]
+      let occupied = {} ;  // occupied[x position] == [list of nodes]
       function cog (n) {
           if (n.children.length > 0) {
               // compute my c.o.g. as the average of my kids' positions
               let myCog = (n.children.map(cog).reduce((t,c) => t+c, 0))/n.children.length;
-              // adjust myCog to avoid collisions
-              let occ = occupied[n.y] || [];
-              let stepSize = 20;
-              let minSep = 80;
-              for( let i = 0; i*stepSize <= h; i += 1 ){
-                  let testPos = myCog + (i % 2 ? -i : +i) * stepSize;
-                  if (testPos > 0
-                  && testPos < h
-                  && occ.filter(ox => Math.abs(ox - testPos) < minSep).length === 0) {
-                      myCog = testPos;
-                      break;
-                  }
-              };
-
-              // if I'm not the root, set my position
-              if (n.parent)
-                  n.x = myCog;
+              if(n.parent) n.x = myCog;
           }
           let dd = occupied[n.y] = (occupied[n.y] || []);
           dd.push(n.x);
           return n.x;
       }
       cog(root);
+
+      // TODO: Final adjustments
+      // 1. If we extend off the right edge, compress.
+      // 2. If items at same x overlap, spread them out in y.
   }
 
   // save links in global
