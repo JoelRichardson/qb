@@ -135,17 +135,24 @@
         <!-- The container where the SVG drawing goes. -->
         <div id="svgContainer">
             <svg></svg>
-            <div id="runatmine" class="fab" title="Click to run. Alt-click to open in editor.">
-                Run this query at
-                <span name="minename"></span>
+            <div id="tooltray" class="flexcolumn">
+                <div id="runatmine" title="Click to run. Alt-click to open in editor.">
+                    Run this query at
+                    <span name="minename"></span>
+                </div>
+                <div id="querycount" class="flexrow syncoff">
+                    <i class="material-icons button sync" title="Count autosync is OFF. Click to turn it ON.">sync_disabled</i>
+                    <label>Count:</label>
+                    <span></span>
+                    <i class="material-icons error">error</i>
+                </div>
+                <div name="undoRedoButtons" class="flexrow">
+                    <i id="undoButton" title="Undo" class="material-icons button undo">undo</i>
+                    <i id="redoButton" title="Redo" class="material-icons button redo">redo</i>
+                </div>
+
+                <img id="mineLogo" src=""></img>
             </div>
-            <div id="querycount" class="fab flexrow syncoff">
-                <i class="material-icons button sync" title="Count autosync is OFF. Click to turn it ON.">sync_disabled</i>
-                <label>Count:</label>
-                <span></span>
-                <i class="material-icons error">error</i>
-            </div>
-            <img id="mineLogo" src=""></img>
             <div name="spacebar"></div>
         </div>
 
@@ -153,14 +160,13 @@
         <div id="footer" class="flexrow">
             <div class="flexrow left" >
 
-                <i id="undoButton" title="Undo" class="material-icons button undo">undo</i>
-                <i id="redoButton" title="Redo" class="material-icons button redo">redo</i>
-
                 <div class="flexcol">
-                    <label>Layout</label>
-                    <select id="layoutstyle">
-                        <option>tree</option>
-                        <option>dendrogram</option>
+                    <label>Edit view</label>
+                    <select id="editView">
+                        <option value="queryMain">Query (main)</option>
+                        <option value="constraintLogic" disabled>Constraint logic</option>
+                        <option value="columnOrder">Column order</option>
+                        <option value="sortOrder" disabled>Sort order</option>
                     </select>
                 </div>
             </div>

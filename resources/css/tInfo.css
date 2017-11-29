@@ -159,31 +159,29 @@
 
 #mineLogo {
     position: absolute;
-    top: 10px;
-    left: 2px;
+    top: -8px;
+    left: -8px;
     height: 40px;
 }
 
-.fab {
-    background-color: gray;
-    color: white;
-    padding: 16px 28px;
-    width: 125px;
-    border-radius: 20px;
-    text-decoration: none;
-    text-align: center;
-    position: absolute ;
+#tooltray {
+    position: absolute;
     top: 20px;
     left: 12px;
 }
 
-.fab:hover {
-    color: blue;
-    cursor: pointer;
+#tooltray [name="undoRedoButtons"] {
 }
 
 #runatmine {
     background-color: green;
+    color: white;
+    border-radius: 20px;
+    padding: 12px 20px;
+    cursor: pointer;
+    width: 120px;
+    text-align: center;
+    text-decoration: none;
 }
 
 #runatmine:hover {
@@ -195,7 +193,6 @@
     padding-top: 8px;
     background-color: transparent;
     color: black;
-    width: auto;
 }
 #querycount i.error,
 #querycount.syncoff i.error,
