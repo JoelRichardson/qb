@@ -124,9 +124,9 @@ function setup(){
         //
         d3.select("#dialog .select-ctrl")
             .on("click", function() {
-                currNode.view = !currNode.view;
+                currNode.isSelected ? currNode.unselect() : currNode.select();
                 update(currNode);
-                d3.select("#dialog .select-ctrl").classed("selected", currNode.view);
+                d3.select("#dialog .select-ctrl").classed("selected", currNode.isSelected);
                 saveState();
             });
 
@@ -505,9 +505,9 @@ function compileTemplate(template, model) {
     })
 
     //
-    t.select && t.select.forEach(function(p){
+    t.select && t.select.forEach(function(p,i){
         var n = addPath(t, p, model);
-        n.view = true;
+        n.select();
     })
     t.joins && t.joins.forEach(function(j){
         var n = addPath(t, j, model);
@@ -543,9 +543,11 @@ function uncompileTemplate(tmplt){
         orderBy : []
     }
     function reach(n){
-        var p = n.getPath()
-        if (n.view) {
-            t.select.push(p);
+        var p = n.path
+        if (n.isSelected) {
+            // path should already be there
+            if (t.select.indexOf(n.path) === -1)
+                throw "Anomaly detected in select list.";
         }
         (n.constraints || []).forEach(function(c){
              t.where.push(c);
@@ -561,6 +563,7 @@ function uncompileTemplate(tmplt){
         }
         n.children.forEach(reach);
     }
+
     reach(tmplt.qtree);
     t.orderBy = t.orderBy.filter(o => o);
     return t
@@ -569,12 +572,14 @@ function uncompileTemplate(tmplt){
 //
 class Node {
     // Args:
+    //   template (Template object) the template that owns this node
     //   parent (object) Parent of the new node.
     //   name (string) Name for the node
     //   pcomp (object) Path component for the root, this is a class. For other nodes, an attribute, 
     //                  reference, or collection decriptor.
     //   ptype (object or string) Type of pcomp.
-    constructor (parent, name, pcomp, ptype) {
+    constructor (template, parent, name, pcomp, ptype) {
+        this.template = template; // the template I belong to.
         this.name = name;     // display name
         this.children = [];   // child nodes
         this.parent = parent; // parent node
@@ -587,24 +592,50 @@ class Node {
         this.subclassConstraint = null; // subclass constraint (if any). Points to a class in the model
                               // If specified, overrides ptype as the type of the node.
         this.constraints = [];// all constraints
-        this.view = false;    // attribute to be returned. Note only simple attributes can have view == true.
+        this.view = null;    // If selected for return, this is its column#.
         parent && parent.children.push(this);
         
-        this.id = this.getPath();
+        this.id = this.path;
     }
     //
-    getPath(){
-        return (this.parent ? this.parent.getPath()+"." : "") + this.name;
+    get rootNode () {
+        return this.template.qtree;
+    }
+
+    //
+    get path () {
+        return (this.parent ? this.parent.path +"." : "") + this.name;
     }
     //
-    getNodeType () {
+    get nodeType () {
         return this.subclassConstraint || this.ptype;
     }
     //
-    isBioEntity () {
+    get isBioEntity () {
         let be = currMine.model.classes["BioEntity"];
-        let nt = this.getNodeType();
+        let nt = this.nodeType;
         return isSubclass(nt, be);
+    }
+    //
+    get isSelected () {
+         return this.view >= 0;
+    }
+    select () {
+        let p = this.path;
+        let t = this.template;
+        let i = t.select.indexOf(p);
+        this.view = i >= 0 ? i : (t.select.push(p) - 1);
+    }
+    unselect () {
+        let p = this.path;
+        let t = this.template;
+        let i = t.select.indexOf(p);
+        if (i >= 0) {
+            // remove path from the select list
+            t.select.splice(i,1);
+            // FIXME: renumber nodes here
+        }
+        this.view = null;
     }
 }
 
@@ -621,6 +652,11 @@ class Template {
         this.tags = [];
         this.orderBy = [];
     }
+
+    findNode (p) {
+        let n = this.qtree;
+        let parts = p.split(".");
+    }
 }
 
 class Constraint {
@@ -632,7 +668,7 @@ class Constraint {
         // used by all except subclass constraints
         this.code = nextAvailableCode(t);
         // all constraints have this
-        this.path = n.getPath();
+        this.path = n.path;
         // used by value, list
         this.value = "";
         // used by LOOKUP on BioEntity and subclasses
@@ -677,7 +713,7 @@ function addPath(template, path, model){
                 cls = classes[p];
                 if (!cls)
                    throw "Could not find class: " + p;
-                n = template.qtree = new Node( null, p, cls, cls );
+                n = template.qtree = new Node( template, null, p, cls, cls );
             }
         }
         else {
@@ -705,7 +741,7 @@ function addPath(template, path, model){
                     throw "Could not find member named " + p + " in class " + cls.name + ".";
                 }
                 // create new node, add it to n's children
-                nn = new Node(n, p, x, cls);
+                nn = new Node(template, n, p, x, cls);
                 n = nn;
             }
         }
@@ -726,7 +762,7 @@ function setSubclassConstraint(n, scName){
     if (scName){
         let cls = currMine.model.classes[scName];
         if(!cls) throw "Could not find class " + scName;
-        n.constraints.push({ ctype:"subclass", op:"ISA", path:n.getPath(), type:cls.name });
+        n.constraints.push({ ctype:"subclass", op:"ISA", path:n.path, type:cls.name });
         n.subclassConstraint = cls;
     }
     function check(node, removed) {
@@ -750,7 +786,7 @@ function setSubclassConstraint(n, scName){
         window.setTimeout(function(){
             alert("Constraining to subclass " + (scName || n.ptype.name)
             + " caused the following paths to be removed: " 
-            + removed.map(n => n.getPath()).join(", ")); 
+            + removed.map(n => n.path).join(", ")); 
         }, animationDuration);
 }
 
@@ -904,18 +940,20 @@ function selectedNext(currNode, mode, p){
     let cc;
     let sfs;
     if (mode === "summaryfields") {
-        sfs = currMine.summaryFields[currNode.getNodeType().name]||[];
-        sfs.forEach(function(sf){
-            sf = sf.replace(/^[^.]+/, currNode.getPath());
+        sfs = currMine.summaryFields[currNode.nodeType.name]||[];
+        sfs.forEach(function(sf, i){
+            sf = sf.replace(/^[^.]+/, currNode.path);
             let m = addPath(currTemplate, sf, currMine.model);
-            m.view = true;
+            if (! m.isSelected) {
+                m.select();
+            }
         });
     }
     else {
-        p = currNode.getPath() + "." + p;
+        p = currNode.path + "." + p;
         n = addPath(currTemplate, p, currMine.model );
         if (mode === "selected")
-            n.view = true;
+            !n.isSelected && n.select();
         if (mode === "constrained") {
             cc = addConstraint(n, false)
         }
@@ -1068,7 +1106,7 @@ function initCEinputs(n, c, ctype) {
     let smzd = ce.classed("summarized");
     ce.attr("class", "open " + ctype)
         .classed("summarized", smzd)
-        .classed("bioentity",  n.isBioEntity());
+        .classed("bioentity",  n.isBioEntity);
 
  
     //
@@ -1217,7 +1255,7 @@ function generateOptionList(n, c){
     clearLocal();
 
     // build the query
-    let p = n.getPath(); // what we want to summarize
+    let p = n.path; // what we want to summarize
     //
     let lex = currTemplate.constraintLogic; // save constraint logic expr
     removeConstraint(n, c, false); // temporarily remove the constraint
@@ -1444,7 +1482,7 @@ function showDialog(n, elt, refreshOnly){
       .text(n.name);
   // Show the full path
   dialog.select('[name="header"] [name="fullPath"] div')
-      .text(n.getPath());
+      .text(n.path);
   // Type at this node
   var tp = n.ptype.name || n.ptype;
   var stp = (n.subclassConstraint && n.subclassConstraint.name) || null;
@@ -1519,7 +1557,7 @@ function showDialog(n, elt, refreshOnly){
           .text(n.pcomp.type.name || n.pcomp.type );
       // 
       dialog.select(".select-ctrl")
-          .classed("selected", function(n){ return n.view; });
+          .classed("selected", function(n){ return n.isSelected });
   }
   else {
       // Dialog for classes
@@ -1737,7 +1775,7 @@ function updateNodes(nodes, source){
 
   // Transition nodes to their new position.
   let nodeUpdate = nodeGrps
-      .classed("selected", function(n){ return n.view; })
+      .classed("selected", function(n){ return n.isSelected; })
       .classed("constrained", function(n){ return n.constraints.length > 0; })
       .transition()
       .duration(animationDuration)
