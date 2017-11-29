@@ -61,6 +61,10 @@
     display: none;
 }
 
+#constraintEditor.lookup.bioentity select[name="value"]::after {
+    content: " in ";
+}
+
 #constraintEditor.lookup.bioentity select[name="values"],
 #constraintEditor.list select[name="values"],
 #constraintEditor.subclass select[name="values"],

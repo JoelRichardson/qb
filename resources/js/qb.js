@@ -28,8 +28,11 @@ import {
 
 import UndoManager from './undoManager.js';
 
-let name2mine;
 let currMine;
+let currTemplate;
+let currNode;
+
+let name2mine;
 let m;
 let w;
 let h;
@@ -37,8 +40,6 @@ let i;
 let root;
 let diagonal;
 let vis;
-let currTemplate;
-let currNode;
 let nodes;
 let links;
 let layoutStyle = "tree";
@@ -179,7 +180,6 @@ function undoredo(which){
     }
 }
 
-// <query model="genomic" view="Organism.shortName"></query>
 // Called when user selects a mine from the option list
 // Loads that mine's data model and all its templates.
 // Then initializes display to show the first termplate's query.
@@ -187,7 +187,7 @@ function selectedMine(mname){
     currMine = name2mine[mname]
     if(!currMine) return;
     let url = currMine.url;
-    let turl, murl, lurl, burl, surl;
+    let turl, murl, lurl, burl, surl, ourl;
     currMine.tnames = []
     currMine.templates = []
     if (mname === "test") { 
@@ -196,6 +196,7 @@ function selectedMine(mname){
         lurl = url + "/lists.json";
         burl = url + "/branding.json";
         surl = url + "/summaryfields.json";
+        ourl = url + "/organismlist.json";
     }
     else {
         turl = url + "/service/templates?format=json";
@@ -203,6 +204,7 @@ function selectedMine(mname){
         lurl = url + "/service/lists?format=json";
         burl = url + "/service/branding";
         surl = url + "/service/summaryfields";
+        ourl = url + "/service/query/results?query=%3Cquery+name%3D%22%22+model%3D%22genomic%22+view%3D%22Organism.shortName%22+longDescription%3D%22%22%3E%3C%2Fquery%3E&format=jsonobjects";
     }
     // get the model
     console.log("Loading resources from " + url );
@@ -211,18 +213,21 @@ function selectedMine(mname){
         d3jsonPromise(turl),
         d3jsonPromise(lurl),
         d3jsonPromise(burl),
-        d3jsonPromise(surl)
+        d3jsonPromise(surl),
+        d3jsonPromise(ourl)
     ]).then( function(data) {
         var j_model = data[0];
         var j_templates = data[1];
         var j_lists = data[2];
         var j_branding = data[3];
         var j_summary = data[4];
+        var j_organisms = data[5];
         //
         currMine.model = compileModel(j_model.model)
         currMine.templates = j_templates.templates;
         currMine.lists = j_lists.lists;
         currMine.summaryFields = j_summary.classes;
+        currMine.organismList = j_organisms.results.map(o => o.shortName);
         //
         currMine.tlist = obj2array(currMine.templates)
         currMine.tlist.sort(function(a,b){ 
@@ -419,6 +424,7 @@ function getSubclasses(cls){
 
 // Returns true iff sub is a subclass of sup.
 function isSubclass(sub,sup) {
+    if (sub === sup) return true;
     if (typeof(sub) === "string" || !sub["extends"] || sub["extends"].length == 0) return false;
     var r = sub["extends"].filter(function(x){ return x===sup || isSubclass(x, sup); });
     return r.length > 0;
@@ -434,7 +440,7 @@ function isValidListConstraint(list, n){
     var nt = n.subtypeConstraint || n.ptype;
     if (typeof(nt) === "string" ) return false;
     var lt = currMine.model.classes[list.type];
-    return lt === nt || isSubclass(lt, nt) || isSubclass(nt, lt);
+    return isSubclass(lt, nt) || isSubclass(nt, lt);
 }
 
 // Compiles a "raw" template - such as one returned by the /templates web service - against
@@ -593,6 +599,12 @@ class Node {
     //
     getNodeType () {
         return this.subclassConstraint || this.ptype;
+    }
+    //
+    isBioEntity () {
+        let be = currMine.model.classes["BioEntity"];
+        let nt = this.getNodeType();
+        return isSubclass(nt, be);
     }
 }
 
@@ -934,7 +946,7 @@ function constraintText(c) {
    }
    else if (c.ctype === "lookup") {
        t = c.op + " " + c.value;
-       if (c.extraValue) t = t + " (in: " + c.extraValue + ")";
+       if (c.extraValue) t = t + " IN " + c.extraValue;
    }
    else if (c.value !== undefined){
        t = c.op + (c.op.includes("NULL") ? "" : " " + c.value)
@@ -1015,6 +1027,9 @@ function initOptionList(selector, data, cfg){
             // selected if the opt's value matches
             opts.attr("selected", d => ((cfg.value || ident)(d) === cfg.selected) || null);
         }
+        else {
+            d3.select(selector)[0][0].selectedIndex = 0;
+        }
     }
     else {
         opts = d3.select(selector)
@@ -1048,14 +1063,27 @@ function initCEinputs(n, c, ctype) {
     //
     //
     ctype = ctype || c.ctype;
+
+    let ce = d3.select("#constraintEditor");
+    let smzd = ce.classed("summarized");
+    ce.attr("class", "open " + ctype)
+        .classed("summarized", smzd)
+        .classed("bioentity",  n.isBioEntity());
+
  
     //
-    // set/remove the "multiple" attribute of the select element according to ctyoe
+    // set/remove the "multiple" attribute of the select element according to ctype
     d3.select('#constraintEditor select[name="values"]')
         .attr("multiple", function(){ return ctype === "multivalue" || null; });
 
+    //
     if (ctype === "lookup") {
         d3.select('#constraintEditor input[name="value"]')[0][0].value = c.value;
+        initOptionList(
+            '#constraintEditor select[name="values"]',
+            ["Any"].concat(currMine.organismList),
+            { selected: c.extraValue }
+            );
     }
     else if (ctype === "subclass") {
         // Create an option list of subclass names
@@ -1140,10 +1168,6 @@ function openConstraintEditor(c, n){
     d3.select('#constraintEditor [name="op"]')
         .on("change", function(){
             var op = OPINDEX[this.value];
-            var ce = d3.select("#constraintEditor");
-            var smzd = ce.classed("summarized");
-            ce.attr("class", "open " + op.ctype)
-                .classed("summarized", smzd);
             initCEinputs(n, c, op.ctype);
         })
         ;
@@ -1160,7 +1184,7 @@ function openConstraintEditor(c, n){
 }
 // Generates an option list of distinct values to select from.
 // Args:
-//   n  (node)  The node we're working on
+//   n  (node)  The node we're working on. Must be an attribute node.
 //   c  (constraint) The constraint to generate the list for.
 // NB: Only value and multivaue constraints can be summarized in this way.  
 function generateOptionList(n, c){
@@ -1217,8 +1241,9 @@ function generateOptionList(n, c){
         // Each list item looks like: { item: "somestring", count: 17 }
         // (Yes, we get counts for free! Ought to make use of this.)
         //
-        if (json.results.length > threshold) {
-            let ans = prompt(`There are ${json.results.length} results, which exceeds the threshold of ${threshold}. How many do you want to show?`, threshold);
+        let res = json.results.map(r => r.item).sort();
+        if (res.length > threshold) {
+            let ans = prompt(`There are ${res.length} results, which exceeds the threshold of ${threshold}. How many do you want to show?`, threshold);
             if (ans === null) {
                 // Signal that we're done.
                 d3.select("#constraintEditor")
@@ -1227,19 +1252,19 @@ function generateOptionList(n, c){
             }
             ans = parseInt(ans);
             if (isNaN(ans) || ans <= 0) return;
-            json.results = json.results.slice(0, ans);
+            res = res.slice(0, ans);
         }
         d3.select('#constraintEditor')
             .classed("summarized", true);
         let opts = d3.select('#constraintEditor [name="values"]')
             .selectAll('option')
-            .data(json.results);
+            .data(res);
         opts.enter().append("option");
         opts.exit().remove();
-        opts.attr("value", function(d){ return d.item; })
-            .text(function(d){ return d.item; })
+        opts.attr("value", d => d)
+            .text( d => d )
             .attr("disabled", null)
-            .attr("selected", d => cvals.indexOf(d.item) !== -1 || null);
+            .attr("selected", d => cvals.indexOf(d) !== -1 || null);
         // Signal that we're done.
         d3.select("#constraintEditor")
             .classed("summarizing", false);
@@ -1340,6 +1365,7 @@ function saveConstraintEdits(n, c){
     else if (c.ctype === "lookup") {
         c.value = val;
         c.values = c.type = null;
+        c.extraValue = vals[0] === "Any" ? null : vals[0];
     }
     else if (c.ctype === "list") {
         c.value = vals[0];
@@ -1461,7 +1487,11 @@ function showDialog(n, elt, refreshOnly){
   constrs.select('[name="value"]')
       .text(function(c){
           // FIXME 
-          return c.value || (c.values && c.values.join(",")) || c.type;
+          if (c.ctype === "lookup") {
+              return c.value + (c.extraValue ? " in " + c.extraValue : "");
+          }
+          else
+              return c.value || (c.values && c.values.join(",")) || c.type;
       });
   constrs.select("i.edit")
       .on("click", function(c){ 
@@ -1832,7 +1862,7 @@ function updateLinks(links, source) {
 
 // Turns a json representation of a template into XML, suitable for importing into the Intermine QB.
 function json2xml(t, qonly){
-    var so = t.orderBy.reduce(function(s,x){ 
+    var so = (t.orderBy || []).reduce(function(s,x){ 
         var k = Object.keys(x)[0];
         var v = x[k]
         return s + `${k} ${v} `;
@@ -1851,7 +1881,7 @@ function json2xml(t, qonly){
         if (c.ctype === "value" || c.ctype === "list")
             g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.value)}" code="${c.code}" editable="${c.editable}"`;
         else if (c.ctype === "lookup"){
-            let ev = c.extraValue ? `extraValue="${c.extraValue}"` : "";
+            let ev = (c.extraValue && c.extraValue !== "Any") ? `extraValue="${c.extraValue}"` : "";
             g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.value)}" ${ev} code="${c.code}" editable="${c.editable}"`;
         }
         else if (c.ctype === "multivalue"){
@@ -1871,21 +1901,21 @@ function json2xml(t, qonly){
     // the query part
     var qpart = 
 `<query
-  name="${t.name}"
-  model="${t.model.name}"
+  name="${t.name || ''}"
+  model="${(t.model && t.model.name) || ''}"
   view="${t.select.join(' ')}"
-  longDescription="${esc(t.description)}"
-  sortOrder="${so}"
-  constraintLogic="${t.constraintLogic}">
-  ${t.joins.map(oj2xml).join(" ")}
-  ${t.where.map(c2xml).join(" ")}
+  longDescription="${esc(t.description || '')}"
+  sortOrder="${so || ''}"
+  constraintLogic="${t.constraintLogic || ''}">
+  ${(t.joins || []).map(oj2xml).join(" ")}
+  ${(t.where || []).map(c2xml).join(" ")}
 </query>`;
     // the whole template
     var tmplt = 
 `<template
-  name="${t.name}"
-  title="${esc(t.title)}"
-  comment="${esc(t.comment)}">
+  name="${t.name || ''}"
+  title="${esc(t.title || '')}"
+  comment="${esc(t.comment || '')}">
  ${qpart}
 </template>
 `;
@@ -1902,7 +1932,13 @@ function updateTtext(){
       txt = json2xml(uct);
   d3.select("#ttextdiv") 
       .text(txt)
-      .on("focus", function(){ selectText("ttextdiv"); });
+      .on("focus", function(){
+          d3.select("#drawer").classed("expanded", true);
+          selectText("ttextdiv");
+      })
+      .on("blur", function() {
+          d3.select("#drawer").classed("expanded", false);
+      });
   if (d3.select('#querycount .button.sync').text() === "sync")
       updateCount();
 }

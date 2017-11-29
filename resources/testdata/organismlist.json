@@ -1,0 +1,9 @@
+{"modelName":"genomic","columnHeaders":["Organism > Id","Organism > Short Name"],"rootClass":"Organism","start":0,"views":["Organism.id","Organism.shortName"],"results":[
+{"shortName":"M. musculus","class":"Organism","objectId":1000034},
+{"shortName":"D. melanogaster","class":"Organism","objectId":8000002},
+{"shortName":"R. norvegicus","class":"Organism","objectId":9000002},
+{"shortName":"C. elegans","class":"Organism","objectId":10000002},
+{"shortName":"S. cerevisiae","class":"Organism","objectId":11000002},
+{"shortName":"D. rerio","class":"Organism","objectId":12000002},
+{"shortName":"H. sapiens","class":"Organism","objectId":14289118}
+],"executionTime":"2017.11.28 14:27::30","wasSuccessful":true,"error":null,"statusCode":200}
