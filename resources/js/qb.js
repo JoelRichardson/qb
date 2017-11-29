@@ -55,7 +55,7 @@ function setup(){
     i = 0
 
     diagonal = d3.svg.diagonal()
-        .projection(function(d) { return [d.y, d.x]; });
+        .projection(function(d) { return [d.x, d.y]; });
 
     // create the SVG container
     vis = d3.select("#svgContainer svg")
@@ -823,8 +823,8 @@ function editTemplate (t, nosave) {
     currTemplate = deepc(t);
     //
     root = compileTemplate(currTemplate, currMine.model).qtree
-    root.x0 = h / 2;
-    root.y0 = 0;
+    root.x0 = 0;
+    root.y0 = h / 2;
 
     if (! nosave) saveState();
 
@@ -1650,12 +1650,16 @@ function doLayout(root){
   let leaves = [];
   
   if (layoutStyle === "tree") {
-      layout = d3.layout.tree()
-          .size([h, w]);
-      // Compute the new layout, and save nodes in global.
+      // d3 layout arranges nodes top-to-bottom, but we want left-to-right.
+      // So...reverse width and height, and do the layout. Then, reverse the x,y coords in the results.
+      layout = d3.layout.tree().size([h, w]);
+      // Save nodes in global.
       nodes = layout.nodes(root).reverse();
-      // Normalize for fixed-depth.
-      nodes.forEach(function(d) { d.y = d.depth * 180; });
+      // Reverse x and y. Also, normalize x for fixed-depth.
+      nodes.forEach(function(d) {
+          let tmp = d.x; d.x = d.y; d.y = tmp;
+          d.x = d.depth * 180;
+      });
   }
   else {
       // dendrogram
@@ -1671,10 +1675,11 @@ function doLayout(root){
           .size([h, maxd * 180]);
       // Compute the new layout, and save nodes in global.
       nodes = layout.nodes(root).reverse();
+      nodes.forEach( d => { let tmp = d.x; d.x = d.y; d.y = tmp; });
 
       // Rearrange y-positions of leaf nodes. 
       // NOTE that x and y are reversed at this point
-      let pos = leaves.map(function(n){ return { x: n.x, x0: n.x0 }; });
+      let pos = leaves.map(function(n){ return { y: n.y, y0: n.y0 }; });
       // sort the leaf array by name
       leaves.sort(function(a,b) {
           let na = a.name.toLowerCase();
@@ -1683,8 +1688,8 @@ function doLayout(root){
       });
       // reassign the Y positions
       leaves.forEach(function(n, i){
-          n.x = pos[i].x;
-          n.x0 = pos[i].x0;
+          n.y = pos[i].y;
+          n.y0 = pos[i].y0;
       });
       // At this point, leaves have been rearranged, but the interior nodes haven't.
       // Her we move interior nodes toward their "center of gravity" as defined
@@ -1698,11 +1703,11 @@ function doLayout(root){
           if (n.children.length > 0) {
               // compute my c.o.g. as the average of my kids' positions
               let myCog = (n.children.map(cog).reduce((t,c) => t+c, 0))/n.children.length;
-              if(n.parent) n.x = myCog;
+              if(n.parent) n.y = myCog;
           }
           let dd = occupied[n.y] = (occupied[n.y] || []);
-          dd.push(n.x);
-          return n.x;
+          dd.push(n.y);
+          return n.y;
       }
       cog(root);
 
@@ -1740,7 +1745,7 @@ function updateNodes(nodes, source){
   let nodeEnter = nodeGrps.enter()
       .append("svg:g")
       .attr("class", "nodegroup")
-      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .attr("transform", function(d) { return "translate(" + source.x0 + "," + source.y0 + ")"; })
       ;
 
   // Add glyph for the node
@@ -1779,7 +1784,7 @@ function updateNodes(nodes, source){
       .classed("constrained", function(n){ return n.constraints.length > 0; })
       .transition()
       .duration(animationDuration)
-      .attr("transform", function(n) { return "translate(" + n.y + "," + n.x + ")"; })
+      .attr("transform", function(n) { return "translate(" + n.x + "," + n.y + ")"; })
       ;
 
 
@@ -1812,7 +1817,7 @@ function updateNodes(nodes, source){
   // Transition exiting nodes to the parent's new position.
   let nodeExit = nodeGrps.exit().transition()
       .duration(animationDuration)
-      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .attr("transform", function(d) { return "translate(" + source.x + "," + source.y + ")"; })
       .remove()
       ;
 
