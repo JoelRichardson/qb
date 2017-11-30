@@ -71,9 +71,12 @@ function setup(){
     h = 800 - m[0] - m[2]
     i = 0
 
+    // thanks to: https://stackoverflow.com/questions/15007877/how-to-use-the-d3-diagonal-function-to-draw-curved-lines
     diagonal = d3.svg.diagonal()
-        .projection(function(d) { return [d.x, d.y]; });
-
+        .source(function(d) { return {"x":d.source.y, "y":d.source.x}; })     
+        .target(function(d) { return {"x":d.target.y, "y":d.target.x}; })
+        .projection(function(d) { return [d.y, d.x]; });
+    
     // create the SVG container
     vis = d3.select("#svgContainer svg")
         .attr("width", w + m[1] + m[3])
@@ -1700,7 +1703,7 @@ function doLayout(root){
   var layout;
   let leaves = [];
   
-  if (layoutStyle === "tree") {
+  if (editView.layoutStyle === "tree") {
       // d3 layout arranges nodes top-to-bottom, but we want left-to-right.
       // So...reverse width and height, and do the layout. Then, reverse the x,y coords in the results.
       layout = d3.layout.tree().size([h, w]);
