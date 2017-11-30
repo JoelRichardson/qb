@@ -51,15 +51,19 @@ let registryFileUrl = "./resources/testdata/registry.json";
 
 let editViews = {
     queryMain: {
+        name: "queryMain",
         layoutStyle: "tree"
     },
     constraintLogic: {
-        layoutStyle: "dendrogram"
+        name: "constraintLogic",
+        layoutStyle: "tree"
     },
     columnOrder: {
+        name: "columnOrder",
         layoutStyle: "dendrogram"
     },
     sortOrder: {
+        name: "sortOrder",
         layoutStyle: "dendrogram"
     }
 };
@@ -1812,6 +1816,7 @@ function updateNodes(nodes, source){
   // Create new nodes at the parent's previous position.
   let nodeEnter = nodeGrps.enter()
       .append("svg:g")
+      .attr("id", n => n.path.replace(/\./g, "_"))
       .attr("class", "nodegroup")
       .attr("transform", function(d) { return "translate(" + source.x0 + "," + source.y0 + ")"; })
       ;
@@ -1824,6 +1829,7 @@ function updateNodes(nodes, source){
       })
       .attr("class","node")
       .on("click", function(d) {
+          if (d3.event.defaultPrevented) return; 
           if (currNode !== d) showDialog(d, this);
           d3.event.stopPropagation();
       });
@@ -1855,17 +1861,39 @@ function updateNodes(nodes, source){
       ;
 
   nodeUpdate.selectAll("text.nodeName")
-      .text(function(d) {
-          return d.name + (d.isSelected ? `(${d.view})` : "");
-      })
+      .text(n => n.name);
 
-
+  // Make selected nodes draggable
   let drag = d3.behavior.drag();
-  nodeGrps.call(drag);
-  drag.on("drag", function () {
-      //console.log("Drag", this, d3.event.dx, d3.event.dy);
-      //console.log("Drag", this, d3.event.x, d3.event.y);
-  });
+  d3.selectAll("g.nodegroup")
+      .classed("draggable", false)
+      .on(".drag", null); 
+  if (editView.name === "columnOrder")
+      d3.selectAll("g.nodegroup.selected")
+          .classed("draggable", true)
+          .call(drag);
+  drag
+      .on("drag", function () {
+          let dd = d3.select(this);
+          dd.attr("transform", (n) => {
+              //n.x = d3.event.x;
+              n.y = d3.event.y;
+              return `translate(${n.x},${n.y})`;
+          });
+          let ll = d3.select(`path.link[target="${dd.attr('id')}"]`);
+          ll.attr("d", diagonal);
+      })
+      .on("dragend", function () {
+          d3.event.sourceEvent.preventDefault();
+          d3.event.sourceEvent.stopPropagation();
+          let dragged = d3.select(this).data()[0];
+          let nodes = d3.selectAll(".nodegroup.selected").data()
+          nodes.sort( (a, b) => a.y - b.y );
+          nodes.forEach((n,i) => { n.view = i });
+          dragged.template.select = nodes.map( n=> n.path );
+          update();
+          saveState();
+      });
 
   // Add text for constraints
   let ct = nodeGrps.selectAll("text.constraint")
@@ -1936,7 +1964,9 @@ function updateLinks(links, source) {
   }
   // set the tooltip
   newPaths.append("svg:title").text(linkTitle);
-  newPaths.attr("class", "link")
+  newPaths
+      .attr("target", d => d.target.id.replace(/\./g, "_"))
+      .attr("class", "link")
       .attr("d", function(d) {
         var o = {x: source.x0, y: source.y0};
         return diagonal({source: o, target: o});

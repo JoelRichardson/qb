@@ -188,7 +188,6 @@ i.material-icons.button:hover {
 
 #dialog table.attributes tr:hover {
     background-color: #ddd;
-    filter: invert(100%);
 }
 
 #dialog table.attributes td.selectsimple {
