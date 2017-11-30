@@ -42,11 +42,28 @@ let diagonal;
 let vis;
 let nodes;
 let links;
-let layoutStyle = "tree";
 let animationDuration = 250; // ms
 let defaultColors = { header: { main: "#595455", text: "#fff" } };
 let defaultLogo = "https://cdn.rawgit.com/intermine/design-materials/78a13db5/logos/intermine/squareish/45x45.png";
 let undoMgr = new UndoManager();
+let registryUrl = "http://registry.intermine.org/service/instances";
+let registryFileUrl = "./resources/testdata/registry.json";
+
+let editViews = {
+    queryMain: {
+        layoutStyle: "tree"
+    },
+    constraintLogic: {
+        layoutStyle: "dendrogram"
+    },
+    columnOrder: {
+        layoutStyle: "dendrogram"
+    },
+    sortOrder: {
+        layoutStyle: "dendrogram"
+    }
+};
+let editView = editViews.queryMain;
 
 function setup(){
     m = [20, 120, 20, 120]
@@ -82,56 +99,15 @@ function setup(){
             d3.select(this).text( isClosed ? "add" : "clear" );
         });
 
-    d3jsonPromise("./resources/testdata/registry.json")
-      .then(function(j_mines){
-        var mines = j_mines.instances;
-        name2mine = {};
-        mines.forEach(function(m){ name2mine[m.name] = m; });
-        currMine = mines[0];
-        currTemplate = null;
-
-        var ml = d3.select("#mlist").selectAll("option").data(mines);
-        var selectMine = "MouseMine";
-        ml.enter().append("option")
-            .attr("value", function(d){return d.name;})
-            .attr("disabled", function(d){
-                var w = window.location.href.startsWith("https");
-                var m = d.url.startsWith("https");
-                var v = (w && !m) || null;
-                return v;
-            })
-            .attr("selected", function(d){ return d.name===selectMine || null; })
-            .text(function(d){ return d.name; });
-        //
-        // when a mine is selected from the list
-        d3.select("#mlist")
-            .on("change", function(){ selectedMine(this.value); });
-        //
-        var dg = d3.select("#dialog");
-        dg.classed("hidden",true)
-        dg.select(".button.close").on("click", hideDialog);
-        dg.select(".button.remove").on("click", () => removeNode(currNode));
-
-        // 
-        //
-        d3.select("#layoutstyle")
-            .on("change", function () { setLayout(this.value); })
-            ;
-
-        //
-        d3.select("#dialog .subclassConstraint select")
-            .on("change", function(){ setSubclassConstraint(currNode, this.value); });
-        //
-        d3.select("#dialog .select-ctrl")
-            .on("click", function() {
-                currNode.isSelected ? currNode.unselect() : currNode.select();
-                update(currNode);
-                d3.select("#dialog .select-ctrl").classed("selected", currNode.isSelected);
-                saveState();
-            });
-
-        // start with the first mine by default.
-        selectedMine(selectMine);
+    d3jsonPromise(registryUrl)
+      .then(initMines)
+      .catch(() => {
+          alert(`Could not access registry at ${registryUrl}. Trying ${registryFileUrl}.`);
+          d3jsonPromise(registryFileUrl)
+              .then(initMines)
+              .catch(() => {
+                  alert("Cannot access registry file. This is not your lucky day.");
+                  });
       });
 
     d3.selectAll("#ttext label span")
@@ -161,6 +137,57 @@ function setup(){
         .on("click", redo);
 }
 
+function initMines(j_mines) {
+    var mines = j_mines.instances;
+    name2mine = {};
+    mines.forEach(function(m){ name2mine[m.name] = m; });
+    currMine = mines[0];
+    currTemplate = null;
+
+    var ml = d3.select("#mlist").selectAll("option").data(mines);
+    var selectMine = "MouseMine";
+    ml.enter().append("option")
+        .attr("value", function(d){return d.name;})
+        .attr("disabled", function(d){
+            var w = window.location.href.startsWith("https");
+            var m = d.url.startsWith("https");
+            var v = (w && !m) || null;
+            return v;
+        })
+        .attr("selected", function(d){ return d.name===selectMine || null; })
+        .text(function(d){ return d.name; });
+    //
+    // when a mine is selected from the list
+    d3.select("#mlist")
+        .on("change", function(){ selectedMine(this.value); });
+    //
+    var dg = d3.select("#dialog");
+    dg.classed("hidden",true)
+    dg.select(".button.close").on("click", hideDialog);
+    dg.select(".button.remove").on("click", () => removeNode(currNode));
+
+    // 
+    //
+    d3.select("#editView")
+        .on("change", function () { setEditView(this.value); })
+        ;
+
+    //
+    d3.select("#dialog .subclassConstraint select")
+        .on("change", function(){ setSubclassConstraint(currNode, this.value); });
+    //
+    d3.select("#dialog .select-ctrl")
+        .on("click", function() {
+            currNode.isSelected ? currNode.unselect() : currNode.select();
+            update(currNode);
+            d3.select("#dialog .select-ctrl").classed("selected", currNode.isSelected);
+            saveState();
+        });
+
+    // start with the first mine by default.
+    selectedMine(selectMine);
+}
+//
 function clearState() {
     undoMgr.clear();
 }
@@ -536,7 +563,7 @@ function uncompileTemplate(tmplt){
         rank: tmplt.rank,
         model: deepc(tmplt.model),
         tags: deepc(tmplt.tags),
-        select : [],
+        select : tmplt.select.concat(),
         where : [],
         joins : [],
         constraintLogic: tmplt.constraintLogic || "",
@@ -618,7 +645,7 @@ class Node {
     }
     //
     get isSelected () {
-         return this.view >= 0;
+         return this.view !== null && this.view !== undefined;
     }
     select () {
         let p = this.path;
@@ -634,6 +661,10 @@ class Node {
             // remove path from the select list
             t.select.splice(i,1);
             // FIXME: renumber nodes here
+            t.select.slice(i).forEach( (p,j) => {
+                let n = getNodeByPath(this.template, p);
+                n.view -= 1;
+            });
         }
         this.view = null;
     }
@@ -653,11 +684,21 @@ class Template {
         this.orderBy = [];
     }
 
-    findNode (p) {
-        let n = this.qtree;
-        let parts = p.split(".");
-    }
 }
+function getNodeByPath (t,p) {
+        p = p.trim();
+        if (!p) return null;
+        let parts = p.split(".");
+        let n = t.qtree;
+        if (n.name !== parts[0]) return null;
+        for( let i = 1; i < parts.length; i++){
+            let cname = parts[i];
+            let c = (n.children || []).filter(x => x.name === cname)[0];
+            if (!c) return null;
+            n = c;
+        }
+        return n;
+    }
 
 class Constraint {
     constructor (n, t) {
@@ -795,6 +836,7 @@ function setSubclassConstraint(n, scName){
 function removeNode(n) {
     // First, remove all constraints on n or its descendants
     function rmc (x) {
+        x.unselect();
         x.constraints.forEach(c => removeConstraint(x,c));
         x.children.forEach(rmc);
     }
@@ -1640,8 +1682,17 @@ function hideDialog(){
       ;
 }
 
-function setLayout(style){
-    layoutStyle = style;
+// Set the editing view. View is one of:
+// Args:
+//     view (string) One of: queryMain, constraintLogic, columnOrder, sortOrder
+// Returns:
+//     Nothing
+// Side effects:
+//     Changes the layout and updates the view.
+function setEditView(view){
+    let v = editViews[view];
+    if (!v) throw "Unrecognized view type: " + view;
+    editView = v;
     update(root);
 }
 
@@ -1663,8 +1714,6 @@ function doLayout(root){
   }
   else {
       // dendrogram
-      // Experimenting with rearranging leaves. Rough code ahead...
-
       function md (n) { // max depth
           if (n.children.length === 0) leaves.push(n);
           return 1 + (n.children.length ? Math.max.apply(null, n.children.map(md)) : 0);
@@ -1673,19 +1722,34 @@ function doLayout(root){
       layout = d3.layout.cluster()
           .separation((a,b) => 1)
           .size([h, maxd * 180]);
-      // Compute the new layout, and save nodes in global.
+      // Save nodes in global.
       nodes = layout.nodes(root).reverse();
       nodes.forEach( d => { let tmp = d.x; d.x = d.y; d.y = tmp; });
 
+      // ------------------------------------------------------
+      // Experimenting with rearranging leaves. Rough code ahead...
+      //
       // Rearrange y-positions of leaf nodes. 
-      // NOTE that x and y are reversed at this point
       let pos = leaves.map(function(n){ return { y: n.y, y0: n.y0 }; });
-      // sort the leaf array by name
-      leaves.sort(function(a,b) {
+      //let pos = leaves.map(function(n){ return { x: n.x, x0: n.x0 }; });
+      let nameComp = function(a,b) {
           let na = a.name.toLowerCase();
           let nb = b.name.toLowerCase();
           return na < nb ? -1 : na > nb ? 1 : 0;
-      });
+      };
+      let colOrderComp = function(a,b){
+          if (a.isSelected)
+              if (b.isSelected)
+                  return a.view - b.view;
+              else
+                  return -1
+          else
+              if (b.isSelected)
+                  return 1
+              else
+                  return nameComp(a,b)
+      }
+      leaves.sort(colOrderComp);
       // reassign the Y positions
       leaves.forEach(function(n, i){
           n.y = pos[i].y;
@@ -1714,6 +1778,7 @@ function doLayout(root){
       // TODO: Final adjustments
       // 1. If we extend off the right edge, compress.
       // 2. If items at same x overlap, spread them out in y.
+      // ------------------------------------------------------
   }
 
   // save links in global
@@ -1773,7 +1838,6 @@ function updateNodes(nodes, source){
   nodeEnter.append("svg:text")
       .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
       .attr("dy", ".35em")
-      .text(function(d) { return d.name; })
       .style("fill-opacity", 1e-6) // start off nearly transparent
       .attr("class","nodeName")
       ;
@@ -1787,6 +1851,18 @@ function updateNodes(nodes, source){
       .attr("transform", function(n) { return "translate(" + n.x + "," + n.y + ")"; })
       ;
 
+  nodeUpdate.selectAll("text.nodeName")
+      .text(function(d) {
+          return d.name + (d.isSelected ? `(${d.view})` : "");
+      })
+
+
+  let drag = d3.behavior.drag();
+  nodeGrps.call(drag);
+  drag.on("drag", function () {
+      //console.log("Drag", this, d3.event.dx, d3.event.dy);
+      //console.log("Drag", this, d3.event.x, d3.event.y);
+  });
 
   // Add text for constraints
   let ct = nodeGrps.selectAll("text.constraint")
