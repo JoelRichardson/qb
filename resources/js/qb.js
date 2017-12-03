@@ -163,7 +163,7 @@ let editView = editViews.queryMain;
 
 // Setup function
 function setup(){
-    m = [20, 120, 20, 120]
+    m = [40, 120, 20, 120]
     w = 1280 - m[1] - m[3]
     h = 800 - m[0] - m[2]
     i = 0
@@ -182,7 +182,7 @@ function setup(){
       .append("svg:g")
         .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
     //
-    d3.select('#tInfoBar > i.button[name="openclose"]')
+    d3.select('.button[name="openclose"]')
         .on("click", function(){ 
             let t = d3.select("#tInfoBar");
             let wasClosed = t.classed("closed");
@@ -196,7 +196,6 @@ function setup(){
                d3.select('#drawer').style("height", d.__saved_height);
                 
             t.classed("closed", isClosed);
-            d3.select(this).text( isClosed ? "add" : "clear" );
         });
 
     d3jsonPromise(registryUrl)
@@ -423,6 +422,9 @@ function selectedMine(mname){
         let bgc = clrs.header ? clrs.header.main : clrs.main.fg;
         let txc = clrs.header ? clrs.header.text : clrs.main.bg;
         let logo = currMine.images.logo || defaultLogo;
+        d3.select("#tooltray")
+            .style("background-color", bgc)
+            .style("color", txc);
         d3.select("#tInfoBar")
             .style("background-color", bgc)
             .style("color", txc);

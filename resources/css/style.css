@@ -38,6 +38,11 @@ label {
     flex-wrap: nowrap;
 }
 
+#svgContainer {
+    position: relative;
+    top: 80px;
+}
+
 #svgContainer [name="spacebar"] {
     height: 75px;
     width: 100%;
@@ -45,9 +50,6 @@ label {
 }
 
 #svgContainer [name="logicExpression"] {
-    position: absolute;
-    top : 20px;
-    left: 250px;
     width: auto;
     background-color: purple;
     color: white;
