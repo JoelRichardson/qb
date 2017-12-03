@@ -10,12 +10,13 @@
 }
 
 #titleBar [name="title"] {
-    font-size: 24px;
+    font-size: 20px;
     width: auto;
 }
 
 #titleBar [name="version"] {
     font-size: 14px;
+    padding-left: 4px;
 }
 
 #titleBar [name="qblogo"] {

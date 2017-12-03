@@ -28,6 +28,8 @@ import {
 import {codepoints} from './material_icon_codepoints.js';
 import UndoManager from './undoManager.js';
 
+let VERSION = "0.1.0";
+
 let currMine;
 let currTemplate;
 let currNode;
@@ -163,10 +165,14 @@ let editView = editViews.queryMain;
 
 // Setup function
 function setup(){
-    m = [40, 120, 20, 120]
+    m = [20, 120, 20, 120]
     w = 1280 - m[1] - m[3]
     h = 800 - m[0] - m[2]
     i = 0
+
+    //
+    d3.select('#footer [name="version"]')
+        .text(`QB v${VERSION}`);
 
     // thanks to: https://stackoverflow.com/questions/15007877/how-to-use-the-d3-diagonal-function-to-draw-curved-lines
     diagonal = d3.svg.diagonal()
