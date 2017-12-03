@@ -9,29 +9,56 @@
   stroke: none;
   stroke-width: 1.5px;
 }
+.nodegroup.draggable .node {
+}
 rect.node {
   fill: #ccc;
 }
 circle.node {
   fill: lightsteelblue;
 }
-.constrained .node {
-    stroke: purple;
+
+.nodeIcon {
+    text-anchor: middle;
+    stroke: white;
 }
-.selected .node {
+
+.queryMain .selected .node {
     fill: green;
 }
-.constraint {
+.queryMain .constrained .node {
+    stroke: purple;
+}
+.queryMain .constraint {
     stroke : purple;
     fill: purple;
 }
 
-path.link {
-  fill: none;
-  cursor: pointer;
+.columnOrder .selected .node {
+    fill: green;
+}
+
+.sortOrder .sorted .node {
+    fill: #e28b28;
+}
+.sortOrder .constrained .constraint,
+.columnOrder .constrained .constraint {
+    stroke: #ccc;
+}
+
+.sortOrder .sorted .nodeIcon,
+.columnOrder .selected .nodeIcon {
+    cursor: pointer;
+}
+
+.sortOrder .sorted .handle,
+.columnOrder .selected .handle {
+    cursor: row-resize;
 }
 
 .link {
+    fill: none;
+    cursor: pointer;
     stroke: lightsteelblue;
     stroke-width: 3px;
 }

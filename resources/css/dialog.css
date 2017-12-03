@@ -39,24 +39,55 @@
     color: white;
 }
 
-#dialog .select-ctrl {
+#dialog [name="selsort-ctrls"] {
     display: none;
 }
 
-#dialog.simple .select-ctrl {
+#dialog.simple [name="selsort-ctrls"] {
     display: flex;
-    flex-direction: row;
-    cursor: pointer;
+    justify-content: space-around;
+
+}
+#dialog.simple [name="selsort-ctrls"] > * {
+    flex-grow: 1;
+    margin: 2px;
 }
 
-#dialog.simple .select-ctrl div {
-    flex-grow: 2;
+#dialog.simple [name="selsort-ctrls"] .swatch {
+    height: 20px;
+    width: 100%;
     background-color: #ddd;
+    cursor: pointer;
+    text-align: center;
 }
 
-#dialog.simple .select-ctrl.selected div {
+
+#dialog.simple [name="selsort-ctrls"] .swatch i {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    display: none;
+}
+#dialog.simple [name="select-ctrl"].selected .swatch i {
+    display: block;
+}
+#dialog.simple [name="sort-ctrl"].sortasc i.arrow_upward {
+    display: block;
+}
+#dialog.simple [name="sort-ctrl"].sortdesc i.arrow_downward {
+    display: block;
+}
+
+
+#dialog.simple [name="select-ctrl"].selected .swatch {
     background-color: green;
 }
+
+#dialog.simple [name="sort-ctrl"].sortasc .swatch,
+#dialog.simple [name="sort-ctrl"].sortdesc .swatch {
+    background-color: #617896;
+}
+
 
 #dialog .constraintSection {
     color: purple;

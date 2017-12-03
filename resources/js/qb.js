@@ -25,7 +25,7 @@ import {
     clearLocal,
     parsePathQuery
 } from './utils.js';
-
+import {codepoints} from './material_icon_codepoints.js';
 import UndoManager from './undoManager.js';
 
 let currMine;
@@ -42,6 +42,7 @@ let diagonal;
 let vis;
 let nodes;
 let links;
+let dragBehavior = null;
 let animationDuration = 250; // ms
 let defaultColors = { header: { main: "#595455", text: "#fff" } };
 let defaultLogo = "https://cdn.rawgit.com/intermine/design-materials/78a13db5/logos/intermine/squareish/45x45.png";
@@ -52,23 +53,92 @@ let registryFileUrl = "./resources/testdata/registry.json";
 let editViews = {
     queryMain: {
         name: "queryMain",
-        layoutStyle: "tree"
-    },
-    constraintLogic: {
-        name: "constraintLogic",
-        layoutStyle: "tree"
+        layoutStyle: "tree",
+        nodeComp: null,
+        handleIcon: {
+            fontFamily: "Material Icons",
+            text: n => {
+                let dir = n.sort ? n.sort.dir.toLowerCase() : "none";
+                let cc = codepoints[ dir === "asc" ? "arrow_upward" : dir === "desc" ? "arrow_downward" : "" ];
+                return cc ? cc : ""
+            }
+        },
+        nodeIcon: {
+        }
     },
     columnOrder: {
         name: "columnOrder",
-        layoutStyle: "dendrogram"
+        layoutStyle: "dendrogram",
+        draggable: "g.nodegroup.selected",
+        nodeComp: function(a,b){
+          // Comparator function. In column order view:
+          //     - selected nodes are at the top, in selection-list order (top-to-bottom)
+          //     - unselected nodes are at the bottom, in alpha order by name
+          if (a.isSelected)
+              return b.isSelected ? a.view - b.view : -1;
+          else
+              return b.isSelected ? 1 : nameComp(a,b);
+        },
+        // drag in columnOrder view changes the column order (duh!)
+        afterDrag: function(nodes, dragged) {
+          nodes.forEach((n,i) => { n.view = i });
+          dragged.template.select = nodes.map( n=> n.path );
+        },
+        handleIcon: {
+            fontFamily: "Material Icons",
+            text: n => n.isSelected ? codepoints["reorder"] : ""
+        },
+        nodeIcon: {
+            fontFamily: null,
+            text: n => n.isSelected ? n.view : ""
+        }
     },
     sortOrder: {
         name: "sortOrder",
-        layoutStyle: "dendrogram"
+        layoutStyle: "dendrogram",
+        draggable: "g.nodegroup.sorted",
+        nodeComp: function(a,b){
+          // Comparator function. In sort order view:
+          //     - sorted nodes are at the top, in sort-list order (top-to-bottom)
+          //     - unsorted nodes are at the bottom, in alpha order by name
+          if (a.sort)
+              return b.sort ? a.sort.level - b.sort.level : -1;
+          else
+              return b.sort ? 1 : nameComp(a,b);
+        },
+        afterDrag: function(nodes, dragged) {
+          // drag in sortOrder view changes the sort order (duh!)
+          nodes.forEach((n,i) => {
+              n.sort.level = i
+          });
+        },
+        handleIcon: {
+            fontFamily: "Material Icons",
+            text: n => n.sort ? codepoints["reorder"] : ""
+        },
+        nodeIcon: {
+            fontFamily: "Material Icons",
+            text: n => {
+                let dir = n.sort ? n.sort.dir.toLowerCase() : "none";
+                let cc = codepoints[ dir === "asc" ? "arrow_upward" : dir === "desc" ? "arrow_downward" : "" ];
+                return cc ? cc : ""
+            }
+        }
     }
 };
+
+// Comparator function, for sorting a list of nodes by name. Case-insensitive.
+//
+let nameComp = function(a,b) {
+    let na = a.name.toLowerCase();
+    let nb = b.name.toLowerCase();
+    return na < nb ? -1 : na > nb ? 1 : 0;
+};
+
+// Starting edit view is the main query view.
 let editView = editViews.queryMain;
 
+// Setup function
 function setup(){
     m = [20, 120, 20, 120]
     w = 1280 - m[1] - m[3]
@@ -142,6 +212,37 @@ function setup(){
         .on("click", undo);
     d3.select("#redoButton")
         .on("click", redo);
+
+  //
+  dragBehavior = d3.behavior.drag()
+    .on("drag", function () {
+      // on drag, follow the mouse in the Y dimension.
+      // Drag callback is attached to the drag handle.
+      let nodeGrp = d3.select(this);
+      // update node's y-coordinate
+      nodeGrp.attr("transform", (n) => {
+          n.y = d3.event.y;
+          return `translate(${n.x},${n.y})`;
+      });
+      // update the node's link
+      let ll = d3.select(`path.link[target="${nodeGrp.attr('id')}"]`);
+      ll.attr("d", diagonal);
+      })
+    .on("dragend", function () {
+      // on dragend, resort the draggable nodes according to their Y position
+      let nodes = d3.selectAll(editView.draggable).data()
+      nodes.sort( (a, b) => a.y - b.y );
+      // the node that was dragged
+      let dragged = d3.select(this).data()[0];
+      // callback for specific drag-end behavior
+      editView.afterDrag && editView.afterDrag(nodes, dragged);
+      //
+      update();
+      saveState();
+      //
+      d3.event.sourceEvent.preventDefault();
+      d3.event.sourceEvent.stopPropagation();
+  });
 }
 
 function initMines(j_mines) {
@@ -175,19 +276,33 @@ function initMines(j_mines) {
 
     // 
     //
-    d3.select("#editView")
+    d3.select("#editView select")
         .on("change", function () { setEditView(this.value); })
         ;
 
     //
     d3.select("#dialog .subclassConstraint select")
         .on("change", function(){ setSubclassConstraint(currNode, this.value); });
-    //
-    d3.select("#dialog .select-ctrl")
+    // Wire up select button in dialog
+    d3.select('#dialog [name="select-ctrl"] .swatch')
         .on("click", function() {
             currNode.isSelected ? currNode.unselect() : currNode.select();
+            d3.select('#dialog [name="select-ctrl"]')
+                .classed("selected", currNode.isSelected);
             update(currNode);
-            d3.select("#dialog .select-ctrl").classed("selected", currNode.isSelected);
+            saveState();
+        });
+    // Wire up sort function in dialog
+    d3.select('#dialog [name="sort-ctrl"] .swatch')
+        .on("click", function() {
+            let cc = d3.select('#dialog [name="sort-ctrl"]');
+            let currSort = cc.classed
+            let oldsort = cc.classed("sortasc") ? "asc" : cc.classed("sortdesc") ? "desc" : "none";
+            let newsort = oldsort === "asc" ? "desc" : oldsort === "desc" ? "none" : "asc";
+            cc.classed("sortasc", newsort === "asc");
+            cc.classed("sortdesc", newsort === "desc");
+            currNode.setSort(newsort);
+            update(currNode);
             saveState();
         });
 
@@ -299,23 +414,24 @@ function selectedMine(mname){
         d3.select('#editSourceSelector [name="in"]')
             .call(function(){ this[0][0].selectedIndex = 1; })
             .on("change", function(){ selectedEditSource(this.value); startEdit(); });
-        selectedEditSource( "tlist" );
         d3.select("#xmltextarea")[0][0].value = "";
         d3.select("#jsontextarea").value = "";
+        selectedEditSource( "tlist" );
 
     }, function(error){
         alert(`Could not access ${currMine.name}. Status=${error.status}. Error=${error.statusText}. (If there is no error message, then its probably a CORS issue.)`);
     });
 }
 
-//
+// Begins an edit, based on user controls.
 function startEdit() {
     // selector for choosing edit input source, and the current selection
     let srcSelector = d3.selectAll('[name="editTarget"] [name="in"]');
+    // the chosen edit source
     let inputId = srcSelector[0][0].value;
     // the query input element corresponding to the selected source
     let src = d3.select(`#${inputId} [name="in"]`);
-    // the quary starting point
+    // the query starting point
     let val = src[0][0].value
     if (inputId === "tlist") {
         // a saved query or template
@@ -584,15 +700,16 @@ function uncompileTemplate(tmplt){
                 throw "Anomaly detected in select list.";
         }
         (n.constraints || []).forEach(function(c){
-             t.where.push(c);
-                
+             let cc = new Constraint(c);
+             cc.node = null;
+             t.where.push(cc)
         })
         if (n.join === "outer") {
             t.joins.push(p);
         }
         if (n.sort) {
             let s = {}
-            s[p] = n.sort.dir;
+            s[p] = n.sort.dir.toUpperCase();
             t.orderBy[n.sort.level] = s;
         }
         n.children.forEach(reach);
@@ -675,23 +792,57 @@ class Node {
         }
         this.view = null;
     }
+    setSort(newdir){
+        let olddir = this.sort ? this.sort.dir : "none";
+        let oldlev = this.sort ? this.sort.level : -1;
+        let maxlev = -1;
+        let renumber = function (n){
+            if (n.sort) {
+                if (oldlev >= 0 && n.sort.level > oldlev)
+                    n.sort.level -= 1;
+                maxlev = Math.max(maxlev, n.sort.level);
+            }
+            n.children.forEach(renumber);
+        }
+        if (!newdir || newdir === "none") {
+            // set to not sorted
+            this.sort = null;
+            if (oldlev >= 0){
+                // if we were sorted before, need to renumber any existing sort cfgs.
+                renumber(this.template.qtree);
+            }
+        }
+        else {
+            // set to sorted
+            if (oldlev === -1) {
+                // if we were not sorted before, need to find next level.
+                renumber(this.template.qtree);
+                oldlev = maxlev + 1;
+            }
+            this.sort = { dir:newdir, level: oldlev };
+        }
+    }
 }
 
 class Template {
-    constructor () {
-        this.model = { name: "genomic" };
-        this.name = "";
-        this.title = "";
-        this.description = "";
-        this.comment = "";
-        this.select = [];
-        this.where = [];
-        this.constraintLogic = "";
-        this.tags = [];
-        this.orderBy = [];
+    constructor (t) {
+        t = t || {}
+        this.model = t.model ? deepc(t.model) : { name: "genomic" };
+        this.name = t.name || "";
+        this.title = t.title || "";
+        this.description = t.description || "";
+        this.comment = t.comment || "";
+        this.select = t.select ? deepc(t.select) : [];
+        this.where = t.where ? t.where.map( c => c.clone ? c.clone() : new Constraint(c) ) : [];
+        this.constraintLogic = t.constraintLogic || "";
+        this.tags = t.tags ? deepc(t.tags) : [];
+        this.orderBy = t.orderBy ? deepc(t.orderBy) : [];
     }
 
-}
+    // TODO: Keep moving functions into methods
+    // FIXME: Not all templates are Temaplates !! (some are still plain objects created elsewise)
+};
+
 function getNodeByPath (t,p) {
         p = p.trim();
         if (!p) return null;
@@ -708,23 +859,75 @@ function getNodeByPath (t,p) {
     }
 
 class Constraint {
-    constructor (n, t) {
-        // one of: null, value, multivalue, subclass, lookup, list
-        this.ctype = n.pcomp.kind === "attribute" ? "value" : "lookup";
-        // used by all except subclass constraints (we set it to "ISA")
-        this.op = this.ctype === "value" ? "=" : "LOOKUP";
-        // used by all except subclass constraints
-        this.code = nextAvailableCode(t);
+    constructor (c) {
+        c = c || {}
+        // save the  node
+        this.node = c.node || null;
         // all constraints have this
-        this.path = n.path;
+        this.path = c.path || c.node && c.node.path || "";
+        // used by all except subclass constraints (we set it to "ISA")
+        this.op = c.op || null;
+        // one of: null, value, multivalue, subclass, lookup, list
+        this.ctype = c.ctype || null;
+        // used by all except subclass constraints
+        this.code = c.code || null;
         // used by value, list
-        this.value = "";
+        this.value = c.value || "";
         // used by LOOKUP on BioEntity and subclasses
-        this.extraValue = null;
+        this.extraValue = c.extraValue || null;
         // used by multivalue and range constraints
-        this.values = null;
+        this.values = c.values && deepc(c.values) || null;
         // used by subclass contraints
-        this.type = null;
+        this.type = c.type || null;
+        // used for constraints in a template
+        this.editable = c.editable || null;
+    }
+    // Returns an unregistered clone. (means: no node pointer)
+    clone () {
+        let c = new Constraint(this);
+        c.node = null;
+        return c;
+    }
+    //
+    setOp (o, quietly) {
+        let op = OPINDEX[o];
+        if (!op) throw "Unknown operator: " + o;
+        this.op = op.op;
+        this.ctype = op.ctype;
+        let t = this.node && this.node.template;
+        if (this.ctype === "subclass") {
+            if (this.code && !quietly && t) 
+                delete t.code2c[this.code];
+            this.code = null;
+        }
+        else {
+            if (!this.code) 
+                this.code = t && nextAvailableCode(t) || null;
+        }
+        !quietly && t && setLogicExpression(t.constraintLogic, t);
+    }
+    // formats this constraint as xml
+    c2xml (){
+        let g = '';
+        let h = '';
+        if (this.ctype === "value" || this.ctype === "list")
+            g = `path="${this.path}" op="${esc(this.op)}" value="${esc(this.value)}" code="${this.code}" editable="${this.editable}"`;
+        else if (this.ctype === "lookup"){
+            let ev = (this.extraValue && this.extraValue !== "Any") ? `extraValue="${this.extraValue}"` : "";
+            g = `path="${this.path}" op="${esc(this.op)}" value="${esc(this.value)}" ${ev} code="${this.code}" editable="${this.editable}"`;
+        }
+        else if (this.ctype === "multivalue"){
+            g = `path="${this.path}" op="${this.op}" code="${this.code}" editable="${this.editable}"`;
+            h = this.values.map( v => `<value>${esc(v)}</value>` ).join('');
+        }
+        else if (this.ctype === "subclass")
+            g = `path="${this.path}" type="${this.type}" editable="false"`;
+        else if (this.ctype === "null")
+            g = `path="${this.path}" op="${this.op}" code="${this.code}" editable="${this.editable}"`;
+        if(h)
+            return `<constraint ${g}>${h}</constraint>\n`;
+        else
+            return `<constraint ${g} />\n`;
     }
 }
 
@@ -869,7 +1072,7 @@ function removeNode(n) {
 function editTemplate (t, nosave) {
     // Make sure the editor works on a copy of the template.
     //
-    currTemplate = deepc(t);
+    currTemplate = new Template(t);
     //
     root = compileTemplate(currTemplate, currMine.model).qtree
     root.x0 = 0;
@@ -911,7 +1114,7 @@ function editTemplate (t, nosave) {
     update(root);
 }
 
-// Set the constraint logic expression for the given template.
+// Sets the constraint logic expression for the given template.
 // In the process, also "corrects" the expression as follows:
 //    * any codes in the expression that are not associated with
 //      any constraint in the current template are removed and the
@@ -928,13 +1131,17 @@ function editTemplate (t, nosave) {
 //   the "corrected" expression
 //   
 function setLogicExpression(ex, tmplt){
+    tmplt = tmplt ? tmplt : currTemplate;
+    ex = ex ? ex : (tmplt.constraintLogic || "")
     var ast; // abstract syntax tree
     var seen = [];
     function reach(n,lev){
         if (typeof(n) === "string" ){
-            // check that n is a constraint code in the template. If not, remove it from the expr.
+            // check that n is a constraint code in the template. 
+            // If not, remove it from the expr.
+            // Also remove it if it's the code for a subclass constraint
             seen.push(n);
-            return (n in tmplt.code2c ? n : "");
+            return (n in tmplt.code2c && tmplt.code2c[n].ctype !== "subclass") ? n : "";
         }
         var cms = n.children.map(function(c){return reach(c, lev+1);}).filter(function(x){return x;});;
         var cmss = cms.join(" "+n.op+" ");
@@ -1222,9 +1429,6 @@ function initCEinputs(n, c, ctype) {
 //
 function openConstraintEditor(c, n){
 
-    var ccopy = deepc(c);
-    d3.select("#constraintEditor").datum({ c, ccopy })
-
     // Note if this is happening at the root node
     var isroot = ! n.parent;
  
@@ -1392,13 +1596,21 @@ function nextAvailableCode(tmplt){
 //   The new constraint.
 //
 function addConstraint(n, updateUI, c) {
-    if (!c) {
-        c = new Constraint(n,currTemplate);
+    if (c) {
+        // just to be sure
+        c.node = n;
+    }
+    else {
+        let op = OPINDEX[n.pcomp.kind === "attribute" ? "=" : "LOOKUP"];
+        c = new Constraint({node:n, op:op.op, ctype: op.ctype});
     }
     n.constraints.push(c);
-    currTemplate.where.push(c);
-    currTemplate.code2c[c.code] = c;
-    setLogicExpression(currTemplate.constraintLogic, currTemplate);
+    n.template.where.push(c);
+    if (c.ctype !== "subclass") {
+        c.code = nextAvailableCode(n.template);
+        n.template.code2c[c.code] = c;
+        setLogicExpression(n.template.constraintLogic, n.template);
+    }
     //
     if (updateUI) {
         update(n);
@@ -1427,8 +1639,7 @@ function removeConstraint(n, c, updateUI){
 function saveConstraintEdits(n, c){
     //
     let o = d3.select('#constraintEditor [name="op"]')[0][0].value;
-    c.op = o;
-    c.ctype = OPINDEX[o].ctype;
+    c.setOp(o);
     c.saved = true;
     //
     let val = d3.select('#constraintEditor [name="value"]')[0][0].value;
@@ -1557,9 +1768,9 @@ function showDialog(n, elt, refreshOnly){
   // 4. constraint code
   cdivs.append("div").attr("name", "code") ;
   // 5. button to edit this constraint
-  cdivs.append("i").attr("class", "material-icons edit").text("mode_edit");
+  cdivs.append("i").attr("class", "material-icons edit").text("mode_edit").attr("title","Edit this constraint");
   // 6. button to remove this constraint
-  cdivs.append("i").attr("class", "material-icons cancel").text("delete_forever");
+  cdivs.append("i").attr("class", "material-icons cancel").text("delete_forever").attr("title","Remove this constraint");
 
   // Remove exiting
   constrs.exit().remove() ;
@@ -1605,8 +1816,12 @@ function showDialog(n, elt, refreshOnly){
       dialog.select("span.clsName")
           .text(n.pcomp.type.name || n.pcomp.type );
       // 
-      dialog.select(".select-ctrl")
+      dialog.select('[name="select-ctrl"]')
           .classed("selected", function(n){ return n.isSelected });
+      // 
+      dialog.select('[name="sort-ctrl"]')
+          .classed("sortasc", n => n.sort && n.sort.dir.toLowerCase() === "asc")
+          .classed("sortdesc", n => n.sort && n.sort.dir.toLowerCase() === "desc")
   }
   else {
       // Dialog for classes
@@ -1700,6 +1915,7 @@ function setEditView(view){
     let v = editViews[view];
     if (!v) throw "Unrecognized view type: " + view;
     editView = v;
+    d3.select("#svgContainer").attr("class", v.name);
     update(root);
 }
 
@@ -1734,29 +1950,11 @@ function doLayout(root){
       nodes.forEach( d => { let tmp = d.x; d.x = d.y; d.y = tmp; });
 
       // ------------------------------------------------------
-      // Experimenting with rearranging leaves. Rough code ahead...
-      //
       // Rearrange y-positions of leaf nodes. 
       let pos = leaves.map(function(n){ return { y: n.y, y0: n.y0 }; });
-      //let pos = leaves.map(function(n){ return { x: n.x, x0: n.x0 }; });
-      let nameComp = function(a,b) {
-          let na = a.name.toLowerCase();
-          let nb = b.name.toLowerCase();
-          return na < nb ? -1 : na > nb ? 1 : 0;
-      };
-      let colOrderComp = function(a,b){
-          if (a.isSelected)
-              if (b.isSelected)
-                  return a.view - b.view;
-              else
-                  return -1
-          else
-              if (b.isSelected)
-                  return 1
-              else
-                  return nameComp(a,b)
-      }
-      leaves.sort(colOrderComp);
+
+      leaves.sort(editView.nodeComp);
+
       // reassign the Y positions
       leaves.forEach(function(n, i){
           n.y = pos[i].y;
@@ -1801,6 +1999,7 @@ function doLayout(root){
 //
 function update(source) {
   //
+  d3.select("#svgContainer").attr("class", editView.name);
   doLayout(root);
   updateNodes(nodes, source);
   updateLinks(links, source);
@@ -1822,11 +2021,10 @@ function updateNodes(nodes, source){
       ;
 
   // Add glyph for the node
-  //nodeEnter.append("svg:circle")
   nodeEnter.append(function(d){
       var shape = (d.pcomp.kind == "attribute" ? "rect" : "circle");
       return document.createElementNS("http://www.w3.org/2000/svg", shape);
-      })
+    })
       .attr("class","node")
       .on("click", function(d) {
           if (d3.event.defaultPrevented) return; 
@@ -1845,55 +2043,60 @@ function updateNodes(nodes, source){
 
   // Add text for node name
   nodeEnter.append("svg:text")
-      .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
+      .attr("x", function(d) { return d.children ? -10 : 10; })
       .attr("dy", ".35em")
       .style("fill-opacity", 1e-6) // start off nearly transparent
       .attr("class","nodeName")
       ;
 
-  // Transition nodes to their new position.
+  // Placeholder for icon/text to appear inside node
+  nodeEnter.append("svg:text")
+      .attr('class', 'nodeIcon')
+      .attr('dy', 5)
+      ;
+
+  // Add node handle
+  nodeEnter.append("svg:text")
+      .attr('class', 'handle')
+      .attr('dx', 10)
+      .attr('dy', 5)
+      ;
+
   let nodeUpdate = nodeGrps
-      .classed("selected", function(n){ return n.isSelected; })
-      .classed("constrained", function(n){ return n.constraints.length > 0; })
-      .transition()
+      .classed("selected", n => n.isSelected)
+      .classed("constrained", n => n.constraints.length > 0)
+      .classed("sorted", n => n.sort && n.sort.level >= 0)
+      .classed("sortedasc", n => n.sort && n.sort.dir.toLowerCase() === "asc")
+      .classed("sorteddesc", n => n.sort && n.sort.dir.toLowerCase() === "desc")
+    // Transition nodes to their new position.
+    .transition()
       .duration(animationDuration)
       .attr("transform", function(n) { return "translate(" + n.x + "," + n.y + ")"; })
       ;
 
+  nodeUpdate.select("text.handle")
+      .attr('font-family', editView.handleIcon.fontFamily || null)
+      .text(editView.handleIcon.text || "") ;
+  nodeUpdate.select("text.nodeIcon")
+      .attr('font-family', editView.nodeIcon.fontFamily || null)
+      .text(editView.nodeIcon.text || "") ;
+
   nodeUpdate.selectAll("text.nodeName")
       .text(n => n.name);
 
-  // Make selected nodes draggable
-  let drag = d3.behavior.drag();
+  // --------------------------------------------------
+  // Make selected nodes draggable.
+  // Clear out all exiting drag handlers
   d3.selectAll("g.nodegroup")
       .classed("draggable", false)
-      .on(".drag", null); 
-  if (editView.name === "columnOrder")
-      d3.selectAll("g.nodegroup.selected")
+      .select(".handle")
+          .on(".drag", null); 
+  // Now make everything draggable that should be
+  if (editView.draggable)
+      d3.selectAll(editView.draggable)
           .classed("draggable", true)
-          .call(drag);
-  drag
-      .on("drag", function () {
-          let dd = d3.select(this);
-          dd.attr("transform", (n) => {
-              //n.x = d3.event.x;
-              n.y = d3.event.y;
-              return `translate(${n.x},${n.y})`;
-          });
-          let ll = d3.select(`path.link[target="${dd.attr('id')}"]`);
-          ll.attr("d", diagonal);
-      })
-      .on("dragend", function () {
-          d3.event.sourceEvent.preventDefault();
-          d3.event.sourceEvent.stopPropagation();
-          let dragged = d3.select(this).data()[0];
-          let nodes = d3.selectAll(".nodegroup.selected").data()
-          nodes.sort( (a, b) => a.y - b.y );
-          nodes.forEach((n,i) => { n.view = i });
-          dragged.template.select = nodes.map( n=> n.path );
-          update();
-          saveState();
-      });
+          .call(dragBehavior);
+  // --------------------------------------------------
 
   // Add text for constraints
   let ct = nodeGrps.selectAll("text.constraint")
@@ -1985,6 +2188,7 @@ function updateLinks(links, source) {
               // re-set the tooltip
               d3.select(this).select("title").text(linkTitle);
               update(l.source);
+              saveState();
           }
       })
       .transition()
@@ -2011,6 +2215,12 @@ function updateLinks(links, source) {
       ;
 
 }
+//
+// Function to escape '<' '"' and '&' characters
+function esc(s){
+    if (!s) return "";
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); 
+}
 
 // Turns a json representation of a template into XML, suitable for importing into the Intermine QB.
 function json2xml(t, qonly){
@@ -2020,13 +2230,12 @@ function json2xml(t, qonly){
         return s + `${k} ${v} `;
     }, "");
 
-    // Function to escape '<' '"' and '&' characters
-    var esc = function(s){ return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); };
     // Converts an outer join path to xml.
     function oj2xml(oj){
         return `<join path="${oj}" style="OUTER" />`;
     }
     // Converts a constraint to xml
+    /*
     function c2xml(c){
         let g = '';
         let h = '';
@@ -2049,6 +2258,7 @@ function json2xml(t, qonly){
         else
             return `<constraint ${g} />\n`;
     }
+    */
 
     // the query part
     var qpart = 
@@ -2058,9 +2268,10 @@ function json2xml(t, qonly){
   view="${t.select.join(' ')}"
   longDescription="${esc(t.description || '')}"
   sortOrder="${so || ''}"
-  constraintLogic="${t.constraintLogic || ''}">
+  ${t.constraintLogic && 'constraintLogic="'+t.constraintLogic+'"' || ''}
+>
   ${(t.joins || []).map(oj2xml).join(" ")}
-  ${(t.where || []).map(c2xml).join(" ")}
+  ${(t.where || []).map(c => c.c2xml()).join(" ")}
 </query>`;
     // the whole template
     var tmplt = 

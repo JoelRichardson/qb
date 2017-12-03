@@ -24,16 +24,23 @@
 
             <i class="material-icons button" name="openclose">clear</i>
 
-            <!-- Select a mine and set your API token here. -->
-            <div name="mineCtrls" class="flexrow">
+            <div name="topBar" class="flexrow">
+                <div id="editView" class="flexrow">
+                    <label>View</label>
+                    <select>
+                        <option value="queryMain">Query (main)</option>
+                        <option value="columnOrder">Column order</option>
+                        <option value="sortOrder">Sort order</option>
+                    </select>
+                </div>
+                <div name="undoRedoButtons" class="flexrow">
+                    <i id="undoButton" title="Undo" class="material-icons button undo">undo</i>
+                    <i id="redoButton" title="Redo" class="material-icons button redo">redo</i>
+                </div>
                 <!-- The list of available mines. -->
-                <div>
+                <div class="flexrow">
                     <label>Mine</label>
                     <select id="mlist"></select>
-                </div>
-
-                <!-- API token. -->
-                <div>
                     <label>API Token</label>
                     <input disabled id="token" type="text" placeholder="Not implemented"></input>
                 </div>
@@ -146,11 +153,6 @@
                     <span></span>
                     <i class="material-icons error">error</i>
                 </div>
-                <div name="undoRedoButtons" class="flexrow">
-                    <i id="undoButton" title="Undo" class="material-icons button undo">undo</i>
-                    <i id="redoButton" title="Redo" class="material-icons button redo">redo</i>
-                </div>
-
                 <img id="mineLogo" src=""></img>
             </div>
             <div name="spacebar"></div>
@@ -160,15 +162,6 @@
         <div id="footer" class="flexrow">
             <div class="flexrow left" >
 
-                <div class="flexcol">
-                    <label>Edit view</label>
-                    <select id="editView">
-                        <option value="queryMain">Query (main)</option>
-                        <option value="constraintLogic" disabled>Constraint logic</option>
-                        <option value="columnOrder">Column order</option>
-                        <option value="sortOrder" disabled>Sort order</option>
-                    </select>
-                </div>
             </div>
             <div class="center">
                 <a target="_blank" href="https://github.com/JoelRichardson/qb">QB@GitHub</a>
@@ -199,9 +192,20 @@
 
             <!-- Where the user gets to select/unselect an attribute to return. 
                  Only display for attributes (not for refs/colls) -->
-            <div class="select-ctrl">
-                <label>Selected:&nbsp;</label>
-                <div></div>
+            <div name="selsort-ctrls" class="flexrow">
+                <div name="select-ctrl"class="flexcolumn">
+                    <label>Select</label>
+                    <div class="swatch">
+                        <i class="material-icons done">done</i>
+                    </div>
+                </div>
+                <div name="sort-ctrl" class="flexcolumn">
+                    <label>Sort</label>
+                    <div class="swatch">
+                        <i class="material-icons arrow_upward">arrow_upward</i>
+                        <i class="material-icons arrow_downward">arrow_downward</i>
+                    </div>
+                </div>
             </div>
 
             <!-- Where the current set of constraints on this node are displayed. -->

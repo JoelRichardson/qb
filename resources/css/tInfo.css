@@ -44,19 +44,16 @@
     display:none;
 }
 /* Top control bar */
-#tInfoBar [name="mineCtrls"] {
+#tInfoBar [name="topBar"] {
     padding-left: 80px;
     padding-right: 50px;
-    padding-bottom: 10px;
     justify-content: space-between;
     border-bottom: thin solid;
 }
-#tInfoBar.closed [name="mineCtrls"] {
+#tInfoBar.closed [name="topBar"] {
     border-bottom: none;
 }
-#tInfoBar [name="mineCtrls"] > div {
-    padding: 4px 30px;
-    margin-top: 8px;
+#tInfoBar [name="topBar"] > div {
 }
 #drawer {
     width: 100%;
@@ -170,13 +167,52 @@
     left: 12px;
 }
 
-#tooltray [name="undoRedoButtons"] {
+#tooltray > .flexrow,
+#tooltray > .flexcolumn {
+    width: auto;
+}
+
+#tooltray i.button {
+    background-color: #607896;
+    color: white;
+    border-radius: 16px;
+    padding: 2px;
+    margin: 6px;
+}
+
+#editView {
+    width: auto;
+    padding-left: 20px;
+}
+
+[name="topBar"] [name="undoRedoButtons"] {
+    justify-content: center;
+}
+
+[name="topBar"] [name="undoRedoButtons"] i.button {
+    padding: 6px;
+    border-radius: 20px;
+    margin-left: 6px;
+    margin-right: 6px;
+}
+[name="topBar"] [name="undoRedoButtons"] i.button:hover {
+    color: black;
+    background-color: white;
+}
+
+[name="topBar"] label {
+    margin-right: 6px;
+    margin-left: 12px;
+}
+
+#tooltray i.button.sync {
+    background-color: green;
 }
 
 #runatmine {
     background-color: green;
     color: white;
-    border-radius: 20px;
+    border-radius: 16px;
     padding: 12px 20px;
     cursor: pointer;
     width: 120px;
@@ -190,7 +226,6 @@
 
 #querycount {
     top: 80px;
-    padding-top: 8px;
     background-color: transparent;
     color: black;
 }
