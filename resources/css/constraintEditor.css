@@ -10,10 +10,22 @@
     margin: 4px;
 }
 
-#constraintEditor .button:hover {
-    color: white;
-    background-color: black;
+#constraintEditor .button.save {
+    color: green;
 }
+#constraintEditor .button.save:hover {
+    color: white;
+    background-color: green;
+}
+
+#constraintEditor .button.cancel {
+    color: red;
+}
+#constraintEditor .button.cancel:hover {
+    color: white;
+    background-color: red;
+}
+
 
 #constraintEditor.open {
     display: flex;

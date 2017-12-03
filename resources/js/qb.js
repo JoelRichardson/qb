@@ -835,6 +835,7 @@ class Template {
         this.select = t.select ? deepc(t.select) : [];
         this.where = t.where ? t.where.map( c => c.clone ? c.clone() : new Constraint(c) ) : [];
         this.constraintLogic = t.constraintLogic || "";
+        this.joins = t.joins ? deepc(t.joins) : [];
         this.tags = t.tags ? deepc(t.tags) : [];
         this.orderBy = t.orderBy ? deepc(t.orderBy) : [];
     }
@@ -2234,31 +2235,6 @@ function json2xml(t, qonly){
     function oj2xml(oj){
         return `<join path="${oj}" style="OUTER" />`;
     }
-    // Converts a constraint to xml
-    /*
-    function c2xml(c){
-        let g = '';
-        let h = '';
-        if (c.ctype === "value" || c.ctype === "list")
-            g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.value)}" code="${c.code}" editable="${c.editable}"`;
-        else if (c.ctype === "lookup"){
-            let ev = (c.extraValue && c.extraValue !== "Any") ? `extraValue="${c.extraValue}"` : "";
-            g = `path="${c.path}" op="${esc(c.op)}" value="${esc(c.value)}" ${ev} code="${c.code}" editable="${c.editable}"`;
-        }
-        else if (c.ctype === "multivalue"){
-            g = `path="${c.path}" op="${c.op}" code="${c.code}" editable="${c.editable}"`;
-            h = c.values.map( v => `<value>${esc(v)}</value>` ).join('');
-        }
-        else if (c.ctype === "subclass")
-            g = `path="${c.path}" type="${c.type}" editable="false"`;
-        else if (c.ctype === "null")
-            g = `path="${c.path}" op="${c.op}" code="${c.code}" editable="${c.editable}"`;
-        if(h)
-            return `<constraint ${g}>${h}</constraint>\n`;
-        else
-            return `<constraint ${g} />\n`;
-    }
-    */
 
     // the query part
     var qpart = 
