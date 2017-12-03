@@ -939,23 +939,24 @@ class Constraint {
         !quietly && t && setLogicExpression(t.constraintLogic, t);
     }
     // formats this constraint as xml
-    c2xml (){
+    c2xml (qonly){
         let g = '';
         let h = '';
+        let e = qonly ? "" : `editable="${this.editable || 'false'}"`;
         if (this.ctype === "value" || this.ctype === "list")
-            g = `path="${this.path}" op="${esc(this.op)}" value="${esc(this.value)}" code="${this.code}" editable="${this.editable}"`;
+            g = `path="${this.path}" op="${esc(this.op)}" value="${esc(this.value)}" code="${this.code}" ${e}`;
         else if (this.ctype === "lookup"){
             let ev = (this.extraValue && this.extraValue !== "Any") ? `extraValue="${this.extraValue}"` : "";
-            g = `path="${this.path}" op="${esc(this.op)}" value="${esc(this.value)}" ${ev} code="${this.code}" editable="${this.editable}"`;
+            g = `path="${this.path}" op="${esc(this.op)}" value="${esc(this.value)}" ${ev} code="${this.code}" ${e}`;
         }
         else if (this.ctype === "multivalue"){
-            g = `path="${this.path}" op="${this.op}" code="${this.code}" editable="${this.editable}"`;
+            g = `path="${this.path}" op="${this.op}" code="${this.code}" ${e}`;
             h = this.values.map( v => `<value>${esc(v)}</value>` ).join('');
         }
         else if (this.ctype === "subclass")
-            g = `path="${this.path}" type="${this.type}" editable="false"`;
+            g = `path="${this.path}" type="${this.type}" ${e}`;
         else if (this.ctype === "null")
-            g = `path="${this.path}" op="${this.op}" code="${this.code}" editable="${this.editable}"`;
+            g = `path="${this.path}" op="${this.op}" code="${this.code}" ${e}`;
         if(h)
             return `<constraint ${g}>${h}</constraint>\n`;
         else
@@ -2280,7 +2281,7 @@ function json2xml(t, qonly){
   ${t.constraintLogic && 'constraintLogic="'+t.constraintLogic+'"' || ''}
 >
   ${(t.joins || []).map(oj2xml).join(" ")}
-  ${(t.where || []).map(c => c.c2xml()).join(" ")}
+  ${(t.where || []).map(c => c.c2xml(qonly)).join(" ")}
 </query>`;
     // the whole template
     var tmplt = 
