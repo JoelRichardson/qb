@@ -2035,6 +2035,14 @@ function doLayout(root){
 function update(source) {
   //
   d3.select("#svgContainer").attr("class", editView.name);
+
+  //
+  let title = vis.select("#qtitle");
+  title.enter().append("svg:text");
+  title.exit().remove();
+  title.text(editView.name);
+
+  //
   doLayout(root);
   updateNodes(nodes, source);
   updateLinks(links, source);
