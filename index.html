@@ -31,6 +31,7 @@
                         <option value="queryMain">Query (main)</option>
                         <option value="columnOrder">Column order</option>
                         <option value="sortOrder">Sort order</option>
+                        <option value="constraintLogic">Constraint logic</option>
                     </select>
                 </div>
                 <div name="undoRedoButtons" class="flexrow">
@@ -112,18 +113,6 @@
                                 <textarea cols="40" rows="4"></textarea>
                             </div>
                         </div>    
-                        <div class="flexrow">
-                            <!-- Constraint logic expression -->
-                            <div name="logicExpression" class="flexcolumn">
-                                <label>Logic expression</label>
-                                <input size="40" type="text" ></input>
-                            </div>
-                            <!-- spacer -->
-                            <div class="flexcolumn">
-                                <span>&nbsp;</span>
-                                <span>&nbsp;</span>
-                            </div>
-                        </div>
                     </div> <!-- end of tInfo -->
 
                     <!-- Where the query text is dumped with every update. -->
@@ -154,6 +143,11 @@
                     <i class="material-icons error">error</i>
                 </div>
                 <img id="mineLogo" src=""></img>
+            </div>
+            <!-- Constraint logic expression -->
+            <div name="logicExpression" class="flexrow">
+                <label>Constraint logic</label>
+                <input size="40" type="text" ></input>
             </div>
             <div name="spacebar"></div>
         </div>

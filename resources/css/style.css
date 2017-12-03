@@ -44,6 +44,32 @@ label {
     opacity: 0;
 }
 
+#svgContainer [name="logicExpression"] {
+    position: absolute;
+    top : 20px;
+    left: 250px;
+    width: auto;
+    background-color: purple;
+    color: white;
+    border-radius: 4px;
+}
+#svgContainer [name="logicExpression"] input {
+    color: purple;
+    font-weight: bold;
+}
+#svgContainer [name="logicExpression"] > * {
+    margin: 4px;
+}
+
+#svgContainer.sortOrder [name="logicExpression"],
+#svgContainer.columnOrder [name="logicExpression"]{
+    background-color: #ccc;
+}
+#svgContainer.sortOrder [name="logicExpression"] input,
+#svgContainer.columnOrder [name="logicExpression"] input {
+    color: #ccc;
+}
+
 .noselect {
     -webkit-touch-callout: none; /* iOS Safari */
       -webkit-user-select: none; /* Safari */

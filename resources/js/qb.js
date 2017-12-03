@@ -124,6 +124,29 @@ let editViews = {
                 return cc ? cc : ""
             }
         }
+    },
+    constraintLogic: {
+        name: "constraintLogic",
+        layoutStyle: "dendrogram",
+        nodeComp: function(a,b){
+          // Comparator function. In constraint logic view:
+          //     - constrained nodes are at the top, in code order (top-to-bottom)
+          //     - unsorted nodes are at the bottom, in alpha order by name
+          let aconst = a.constraints && a.constraints.length > 0;
+          let acode = aconst ? a.constraints[0].code : null;
+          let bconst = b.constraints && b.constraints.length > 0;
+          let bcode = bconst ? b.constraints[0].code : null;
+          if (aconst)
+              return bconst ? (acode < bcode ? -1 : acode > bcode ? 1 : 0) : -1;
+          else
+              return bconst ? 1 : nameComp(a, b);
+        },
+        handleIcon: {
+            text: ""
+        },
+        nodeIcon: {
+            text: ""
+        }
     }
 };
 
@@ -1078,6 +1101,8 @@ function editTemplate (t, nosave) {
     root = compileTemplate(currTemplate, currMine.model).qtree
     root.x0 = 0;
     root.y0 = h / 2;
+    //
+    setLogicExpression();
 
     if (! nosave) saveState();
 
@@ -1103,10 +1128,10 @@ function editTemplate (t, nosave) {
         .on("change", function(){ xfer("comment", this) });
 
     // Logic expression - which ties the individual constraints together
-    ti.select('[name="logicExpression"] input')
-        .call(function(){ this[0][0].value = setLogicExpression(currTemplate.constraintLogic, currTemplate) })
+    d3.select('#svgContainer [name="logicExpression"] input')
+        .call(function(){ this[0][0].value = currTemplate.constraintLogic })
         .on("change", function(){
-            this.value = setLogicExpression(this.value, currTemplate);
+            setLogicExpression(this.value, currTemplate);
             xfer("constraintLogic", this)
         });
 
@@ -1171,7 +1196,7 @@ function setLogicExpression(ex, tmplt){
     //
     tmplt.constraintLogic = lex;
 
-    d3.select('#tInfo [name="logicExpression"] input')
+    d3.select('#svgContainer [name="logicExpression"] input')
         .call(function(){ this[0][0].value = lex; });
 
     return lex;

@@ -26,10 +26,12 @@ circle.node {
 .queryMain .selected .node {
     fill: green;
 }
-.queryMain .constrained .node {
+.queryMain .constrained .node,
+.constraintLogic .constrained .node {
     stroke: purple;
 }
-.queryMain .constraint {
+.queryMain .constraint,
+.constraintLogic .constrained .constraint {
     stroke : purple;
     fill: purple;
 }
