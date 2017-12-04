@@ -1959,6 +1959,13 @@ function doLayout(root){
   var layout;
   let leaves = [];
   
+  function md (n) { // max depth
+      if (n.children.length === 0) leaves.push(n);
+      return 1 + (n.children.length ? Math.max.apply(null, n.children.map(md)) : 0);
+  };
+  let maxd = md(root); // max depth, 1-based
+
+  //
   if (editView.layoutStyle === "tree") {
       // d3 layout arranges nodes top-to-bottom, but we want left-to-right.
       // So...reverse width and height, and do the layout. Then, reverse the x,y coords in the results.
@@ -1968,19 +1975,15 @@ function doLayout(root){
       // Reverse x and y. Also, normalize x for fixed-depth.
       nodes.forEach(function(d) {
           let tmp = d.x; d.x = d.y; d.y = tmp;
-          d.x = d.depth * 180;
+          let dx = Math.min(180, w / Math.max(1,maxd-1))
+          d.x = d.depth * dx 
       });
   }
   else {
       // dendrogram
-      function md (n) { // max depth
-          if (n.children.length === 0) leaves.push(n);
-          return 1 + (n.children.length ? Math.max.apply(null, n.children.map(md)) : 0);
-      };
-      let maxd = md(root); // max depth, 1-based
       layout = d3.layout.cluster()
           .separation((a,b) => 1)
-          .size([h, maxd * 180]);
+          .size([h, Math.min(w, maxd * 180)]);
       // Save nodes in global.
       nodes = layout.nodes(root).reverse();
       nodes.forEach( d => { let tmp = d.x; d.x = d.y; d.y = tmp; });
