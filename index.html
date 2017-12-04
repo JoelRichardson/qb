@@ -37,7 +37,7 @@
                     <div id="editSourceSelector" class="flexcolumn">
                         <label>Query</label>
                         <select name="in">
-                          <option value="newqclist">Start new</option>
+                          <option value="newqclist">Start from class</option>
                           <option value="tlist">Edit saved</option>
                           <option value="importxml">Import XML</option>
                           <option value="importjson">Import JSON</option>
@@ -108,49 +108,55 @@
                     </div> <!-- end of ttext -->
                 </div> <!-- end of details -->
             </div> <!-- end of drawer -->
+
         </div> <!-- end of tInfoBar -->
 
         <!-- The container where the SVG drawing goes. -->
         <div id="svgContainer">
+            <div name="logicExpression" class="flexrow">
+                <label>Constraint logic</label>
+                <input size="40" type="text" ></input>
+            </div>
             <svg></svg>
             <div id="tooltray" class="flexrow">
 
-                <img id="mineLogo" src=""></img>
+                <div class="flexrow">
+                    <img id="mineLogo" src=""></img>
 
-                <div id="runatmine" title="Click to run. Alt-click to open in editor.">
-                    Run this query at
-                    <span name="minename"></span>
+                    <div id="runatmine" title="Click to run. Alt-click to open in editor.">
+                        Run this query at
+                        <span name="minename"></span>
+                    </div>
+
+                    <div id="querycount" class="flexrow syncoff">
+                        <i class="material-icons button sync" title="Count autosync is OFF. Click to turn it ON.">sync_disabled</i>
+                        <label>Count:</label>
+                        <span></span>
+                        <i class="material-icons error">error</i>
+                    </div>
                 </div>
 
-                <div id="querycount" class="flexrow syncoff">
-                    <i class="material-icons button sync" title="Count autosync is OFF. Click to turn it ON.">sync_disabled</i>
-                    <label>Count:</label>
-                    <span></span>
-                    <i class="material-icons error">error</i>
-                </div>
-
-                <div name="logicExpression" class="flexrow">
-                    <label>Constraint logic</label>
-                    <input size="40" type="text" ></input>
-                </div>
+                <div class="spacer1"></div>
 
                 <div name="undoRedoButtons" class="flexrow">
                     <i id="undoButton" title="Undo" class="material-icons button undo">undo</i>
                     <i id="redoButton" title="Redo" class="material-icons button redo">redo</i>
                 </div>
 
-                <div id="editView" class="flexrow">
-                    <label>View</label>
-                    <select>
-                        <option value="queryMain">Query (main)</option>
-                        <option value="columnOrder">Column order</option>
-                        <option value="sortOrder">Sort order</option>
-                        <option value="constraintLogic">Constraint logic</option>
-                    </select>
+                <div class="spacer3"></div>
 
+                <div class="flexrow">
+                    <div id="editView" class="flexrow">
+                        <label>View</label>
+                        <select>
+                            <option value="queryMain">Query (main)</option>
+                            <option value="columnOrder">Column order</option>
+                            <option value="sortOrder">Sort order</option>
+                            <option value="constraintLogic">Constraint logic</option>
+                        </select>
+                    </div>
+                    <i class="material-icons button" name="openclose">settings</i>
                 </div>
-
-                <i class="material-icons button" name="openclose">settings</i>
 
             </div> <!-- end of tooltray -->
         </div> <!-- end of svgContainer -->

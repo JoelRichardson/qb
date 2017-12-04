@@ -11,8 +11,21 @@ body {
   font-family: "Helvetica Neue", Helvetica;
 }
 
+.spacer1 { flex-grow: 1; }
+.spacer2 { flex-grow: 2; }
+.spacer3 { flex-grow: 3; }
+.spacer5 { flex-grow: 5; }
+.spacer8 { flex-grow: 8; }
+.spacer13 { flex-grow: 13; }
+
 #qb {
     padding-top: 49px;
+}
+
+#qtitle {
+     font-size: 30px;
+     stroke: #ddd;
+     fill: #ddd;
 }
 
 #apitoken {
@@ -51,6 +64,9 @@ label {
 
 #svgContainer [name="logicExpression"] {
     width: auto;
+    position: absolute;
+    top: 10px;
+    right: 10px;
     background-color: purple;
     color: white;
     border-radius: 4px;

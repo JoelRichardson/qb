@@ -73,7 +73,7 @@
     opacity: 1;
     -webkit-transition: height 0.3s, opacity 0.2s;
     transition: height 0.3s, opacity 0.2s;
-    overflow: scroll;
+    overflow: hidden;
 }
 #drawer.expanded {
     height: 400px;
@@ -95,7 +95,6 @@
 
 #tInfoBar [name="editTarget"] {
     padding: 10px;
-    border-bottom: thin solid;
     align-items: flex-start;
 }
 
@@ -155,22 +154,27 @@
     height: 150px;
     font-family: monospace;
     white-space: pre;
-    overflow: scroll;
+    overflow: hidden;
     transition: height 0.5s;
 }
 #drawer.expanded #ttextdiv {
     height: 380px;
+    overflow: scroll;
 }
 
 #mineLogo {
-    height: 40px;
+    width: 40px;
+    position: relative;
+    left: 18px;
+    top: -10px;
+
 }
 
 #tooltray {
     position: fixed;
     height: 75px;
     top: 50px;
-    justify-content: space-around;
+    justify-content: space-between;
     z-index: 1000;
 }
 
@@ -190,6 +194,10 @@
 #editView {
     width: auto;
     padding-left: 20px;
+    padding-right: 10px;
+}
+#editView label {
+    padding-right: 6px;
 }
 
 [name="topBar"] [name="undoRedoButtons"] {
@@ -222,7 +230,6 @@
     border-radius: 16px;
     padding: 12px 20px;
     cursor: pointer;
-    width: 120px;
     text-align: center;
     text-decoration: none;
 }

@@ -63,7 +63,8 @@ let editViews = {
                 let dir = n.sort ? n.sort.dir.toLowerCase() : "none";
                 let cc = codepoints[ dir === "asc" ? "arrow_upward" : dir === "desc" ? "arrow_downward" : "" ];
                 return cc ? cc : ""
-            }
+            },
+            stroke: "#e28b28"
         },
         nodeIcon: {
         }
@@ -2037,12 +2038,6 @@ function update(source) {
   d3.select("#svgContainer").attr("class", editView.name);
 
   //
-  let title = vis.select("#qtitle");
-  title.enter().append("svg:text");
-  title.exit().remove();
-  title.text(editView.name);
-
-  //
   doLayout(root);
   updateNodes(nodes, source);
   updateLinks(links, source);
@@ -2119,7 +2114,9 @@ function updateNodes(nodes, source){
 
   nodeUpdate.select("text.handle")
       .attr('font-family', editView.handleIcon.fontFamily || null)
-      .text(editView.handleIcon.text || "") ;
+      .text(editView.handleIcon.text || "") 
+      .attr("stroke", editView.handleIcon.stroke || null)
+      .attr("fill", editView.handleIcon.fill || null);
   nodeUpdate.select("text.nodeIcon")
       .attr('font-family', editView.nodeIcon.fontFamily || null)
       .text(editView.nodeIcon.text || "") ;
@@ -2132,8 +2129,7 @@ function updateNodes(nodes, source){
   // Clear out all exiting drag handlers
   d3.selectAll("g.nodegroup")
       .classed("draggable", false)
-      .select(".handle")
-          .on(".drag", null); 
+      .on(".drag", null); 
   // Now make everything draggable that should be
   if (editView.draggable)
       d3.selectAll(editView.draggable)
@@ -2307,6 +2303,26 @@ function json2xml(t, qonly){
 function updateTtext(){
   let uct = uncompileTemplate(currTemplate);
   let txt;
+  //
+  let title = vis.selectAll("#qtitle")
+      .data([root.template.title]);
+  title.enter()
+      .append("svg:text")
+      .attr("id","qtitle")
+      .attr("x", -40)
+      .attr("y", 15)
+      ;
+  title.html(t => {
+      let parts = t.split(/(-->)/);
+      return parts.map((p,i) => {
+          if (p === "-->") 
+              return `<tspan y=10 font-family="Material Icons">${codepoints['forward']}</tspan>`
+          else
+              return `<tspan y=4>${p}</tspan>`
+      }).join("");
+  });
+
+  //
   if( d3.select("#ttext").classed("json") )
       txt = JSON.stringify(uct, null, 2);
   else
@@ -2320,6 +2336,7 @@ function updateTtext(){
       .on("blur", function() {
           d3.select("#drawer").classed("expanded", false);
       });
+  //
   if (d3.select('#querycount .button.sync').text() === "sync")
       updateCount();
 }
