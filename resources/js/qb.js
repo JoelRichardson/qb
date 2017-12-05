@@ -203,6 +203,7 @@ function setup(){
                d3.select('#drawer').style("height", d.__saved_height);
                 
             t.classed("closed", isClosed);
+            d3.select(this).classed("closed", isClosed);
         });
 
     d3jsonPromise(registryUrl)
@@ -1144,6 +1145,9 @@ function editTemplate (t, nosave) {
             setLogicExpression(this.value, currTemplate);
             xfer("constraintLogic", this)
         });
+
+    // Clear the query count
+    d3.select("#querycount span").text("");
 
     //
     hideDialog();

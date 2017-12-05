@@ -156,7 +156,7 @@
 }
 
 #mineLogo {
-    width: 40px;
+    width: 30px;
     position: relative;
     left: 18px;
 
@@ -190,6 +190,13 @@
 .button.disabled {
     opacity: 0.5;
     cursor: default;
+}
+
+.button[name="openclose"]::before {
+    content: "arrow_upward";
+}
+.button[name="openclose"].closed::before {
+    content: "arrow_downward";
 }
 
 #editView {
@@ -233,6 +240,7 @@
     cursor: pointer;
     text-align: center;
     text-decoration: none;
+    white-space: nowrap;
 }
 
 #runatmine:hover {
