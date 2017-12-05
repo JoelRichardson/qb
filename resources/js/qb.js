@@ -440,7 +440,7 @@ function selectedMine(mname){
         d3.selectAll('#svgContainer [name="minename"]')
             .text(currMine.name);
         // populate class list 
-        let clist = Object.keys(currMine.model.classes);
+        let clist = Object.keys(currMine.model.classes).filter(cn => ! currMine.model.classes[cn].isLeafType);
         clist.sort();
         initOptionList("#newqclist select", clist);
         d3.select('#editSourceSelector [name="in"]')
@@ -526,7 +526,7 @@ function compileModel(model){
     // First add classes that represent the basic type
     LEAFTYPES.forEach(function(n){
         model.classes[n] = {
-            isLeafType: true,
+            isLeafType: true,   // distinguishes these from model classes
             name: n,
             displayName: n,
             attributes: [],
@@ -2061,17 +2061,18 @@ function updateNodes(nodes, source){
       .attr("transform", function(d) { return "translate(" + source.x0 + "," + source.y0 + ")"; })
       ;
 
+  let clickNode = function(n) {
+      if (d3.event.defaultPrevented) return; 
+      if (currNode !== n) showDialog(n, this);
+      d3.event.stopPropagation();
+  };
   // Add glyph for the node
   nodeEnter.append(function(d){
       var shape = (d.pcomp.kind == "attribute" ? "rect" : "circle");
       return document.createElementNS("http://www.w3.org/2000/svg", shape);
     })
       .attr("class","node")
-      .on("click", function(d) {
-          if (d3.event.defaultPrevented) return; 
-          if (currNode !== d) showDialog(d, this);
-          d3.event.stopPropagation();
-      });
+      .on("click", clickNode);
   nodeEnter.select("circle")
       .attr("r", 1e-6) // start off invisibly small
       ;
@@ -2122,7 +2123,11 @@ function updateNodes(nodes, source){
       .attr("fill", editView.handleIcon.fill || null);
   nodeUpdate.select("text.nodeIcon")
       .attr('font-family', editView.nodeIcon.fontFamily || null)
-      .text(editView.nodeIcon.text || "") ;
+      .text(editView.nodeIcon.text || "") 
+      ;
+
+  d3.selectAll(".nodeIcon")
+      .on("click", clickNode);
 
   nodeUpdate.selectAll("text.nodeName")
       .text(n => n.name);

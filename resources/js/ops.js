@@ -19,6 +19,7 @@
 //      IN NOT-IN
 // - loop (TODO)
 
+// all the base types that are numeric
 var NUMERICTYPES= [
     "int", "java.lang.Integer",
     "short", "java.lang.Short",
@@ -29,6 +30,7 @@ var NUMERICTYPES= [
     "java.util.Date"
 ];
 
+// all the base types that can have null values
 var NULLABLETYPES= [
     "java.lang.Integer",
     "java.lang.Short",
@@ -41,6 +43,7 @@ var NULLABLETYPES= [
     "java.lang.Boolean"
 ];
 
+// all the base types that an attribute can have
 var LEAFTYPES= [
     "int", "java.lang.Integer",
     "short", "java.lang.Short",

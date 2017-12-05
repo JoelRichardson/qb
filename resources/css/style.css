@@ -53,7 +53,7 @@ label {
 
 #svgContainer {
     position: relative;
-    top: 80px;
+    top: 60px;
 }
 
 #svgContainer [name="spacebar"] {

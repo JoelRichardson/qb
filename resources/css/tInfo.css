@@ -41,7 +41,7 @@
     z-index: 90;
     width: 100%;
     position: relative;
-    top: 75px;
+    top: 50px;
 }
 
 .button[name="penclose"] {
@@ -166,13 +166,12 @@
     width: 40px;
     position: relative;
     left: 18px;
-    top: -10px;
 
 }
 
 #tooltray {
     position: fixed;
-    height: 75px;
+    height: 50px;
     top: 50px;
     justify-content: space-between;
     z-index: 1000;
@@ -228,7 +227,7 @@
     background-color: green;
     color: white;
     border-radius: 16px;
-    padding: 12px 20px;
+    padding: 4px 20px;
     cursor: pointer;
     text-align: center;
     text-decoration: none;
