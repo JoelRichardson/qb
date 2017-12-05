@@ -360,8 +360,9 @@ function undoredo(which){
 // Loads that mine's data model and all its templates.
 // Then initializes display to show the first termplate's query.
 function selectedMine(mname){
-    currMine = name2mine[mname]
-    if(!currMine) return;
+    if(!name2mine[mname]) throw "No mine named: " + mname;
+    currMine = name2mine[mname];
+    clearState();
     let url = currMine.url;
     let turl, murl, lurl, burl, surl, ourl;
     currMine.tnames = []
