@@ -1,3 +1,5 @@
+// UndoManager maintains a history stack of states (arbitrary objects).
+//
 class UndoManager {
     constructor(limit) {
         this.clear();

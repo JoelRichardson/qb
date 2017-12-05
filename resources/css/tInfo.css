@@ -44,13 +44,6 @@
     top: 50px;
 }
 
-.button[name="penclose"] {
-    position: fixed;
-    top: 75px;
-    right: 14px;
-    z-index: 100;
-}
-
 #tInfoBar.closed [name="details"],
 #tInfoBar.closed [name="editTarget"] {
     display:none;
@@ -182,12 +175,21 @@
     width: auto;
 }
 
-#tooltray i.button {
+#tooltray .button {
     background-color: #607896;
     color: white;
     border-radius: 16px;
     padding: 2px;
     margin: 6px;
+}
+
+.button {
+    cursor: pointer;
+}
+
+.button.disabled {
+    opacity: 0.5;
+    cursor: default;
 }
 
 #editView {

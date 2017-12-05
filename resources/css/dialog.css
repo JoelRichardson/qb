@@ -178,10 +178,6 @@
     background-color: purple;
 }
 
-i.material-icons.button:hover {
-    cursor: pointer;
-}
-
 #dialog i.button.remove {
     font-size: 28px;
 }

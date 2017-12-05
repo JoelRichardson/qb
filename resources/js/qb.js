@@ -237,10 +237,6 @@ function setup(){
         .on("focus", function(){ this.value && selectText("xmltextarea")});
     d3.select("#jsontextarea")
         .on("focus", function(){ this.value && selectText("jsontextarea")});
-    d3.select("#undoButton")
-        .on("click", undo);
-    d3.select("#redoButton")
-        .on("click", redo);
 
   //
   dragBehavior = d3.behavior.drag()
@@ -266,8 +262,8 @@ function setup(){
       // callback for specific drag-end behavior
       editView.afterDrag && editView.afterDrag(nodes, dragged);
       //
-      update();
       saveState();
+      update();
       //
       d3.event.sourceEvent.preventDefault();
       d3.event.sourceEvent.stopPropagation();
@@ -318,8 +314,8 @@ function initMines(j_mines) {
             currNode.isSelected ? currNode.unselect() : currNode.select();
             d3.select('#dialog [name="select-ctrl"]')
                 .classed("selected", currNode.isSelected);
-            update(currNode);
             saveState();
+            update(currNode);
         });
     // Wire up sort function in dialog
     d3.select('#dialog [name="sort-ctrl"] .swatch')
@@ -331,8 +327,8 @@ function initMines(j_mines) {
             cc.classed("sortasc", newsort === "asc");
             cc.classed("sortdesc", newsort === "desc");
             currNode.setSort(newsort);
-            update(currNode);
             saveState();
+            update(currNode);
         });
 
     // start with the first mine by default.
@@ -344,7 +340,9 @@ function clearState() {
 }
 function saveState() {
     let s = JSON.stringify(uncompileTemplate(currTemplate));
-    undoMgr.add(s);
+    if (!undoMgr.hasState || undoMgr.currentState !== s)
+        // only save state if it has changed
+        undoMgr.add(s);
 }
 function undo() { undoredo("undo") }
 function redo() { undoredo("redo") }
@@ -1081,7 +1079,7 @@ function removeNode(n) {
     // First, remove all constraints on n or its descendants
     function rmc (x) {
         x.unselect();
-        x.constraints.forEach(c => removeConstraint(x,c));
+        x.constraints.forEach(c => removeConstraint(x,c,false));
         x.children.forEach(rmc);
     }
     rmc(n);
@@ -1090,6 +1088,7 @@ function removeNode(n) {
     if (p) {
         p.children.splice(p.children.indexOf(n), 1);
         hideDialog();
+        saveState();
         update(p);
     }
     else {
@@ -1251,7 +1250,6 @@ function selectedNext(currNode, mode, p){
         }
     }
     hideDialog();
-    update(currNode);
     if (mode !== "open")
         saveState();
     if (mode !== "summaryfields") 
@@ -1261,6 +1259,7 @@ function selectedNext(currNode, mode, p){
                 editConstraint(cc, n)
             }, animationDuration);
         }, animationDuration);
+    update(currNode);
     
 }
 // Returns a text representation of a constraint
@@ -1649,6 +1648,7 @@ function addConstraint(n, updateUI, c) {
     }
     //
     if (updateUI) {
+        saveState();
         update(n);
         showDialog(n, null, true);
         editConstraint(c, n);
@@ -1666,6 +1666,7 @@ function removeConstraint(n, c, updateUI){
     setLogicExpression(currTemplate.constraintLogic, currTemplate);
     //
     if (updateUI) {
+        saveState();
         update(n);
         showDialog(n, null, true);
     }
@@ -1721,9 +1722,9 @@ function saveConstraintEdits(n, c){
         throw "Unknown ctype: "+c.ctype;
     }
     hideConstraintEditor();
-    update(n);
     showDialog(n, null, true);
     saveState();
+    update(n);
 }
 
 // Opens a dialog on the specified node.
@@ -1834,7 +1835,6 @@ function showDialog(n, elt, refreshOnly){
   constrs.select("i.cancel")
       .on("click", function(c){ 
           removeConstraint(n, c, true);
-          saveState();
       })
 
 
@@ -2040,6 +2040,12 @@ function update(source) {
   //
   d3.select("#svgContainer").attr("class", editView.name);
 
+  d3.select("#undoButton")
+      .classed("disabled", () => ! undoMgr.canUndo)
+      .on("click", undoMgr.canUndo && undo || null);
+  d3.select("#redoButton")
+      .classed("disabled", () => ! undoMgr.canRedo)
+      .on("click", undoMgr.canRedo && redo || null);
   //
   doLayout(root);
   updateNodes(nodes, source);
