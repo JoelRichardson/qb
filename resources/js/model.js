@@ -64,7 +64,11 @@ class Model {
             });
         });
     }
-}
+} // end of class Model
+
+//
+class Class {
+} // end of class Class
 
 //
 class Node {
@@ -110,6 +114,20 @@ class Node {
         if(this.ptype.name && ! op.validForClass) return false;
         return true;
     }
+
+    // Returns true iff the given list is valid as a list constraint option for
+    // the node n. A list is valid to use in a list constraint at node n iff
+    //     * the list's type is equal to or a subclass of the node's type
+    //     * the list's type is a superclass of the node's type. In this case,
+    //       elements in the list that are not compatible with the node's type
+    //       are automatically filtered out.
+    listValid (list){
+        var nt = this.subtypeConstraint || this.ptype;
+        if (typeof(nt) === "string" ) return false;
+        var lt = this.template.model.classes[list.type];
+        return isSubclass(lt, nt) || isSubclass(nt, lt);
+    }
+
 
     //
     get path () {
@@ -224,7 +242,7 @@ class Node {
             }, animationDuration);
     }
 
-}
+} // end of class Node
 
 class Template {
     constructor (t, model) {
@@ -499,7 +517,7 @@ class Template {
 
     // TODO: Keep moving functions into methods
     // FIXME: Not all templates are Temaplates !! (some are still plain objects created elsewise)
-};
+} // end of class Template
 
 class Constraint {
     constructor (c) {
@@ -626,7 +644,7 @@ class Constraint {
         else
             return `<constraint ${g} />\n`;
     }
-}
+} // end of class Constraint
 
 export {
     Model,

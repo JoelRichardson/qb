@@ -528,19 +528,6 @@ function isSubclass(sub,sup) {
     return r.length > 0;
 }
 
-// Returns true iff the given list is valid as a list constraint option for
-// the node n. A list is valid to use in a list constraint at node n iff
-//     * the list's type is equal to or a subclass of the node's type
-//     * the list's type is a superclass of the node's type. In this case,
-//       elements in the list that are not compatible with the node's type
-//       are automatically filtered out.
-function isValidListConstraint(list, n){
-    var nt = n.subtypeConstraint || n.ptype;
-    if (typeof(nt) === "string" ) return false;
-    var lt = currMine.model.classes[list.type];
-    return isSubclass(lt, nt) || isSubclass(nt, lt);
-}
-
 // Removes the current node and all its descendants.
 //
 function removeNode(n) {
@@ -800,7 +787,7 @@ function initCEinputs(n, c, ctype) {
     else if (ctype === "list") {
         initOptionList(
             '#constraintEditor select[name="values"]',
-            currMine.lists.filter(function (l) { return isValidListConstraint(l, currNode); }),
+            currMine.lists.filter(function (l) { return currNode.listValid(l); }),
             { multiple: false,
             value: d => d.title,
             title: d => d.title,
