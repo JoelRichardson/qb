@@ -1,3 +1,6 @@
+// Valid constraint types (ctype):
+//   null, lookup, subclass, list, loop, value, multivalue, range
+//
 // Constraints on attributes:
 // - value (comparing an attribute to a value, using an operator)
 //      > >= < <= = != LIKE NOT-LIKE CONTAINS DOES-NOT-CONTAIN

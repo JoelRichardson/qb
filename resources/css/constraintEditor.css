@@ -81,7 +81,7 @@
 #constraintEditor.list select[name="values"],
 #constraintEditor.subclass select[name="values"],
 #constraintEditor.multivalue select[name="values"],
-#constraintEditor.summarized select[name="values"]{
+#constraintEditor.summarized:not(.null) select[name="values"]{
     display: block;
 }
 #constraintEditor.lookup input[name="value"],
