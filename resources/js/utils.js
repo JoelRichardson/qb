@@ -1,4 +1,11 @@
 
+//
+// Function to escape '<' '"' and '&' characters
+function esc(s){
+    if (!s) return "";
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); 
+}
+
 // Promisifies a call to d3.json.
 // Args:
 //   url (string) The url of the json resource
@@ -162,8 +169,33 @@ function clearLocal() {
     rmv.forEach( k => localStorage.removeItem(k) );
 }
 
+// Returns an array containing the item values from the given object.
+// The list is sorted by the item keys.
+// If nameAttr is specified, the item key is also added to each element
+// as an attribute (only works if those items are themselves objects).
+// Examples:
+//    states = {'ME':{name:'Maine'}, 'IA':{name:'Iowa'}}
+//    obj2array(states) =>
+//        [{name:'Iowa'}, {name:'Maine'}]
+//    obj2array(states, 'abbrev') =>
+//        [{name:'Iowa',abbrev'IA'}, {name:'Maine',abbrev'ME'}]
+// Args:
+//    o  (object) The object.
+//    nameAttr (string) If specified, adds the item key as an attribute to each list element.
+// Return:
+//    list containing the item values from o
+function obj2array(o, nameAttr){
+    var ks = Object.keys(o);
+    ks.sort();
+    return ks.map(function (k) {
+        if (nameAttr) o[k].name = k;
+        return o[k];
+    });
+};
+
 //
-module.exports = {
+export {
+    esc,
     d3jsonPromise,
     selectText,
     deepc,
@@ -171,5 +203,6 @@ module.exports = {
     setLocal,
     testLocal,
     clearLocal,
-    parsePathQuery
+    parsePathQuery,
+    obj2array
 }

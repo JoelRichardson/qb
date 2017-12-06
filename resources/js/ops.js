@@ -225,4 +225,4 @@ var OPINDEX = OPS.reduce(function(x,o){
     return x;
 }, {});
 
-module.exports = { NUMERICTYPES, NULLABLETYPES, LEAFTYPES, OPS, OPINDEX };
+export { NUMERICTYPES, NULLABLETYPES, LEAFTYPES, OPS, OPINDEX };
