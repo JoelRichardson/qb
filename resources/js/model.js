@@ -70,6 +70,43 @@ class Model {
 class Class {
 } // end of class Class
 
+// Returns a list of all the superclasses of the given class.
+// (
+// The returned list does *not* contain cls.)
+// Args:
+//    cls (object)  A class from a compiled model
+// Returns:
+//    list of class objects, sorted by class name
+function getSuperclasses(cls){
+    if (typeof(cls) === "string" || !cls["extends"] || cls["extends"].length == 0) return [];
+    var anc = cls["extends"].map(function(sc){ return getSuperclasses(sc); });
+    var all = cls["extends"].concat(anc.reduce(function(acc, elt){ return acc.concat(elt); }, []));
+    var ans = all.reduce(function(acc,elt){ acc[elt.name] = elt; return acc; }, {});
+    return obj2array(ans);
+}
+
+// Returns a list of all the subclasses of the given class.
+// (The returned list does *not* contain cls.)
+// Args:
+//    cls (object)  A class from a compiled model
+// Returns:
+//    list of class objects, sorted by class name
+function getSubclasses(cls){
+    if (typeof(cls) === "string" || !cls.extendedBy || cls.extendedBy.length == 0) return [];
+    var desc = cls.extendedBy.map(function(sc){ return getSubclasses(sc); });
+    var all = cls.extendedBy.concat(desc.reduce(function(acc, elt){ return acc.concat(elt); }, []));
+    var ans = all.reduce(function(acc,elt){ acc[elt.name] = elt; return acc; }, {});
+    return obj2array(ans);
+}
+
+// Returns true iff sub is a subclass of sup.
+function isSubclass(sub,sup) {
+    if (sub === sup) return true;
+    if (typeof(sub) === "string" || !sub["extends"] || sub["extends"].length == 0) return false;
+    var r = sub["extends"].filter(function(x){ return x===sup || isSubclass(x, sup); });
+    return r.length > 0;
+}
+
 //
 class Node {
     // Args:
@@ -242,6 +279,53 @@ class Node {
             }, animationDuration);
     }
 
+    remove () {
+        let p = this.parent;
+        if (!p) return;
+        // First, remove all constraints on this or descendants
+        function rmc (x) {
+            x.unselect();
+            x.constraints.forEach(c => x.removeConstraint(c));
+            x.children.forEach(rmc);
+        }
+        rmc(this);
+        // Now remove the subtree at n.
+        p.children.splice(p.children.indexOf(this), 1);
+    }
+
+    // Adds a new constraint to a node and returns it.
+    // Args:
+    //   c (constraint) If given, use that constraint. Otherwise autogenerate.
+    // Returns:
+    //   The new constraint.
+    //
+    addConstraint (c) {
+        if (c) {
+            // just to be sure
+            c.node = this;
+        }
+        else {
+            let op = OPINDEX[this.pcomp.kind === "attribute" ? "=" : "LOOKUP"];
+            c = new Constraint({node:this, op:op.op, ctype: op.ctype});
+        }
+        this.constraints.push(c);
+        this.template.where.push(c);
+        if (c.ctype !== "subclass") {
+            c.code = this.template.nextAvailableCode();
+            this.template.code2c[c.code] = c;
+            this.template.setLogicExpression();
+        }
+        return c;
+    }
+
+    removeConstraint (c){
+        this.constraints = this.constraints.filter(function(cc){ return cc !== c; });
+        this.template.where = this.template.where.filter(function(cc){ return cc !== c; });
+        delete this.template.code2c[c.code];
+        if (c.ctype === "subclass") this.subclassConstraint = null;
+        this.template.setLogicExpression();
+        return c;
+    }
 } // end of class Node
 
 class Template {
@@ -452,6 +536,19 @@ class Template {
         // return the last node in the path
         return n;
     }
+ 
+    // Returns a single character constraint code in the range A-Z that is not already
+    // used in the given template.
+    //
+    nextAvailableCode (){
+        for(var i= "A".charCodeAt(0); i <= "Z".charCodeAt(0); i++){
+            var c = String.fromCharCode(i);
+            if (! (c in this.code2c))
+                return c;
+        }
+        return null;
+    }
+
 
 
     // Sets the constraint logic expression for this template.
@@ -590,7 +687,7 @@ class Constraint {
         }
         else {
             if (!this.code) 
-                this.code = t && nextAvailableCode(t) || null;
+                this.code = t && t.nextAvailableCode() || null;
         }
         !quietly && t && t.setLogicExpression();
     }
@@ -648,6 +745,9 @@ class Constraint {
 
 export {
     Model,
+    getSubclasses,
+    getSuperclasses,
+    isSubclass,
     Node,
     Template,
     Constraint
