@@ -12,7 +12,6 @@
  *   and optionally ends at an attribute.
  *
  */
-//import { mines } from './mines.js';
 import { NUMERICTYPES, NULLABLETYPES, LEAFTYPES, OPS, OPINDEX } from './ops.js';
 import {
     esc,
@@ -20,7 +19,8 @@ import {
     selectText,
     deepc,
     parsePathQuery,
-    obj2array
+    obj2array,
+    initOptionList
 } from './utils.js';
 import {codepoints} from './material_icon_codepoints.js';
 import UndoManager from './undoManager.js';
@@ -33,6 +33,7 @@ import {
 } from './model.js';
 import { initRegistry } from './registry.js';
 import { editViews } from './editViews.js';
+import { ConstraintEditor } from './constraintEditor.js';
 
 let VERSION = "0.1.0";
 
@@ -57,6 +58,13 @@ let defaultLogo = "https://cdn.rawgit.com/intermine/design-materials/78a13db5/lo
 let undoMgr = new UndoManager();
 // Starting edit view is the main query view.
 let editView = editViews.queryMain;
+//
+let constraintEditor = 
+    new ConstraintEditor(n => {
+        showDialog(n, null, true);
+        saveState(n);
+        update(n);
+    });
 
 // Setup function
 function setup(){
@@ -191,9 +199,6 @@ function initMines(j_mines) {
         .on("change", function () { setEditView(this.value); })
         ;
 
-    //
-    d3.select("#dialog .subclassConstraint select")
-        .on("change", function(){ currNode.setSubclassConstraint(this.value); });
     // Wire up select button in dialog
     d3.select('#dialog [name="select-ctrl"] .swatch')
         .on("click", function() {
@@ -247,12 +252,12 @@ function undoredo(which){
 // Then initializes display to show the first termplate's query.
 function selectedMine(mname){
     if(!name2mine[mname]) throw "No mine named: " + mname;
-    currMine = name2mine[mname];
+    let cm = currMine = name2mine[mname];
     clearState();
-    let url = currMine.url;
+    let url = cm.url;
     let turl, murl, lurl, burl, surl, ourl;
-    currMine.tnames = []
-    currMine.templates = []
+    cm.tnames = []
+    cm.templates = []
     if (mname === "test") { 
         turl = url + "/templates.json";
         murl = url + "/model.json";
@@ -286,34 +291,34 @@ function selectedMine(mname){
         var j_summary = data[4];
         var j_organisms = data[5];
         //
-        currMine.model = new Model(j_model.model)
-        currMine.templates = j_templates.templates;
-        currMine.lists = j_lists.lists;
-        currMine.summaryFields = j_summary.classes;
-        currMine.organismList = j_organisms.results.map(o => o.shortName);
+        cm.model = new Model(j_model.model, cm)
+        cm.templates = j_templates.templates;
+        cm.lists = j_lists.lists;
+        cm.summaryFields = j_summary.classes;
+        cm.organismList = j_organisms.results.map(o => o.shortName);
         //
-        currMine.tlist = obj2array(currMine.templates)
-        currMine.tlist.sort(function(a,b){ 
+        cm.tlist = obj2array(cm.templates)
+        cm.tlist.sort(function(a,b){ 
             return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
         });
-        currMine.tnames = Object.keys( currMine.templates );
-        currMine.tnames.sort();
+        cm.tnames = Object.keys( cm.templates );
+        cm.tnames.sort();
         // Fill in the selection list of templates for this mine.
         var tl = d3.select("#tlist select")
             .selectAll('option')
-            .data( currMine.tlist );
+            .data( cm.tlist );
         tl.enter().append('option')
         tl.exit().remove()
         tl.attr("value", function(d){ return d.name; })
           .text(function(d){return d.title;});
         d3.selectAll('[name="editTarget"] [name="in"]')
             .on("change", startEdit);
-        editTemplate(currMine.templates[currMine.tlist[0].name]);
+        editTemplate(cm.templates[cm.tlist[0].name]);
         // Apply branding
-        let clrs = currMine.colors || defaultColors;
+        let clrs = cm.colors || defaultColors;
         let bgc = clrs.header ? clrs.header.main : clrs.main.fg;
         let txc = clrs.header ? clrs.header.text : clrs.main.bg;
-        let logo = currMine.images.logo || defaultLogo;
+        let logo = cm.images.logo || defaultLogo;
         d3.select("#tooltray")
             .style("background-color", bgc)
             .style("color", txc);
@@ -323,9 +328,9 @@ function selectedMine(mname){
         d3.select("#mineLogo")
             .attr("src", logo);
         d3.selectAll('#svgContainer [name="minename"]')
-            .text(currMine.name);
+            .text(cm.name);
         // populate class list 
-        let clist = Object.keys(currMine.model.classes).filter(cn => ! currMine.model.classes[cn].isLeafType);
+        let clist = Object.keys(cm.model.classes).filter(cn => ! cm.model.classes[cn].isLeafType);
         clist.sort();
         initOptionList("#newqclist select", clist);
         d3.select('#editSourceSelector [name="in"]')
@@ -336,7 +341,7 @@ function selectedMine(mname){
         selectedEditSource( "tlist" );
 
     }, function(error){
-        alert(`Could not access ${currMine.name}. Status=${error.status}. Error=${error.statusText}. (If there is no error message, then its probably a CORS issue.)`);
+        alert(`Could not access ${cm.name}. Status=${error.status}. Error=${error.statusText}. (If there is no error message, then its probably a CORS issue.)`);
     });
 }
 
@@ -465,7 +470,7 @@ function selectedNext(currNode, mode, p){
         sfs = currMine.summaryFields[currNode.nodeType.name]||[];
         sfs.forEach(function(sf, i){
             sf = sf.replace(/^[^.]+/, currNode.path);
-            let m = ct.addPath(sf, currMine.model);
+            let m = ct.addPath(sf);
             if (! m.isSelected) {
                 m.select();
             }
@@ -473,7 +478,7 @@ function selectedNext(currNode, mode, p){
     }
     else {
         p = currNode.path + "." + p;
-        n = ct.addPath(p, currMine.model );
+        n = ct.addPath(p);
         if (mode === "selected")
             !n.isSelected && n.select();
         if (mode === "constrained") {
@@ -487,7 +492,7 @@ function selectedNext(currNode, mode, p){
         setTimeout(function(){
             showDialog(n);
             cc && setTimeout(function(){
-                editConstraint(cc, n)
+                constraintEditor.open(cc, n)
             }, animationDuration);
         }, animationDuration);
     update(currNode);
@@ -498,374 +503,6 @@ function selectedNext(currNode, mode, p){
 function findDomByDataObj(d){
     var x = d3.selectAll(".nodegroup .node").filter(function(dd){ return dd === d; });
     return x[0][0];
-}
-
-//
-function updateCEinputs(c, op){
-    d3.select('#constraintEditor [name="op"]')[0][0].value = op || c.op;
-    d3.select('#constraintEditor [name="code"]').text(c.code);
-
-    d3.select('#constraintEditor [name="value"]')[0][0].value = c.ctype==="null" ? "" : c.value;
-    d3.select('#constraintEditor [name="values"]')[0][0].value = deepc(c.values);
-}
-
-// Args:
-//   selector (string) For selecting the <select> element
-//   data (list) Data to bind to options
-//   cfg (object) Additional optional configs:
-//       title - function or literal for setting the text of the option. 
-//       value - function or literal setting the value of the option
-//       selected - function or array or string for deciding which option(s) are selected
-//          If function, called for each option.
-//          If array, specifies the values to select.
-//          If string, specifies which value is selected
-//       emptyMessage - a message to show if the data list is empty
-//       multiple - if true, make it a multi-select list
-//
-function initOptionList(selector, data, cfg){
-    
-    cfg = cfg || {};
-
-    var ident = (x=>x);
-    var opts;
-    if(data && data.length > 0){
-        opts = d3.select(selector)
-            .selectAll("option")
-            .data(data);
-        opts.enter().append('option');
-        opts.exit().remove();
-        //
-        opts.attr("value", cfg.value || ident)
-            .text(cfg.title || ident)
-            .attr("selected", null)
-            .attr("disabled", null);
-        if (typeof(cfg.selected) === "function"){
-            // selected if the function says so
-            opts.attr("selected", d => cfg.selected(d)||null);
-        }
-        else if (Array.isArray(cfg.selected)) {
-            // selected if the opt's value is in the array
-            opts.attr("selected", d => cfg.selected.indexOf((cfg.value || ident)(d)) != -1 || null);
-        }
-        else if (cfg.selected) {
-            // selected if the opt's value matches
-            opts.attr("selected", d => ((cfg.value || ident)(d) === cfg.selected) || null);
-        }
-        else {
-            d3.select(selector)[0][0].selectedIndex = 0;
-        }
-    }
-    else {
-        opts = d3.select(selector)
-            .selectAll("option")
-            .data([cfg.emptyMessage||"empty list"]);
-        opts.enter().append('option');
-        opts.exit().remove();
-        opts.text(ident).attr("disabled", true);
-    }
-    // set multi select (or not)
-    d3.select(selector).attr("multiple", cfg.multiple || null);
-    // allow caller to chain
-    return opts;
-}
-
-// Initializes the input elements in the constraint editor from the given constraint.
-//
-function initCEinputs(n, c, ctype) {
-
-    // Populate the operator select list with ops appropriate for the path
-    // at this node.
-    if (!ctype) 
-      initOptionList(
-        '#constraintEditor select[name="op"]', 
-        OPS.filter(function(op){ return n.opValid(op); }),
-        { multiple: false,
-        value: d => d.op,
-        title: d => d.op,
-        selected:c.op
-        });
-    //
-    //
-    ctype = ctype || c.ctype;
-
-    let ce = d3.select("#constraintEditor");
-    let smzd = ce.classed("summarized");
-    ce.attr("class", "open " + ctype)
-        .classed("summarized",  smzd)
-        .classed("bioentity",  n.isBioEntity);
- 
-    //
-    if (ctype === "lookup") {
-        d3.select('#constraintEditor input[name="value"]')[0][0].value = c.value;
-        initOptionList(
-            '#constraintEditor select[name="values"]',
-            ["Any"].concat(currMine.organismList),
-            { selected: c.extraValue }
-            );
-    }
-    else if (ctype === "subclass") {
-        // Create an option list of subclass names
-        initOptionList(
-            '#constraintEditor select[name="values"]',
-            n.parent ? getSubclasses(n.pcomp.kind ? n.pcomp.type : n.pcomp) : [],
-            { multiple: false,
-            value: d => d.name,
-            title: d => d.name,
-            emptyMessage: "(No subclasses)",
-            selected: function(d){ 
-                // Find the one whose name matches the node's type and set its selected attribute
-                var matches = d.name === ((n.subclassConstraint || n.ptype).name || n.ptype);
-                return matches || null;
-                }
-            });
-    }
-    else if (ctype === "list") {
-        initOptionList(
-            '#constraintEditor select[name="values"]',
-            currMine.lists.filter(function (l) { return currNode.listValid(l); }),
-            { multiple: false,
-            value: d => d.title,
-            title: d => d.title,
-            emptyMessage: "(No lists)",
-            selected: c.value
-            });
-    }
-    else if (ctype === "multivalue") {
-        initOptionList(
-            '#constraintEditor select[name="values"]',
-            c.summaryList || c.values || [c.value],
-            { multiple: true,
-            emptyMessage: "No list",
-            selected: c.values || [c.value]
-            });
-    } else if (ctype === "value") {
-        let attr = (n.parent.subclassConstraint || n.parent.ptype).name + "." + n.pcomp.name;
-        d3.select('#constraintEditor input[name="value"]')[0][0].value = c.value;
-        initOptionList(
-            '#constraintEditor select[name="values"]',
-            c.summaryList || [c.value],
-            { multiple: false,
-            emptyMessage: "No results",
-            selected: c.value
-            });
-    } else if (ctype === "null") {
-    }
-    else {
-        throw "Unrecognized ctype: " + ctype
-    }
-    
-}
-
-// Opens the constraint editor for constraint c of node n.
-//
-function openConstraintEditor(c, n){
-
-    // Note if this is happening at the root node
-    var isroot = ! n.parent;
- 
-    // Find the div for constraint c in the dialog listing. We will
-    // open the constraint editor on top of it.
-    var cdiv;
-    d3.selectAll("#dialog .constraint")
-        .each(function(cc){ if(cc === c) cdiv = this; });
-    // bounding box of the constraint's container div
-    var cbb = cdiv.getBoundingClientRect();
-    // bounding box of the app's main body element
-    var dbb = d3.select("#qb")[0][0].getBoundingClientRect();
-    // position the constraint editor over the constraint in the dialog
-    var ced = d3.select("#constraintEditor")
-        .attr("class", c.ctype)
-        .classed("open", true)
-        .classed("summarized", c.summaryList)
-        .style("top", (cbb.top - dbb.top)+"px")
-        .style("left", (cbb.left - dbb.left)+"px")
-        ;
-
-    // Init the constraint code 
-    d3.select('#constraintEditor [name="code"]')
-        .text(c.code);
-
-    initCEinputs(n, c);
-
-    // When user selects an operator, add a class to the c.e.'s container
-    d3.select('#constraintEditor [name="op"]')
-        .on("change", function(){
-            var op = OPINDEX[this.value];
-            initCEinputs(n, c, op.ctype);
-        })
-        ;
-
-    d3.select("#constraintEditor .button.cancel")
-        .on("click", function(){ cancelConstraintEditor(n, c) });
-
-    d3.select("#constraintEditor .button.save")
-        .on("click", function(){ saveConstraintEdits(n, c) });
-
-    d3.select("#constraintEditor .button.sync")
-        .on("click", function(){ generateOptionList(n, c).then(() => initCEinputs(n, c)) });
-
-}
-// Generates an option list of distinct values to select from.
-// Args:
-//   n  (node)  The node we're working on. Must be an attribute node.
-//   c  (constraint) The constraint to generate the list for.
-// NB: Only value and multivaue constraints can be summarized in this way.  
-function generateOptionList(n, c){
-    // To get the list, we have to run the current query with an additional parameter, 
-    // summaryPath, which is the path we want distinct values for. 
-    // BUT NOTE, we have to run the query *without* constraint c!!
-    // Example: suppose we have a query with a constraint alleleType=Targeted,
-    // and we want to change it to Spontaneous. We open the c.e., and then click the
-    // sync button to get a list. If we run the query with c intact, we'll get a list
-    // containing only "Targeted". Doh!
-    // ANOTHER NOTE: the path in summaryPath must be part of the query proper. The approach
-    // here is to ensure it by adding the path to the view list.
-
-    /*
-    // Save this choice in localStorage
-    let attr = (n.parent.subclassConstraint || n.parent.ptype).name + "." + n.pcomp.name;
-    let key = "autocomplete";
-    let lst;
-    lst = getLocal(key, true, []);
-    if(lst.indexOf(attr) === -1) lst.push(attr);
-    setLocal(key, lst, true);
-    */
-
-    // build the query
-    let p = n.path; // what we want to summarize
-    //
-    let lex = n.template.constraintLogic; // save constraint logic expr
-    n.removeConstraint(c); // temporarily remove the constraint
-    let j = n.template.uncompileTemplate();
-    j.select.push(p); // make sure p is part of the query
-    n.template.constraintLogic = lex; // restore the logic expr
-    n.addConstraint(c); // re-add the constraint
-
-    // build the url
-    let x = json2xml(j, true);
-    let e = encodeURIComponent(x);
-    let url = `${currMine.url}/service/query/results?summaryPath=${p}&format=jsonrows&query=${e}`
-    let threshold = 250;
-
-    // cvals containts the currently selected value(s)
-    let cvals = [];
-    if (c.ctype === "multivalue") {
-        cvals = c.values;
-    }
-    else if (c.ctype === "value") {
-        cvals = [ c.value ];
-    }
-
-    // signal that we're starting
-    d3.select("#constraintEditor")
-        .classed("summarizing", true);
-    // go!
-    let prom = d3jsonPromise(url).then(function(json){
-        // The list of values is in json.reults.
-        // Each list item looks like: { item: "somestring", count: 17 }
-        // (Yes, we get counts for free! Ought to make use of this.)
-        let res = json.results.map(r => r.item).sort();
-        // check size of result
-        if (res.length > threshold) {
-            // too big. ask user what to do.
-            let ans = prompt(`There are ${res.length} results, which exceeds the threshold of ${threshold}. How many do you want to show?`, threshold);
-            if (ans === null) {
-                // user sez cancel
-                // Signal that we're done.
-                d3.select("#constraintEditor")
-                    .classed("summarizing", false);
-                return;
-            }
-            ans = parseInt(ans);
-            if (isNaN(ans) || ans <= 0) return;
-            // user wants this many results
-            res = res.slice(0, ans);
-        }
-        //
-        c.summaryList = res;
-
-        d3.select("#constraintEditor")
-            .classed("summarizing", false)
-            .classed("summarized", true);
-
-        initOptionList(
-                '#constraintEditor [name="values"]',
-                c.summaryList, 
-                { selected: d => cvals.indexOf(d) !== -1 || null });
-
-    });
-    return prom; // so caller can chain
-}
-//
-function cancelConstraintEditor(n, c){
-    if (! c.saved) {
-        n.removeConstraint(c);
-        saveState(n);
-        update(n);
-        showDialog(n, null, true);
-    }
-    hideConstraintEditor();
-}
-function hideConstraintEditor(){
-    d3.select("#constraintEditor").classed("open", null);
-}
-//
-function editConstraint(c, n){
-    openConstraintEditor(c, n);
-}
-//
-function saveConstraintEdits(n, c){
-    //
-    let o = d3.select('#constraintEditor [name="op"]')[0][0].value;
-    c.setOp(o);
-    c.saved = true;
-    //
-    let val = d3.select('#constraintEditor [name="value"]')[0][0].value;
-    let vals = [];
-    d3.select('#constraintEditor [name="values"]')
-        .selectAll("option")
-        .each( function() {
-            if (this.selected) vals.push(this.value);
-        });
-
-    let z = d3.select('#constraintEditor').classed("summarized");
-
-    if (c.ctype === "null"){
-        c.value = c.type = c.values = null;
-    }
-    else if (c.ctype === "subclass") {
-        c.type = vals[0]
-        c.value = c.values = null;
-        n.setSubclassConstraint(c.type)
-    }
-    else if (c.ctype === "lookup") {
-        c.value = val;
-        c.values = c.type = null;
-        c.extraValue = vals[0] === "Any" ? null : vals[0];
-    }
-    else if (c.ctype === "list") {
-        c.value = vals[0];
-        c.values = c.type = null;
-    }
-    else if (c.ctype === "multivalue") {
-        c.values = vals;
-        c.value = c.type = null;
-    }
-    else if (c.ctype === "range") {
-        c.values = vals;
-        c.value = c.type = null;
-    }
-    else if (c.ctype === "value") {
-        c.value = z ? vals[0] : val;
-        c.type = c.values = null;
-    }
-    else {
-        throw "Unknown ctype: "+c.ctype;
-    }
-    hideConstraintEditor();
-    showDialog(n, null, true);
-    saveState(n);
-    update(n);
 }
 
 // Opens a dialog on the specified node.
@@ -880,7 +517,7 @@ function saveConstraintEdits(n, c){
 //
 function showDialog(n, elt, refreshOnly){
   if (!elt) elt = findDomByDataObj(n);
-  hideConstraintEditor();
+  constraintEditor.hide();
  
   // Set the global currNode
   currNode = n;
@@ -935,7 +572,7 @@ function showDialog(n, elt, refreshOnly){
             saveState(n);
             update(n);
             showDialog(n, null, true);
-            editConstraint(c, n);
+            constraintEditor.open(c, n);
         });
 
   // Fill out the constraints section. First, select all constraints.
@@ -977,7 +614,7 @@ function showDialog(n, elt, refreshOnly){
       });
   constrs.select("i.edit")
       .on("click", function(c){ 
-          editConstraint(c, n);
+          constraintEditor.open(c, n);
       });
   constrs.select("i.cancel")
       .on("click", function(c){ 
@@ -1418,44 +1055,6 @@ function updateLinks(links, source) {
       ;
 
 }
-// Turns a json representation of a template into XML, suitable for importing into the Intermine QB.
-function json2xml(t, qonly){
-    var so = (t.orderBy || []).reduce(function(s,x){ 
-        var k = Object.keys(x)[0];
-        var v = x[k]
-        return s + `${k} ${v} `;
-    }, "");
-
-    // Converts an outer join path to xml.
-    function oj2xml(oj){
-        return `<join path="${oj}" style="OUTER" />`;
-    }
-
-    // the query part
-    var qpart = 
-`<query
-  name="${t.name || ''}"
-  model="${(t.model && t.model.name) || ''}"
-  view="${t.select.join(' ')}"
-  longDescription="${esc(t.description || '')}"
-  sortOrder="${so || ''}"
-  ${t.constraintLogic && 'constraintLogic="'+t.constraintLogic+'"' || ''}
->
-  ${(t.joins || []).map(oj2xml).join(" ")}
-  ${(t.where || []).map(c => c.c2xml(qonly)).join(" ")}
-</query>`;
-    // the whole template
-    var tmplt = 
-`<template
-  name="${t.name || ''}"
-  title="${esc(t.title || '')}"
-  comment="${esc(t.comment || '')}">
- ${qpart}
-</template>
-`;
-    return qonly ? qpart : tmplt
-}
-
 //
 function updateTtext(t){
   let uct = t.uncompileTemplate();
@@ -1483,7 +1082,7 @@ function updateTtext(t){
   if( d3.select("#ttext").classed("json") )
       txt = JSON.stringify(uct, null, 2);
   else
-      txt = json2xml(uct);
+      txt = t.getXml();
   //
   d3.select("#ttextdiv") 
       .text(txt)
@@ -1501,7 +1100,7 @@ function updateTtext(t){
 
 function runatmine(t) {
   let uct = t.uncompileTemplate();
-  let txt = json2xml(uct);
+  let txt = t.getXml();
   let urlTxt = encodeURIComponent(txt);
   let linkurl = currMine.url + "/loadQuery.do?trail=%7Cquery&method=xml";
   let editurl = linkurl + "&query=" + urlTxt;
@@ -1511,7 +1110,7 @@ function runatmine(t) {
 
 function updateCount(t){
   let uct = t.uncompileTemplate();
-  let qtxt = json2xml(uct, true);
+  let qtxt = t.getXml(true);
   let urlTxt = encodeURIComponent(qtxt);
   let countUrl = currMine.url + `/service/query/results?query=${urlTxt}&format=count`;
   d3.select('#querycount').classed("running", true);

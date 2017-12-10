@@ -193,6 +193,66 @@ function obj2array(o, nameAttr){
     });
 };
 
+// Args:
+//   selector (string) For selecting the <select> element
+//   data (list) Data to bind to options
+//   cfg (object) Additional optional configs:
+//       title - function or literal for setting the text of the option. 
+//       value - function or literal setting the value of the option
+//       selected - function or array or string for deciding which option(s) are selected
+//          If function, called for each option.
+//          If array, specifies the values to select.
+//          If string, specifies which value is selected
+//       emptyMessage - a message to show if the data list is empty
+//       multiple - if true, make it a multi-select list
+//
+function initOptionList (selector, data, cfg) {
+    
+    cfg = cfg || {};
+
+    var ident = (x=>x);
+    var opts;
+    if(data && data.length > 0){
+        opts = d3.select(selector)
+            .selectAll("option")
+            .data(data);
+        opts.enter().append('option');
+        opts.exit().remove();
+        //
+        opts.attr("value", cfg.value || ident)
+            .text(cfg.title || ident)
+            .attr("selected", null)
+            .attr("disabled", null);
+        if (typeof(cfg.selected) === "function"){
+            // selected if the function says so
+            opts.attr("selected", d => cfg.selected(d)||null);
+        }
+        else if (Array.isArray(cfg.selected)) {
+            // selected if the opt's value is in the array
+            opts.attr("selected", d => cfg.selected.indexOf((cfg.value || ident)(d)) != -1 || null);
+        }
+        else if (cfg.selected) {
+            // selected if the opt's value matches
+            opts.attr("selected", d => ((cfg.value || ident)(d) === cfg.selected) || null);
+        }
+        else {
+            d3.select(selector)[0][0].selectedIndex = 0;
+        }
+    }
+    else {
+        opts = d3.select(selector)
+            .selectAll("option")
+            .data([cfg.emptyMessage||"empty list"]);
+        opts.enter().append('option');
+        opts.exit().remove();
+        opts.text(ident).attr("disabled", true);
+    }
+    // set multi select (or not)
+    d3.select(selector).attr("multiple", cfg.multiple || null);
+    // allow caller to chain
+    return opts;
+}
+
 //
 export {
     esc,
@@ -204,5 +264,6 @@ export {
     testLocal,
     clearLocal,
     parsePathQuery,
-    obj2array
+    obj2array,
+    initOptionList
 }

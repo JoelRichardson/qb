@@ -8,8 +8,9 @@ import parser from './parser.js';
 // Also adds arrays for convenience for accessing all classes or all attributes of a class.
 //
 class Model {
-    constructor (cfg) {
+    constructor (cfg, mine) {
         let model = this;
+        this.mine = mine;
         this.package = cfg.package;
         this.name = cfg.name;
         this.classes = deepc(cfg.classes);
@@ -241,19 +242,32 @@ class Node {
         }
     }
 
+    // Sets the subclass constraint at this node, or removes it if no subclass given. A node may
+    // have exactly 0 or 1 subclass constraint. Assumes the subclass is actually a subclass of the node's
+    // type (should check this).
+    //
     // Args:
-    //   scName (type) Name of subclass.
-    setSubclassConstraint (scName) {
+    //   c (Constraint) The subclass Constraint or null. Sets the subclass constraint on the current node to
+    //       the type named in c. Removes the previous subclass constraint if any. If null, just removes
+    //       any existing subclass constraint.
+    // Returns:
+    //   List of any nodes that were removed because the new constraint caused them to become invalid.
+    //
+    setSubclassConstraint (c) {
         let n = this;
         // remove any existing subclass constraint
-        n.constraints = n.constraints.filter(function (c){ return c.ctype !== "subclass"; });
+        if (c && n.constraints.indexOf(c) === -1)
+            n.constraints.push(c);
+        n.constraints = n.constraints.filter(function (cc){ return cc.ctype !== "subclass" || cc === c; });
         n.subclassConstraint = null;
-        if (scName){
-            let cls = this.template.model.classes[scName];
-            if(!cls) throw "Could not find class " + scName;
-            n.constraints.push({ ctype:"subclass", op:"ISA", path:n.path, type:cls.name });
+        if (c){
+            // lookup the subclass name
+            let cls = this.template.model.classes[c.type];
+            if(!cls) throw "Could not find class " + c.type;
+            // add the constraint
             n.subclassConstraint = cls;
         }
+        // looks for invalidated paths 
         function check(node, removed) {
             let cls = node.subclassConstraint || node.ptype;
             let c2 = [];
@@ -262,23 +276,19 @@ class Node {
                     c2.push(c);
                     check(c, removed);
                 }
-                else
+                else {
+                    c.remove();
                     removed.push(c);
+                }
             })
             node.children = c2;
             return removed;
         }
         let removed = check(n,[]);
-        hideDialog();
-        update(n);
-        if(removed.length > 0)
-            window.setTimeout(function(){
-                alert("Constraining to subclass " + (scName || n.ptype.name)
-                + " caused the following paths to be removed: " 
-                + removed.map(n => n.path).join(", ")); 
-            }, animationDuration);
+        return removed;
     }
 
+    // Removes this node from the query.
     remove () {
         let p = this.parent;
         if (!p) return;
@@ -295,7 +305,7 @@ class Node {
 
     // Adds a new constraint to a node and returns it.
     // Args:
-    //   c (constraint) If given, use that constraint. Otherwise autogenerate.
+    //   c (constraint) If given, use that constraint. Otherwise, create default.
     // Returns:
     //   The new constraint.
     //
@@ -310,7 +320,11 @@ class Node {
         }
         this.constraints.push(c);
         this.template.where.push(c);
-        if (c.ctype !== "subclass") {
+
+        if (c.ctype === "subclass") {
+            this.setSubclassConstraint(c);
+        }
+        else {
             c.code = this.template.nextAvailableCode();
             this.template.code2c[c.code] = c;
             this.template.setLogicExpression();
@@ -321,9 +335,12 @@ class Node {
     removeConstraint (c){
         this.constraints = this.constraints.filter(function(cc){ return cc !== c; });
         this.template.where = this.template.where.filter(function(cc){ return cc !== c; });
-        delete this.template.code2c[c.code];
-        if (c.ctype === "subclass") this.subclassConstraint = null;
-        this.template.setLogicExpression();
+        if (c.ctype === "subclass")
+            this.setSubclassConstraint(null);
+        else {
+            delete this.template.code2c[c.code];
+            this.template.setLogicExpression();
+        }
         return c;
     }
 } // end of class Node
@@ -331,7 +348,8 @@ class Node {
 class Template {
     constructor (t, model) {
         t = t || {}
-        this.model = t.model ? deepc(t.model) : { name: "genomic" };
+        //this.model = t.model ? deepc(t.model) : { name: "genomic" };
+        this.model = model;
         this.name = t.name || "";
         this.title = t.title || "";
         this.description = t.description || "";
@@ -342,12 +360,13 @@ class Template {
         this.joins = t.joins ? deepc(t.joins) : [];
         this.tags = t.tags ? deepc(t.tags) : [];
         this.orderBy = t.orderBy ? deepc(t.orderBy) : [];
-        this.compile(model);
+        this.compile();
     }
 
-    compile (model) {
-        var roots = []
-        var t = this;
+    compile () {
+        let self = this;
+        let roots = []
+        let t = this;
         // the tree of nodes representing the compiled query will go here
         t.qtree = null;
         // index of code to constraint gors here.
@@ -356,7 +375,7 @@ class Template {
         t.comment = t.comment || "";
         t.description = t.description || "";
         //
-        var subclassCs = [];
+        let subclassCs = [];
         t.where = (t.where || []).map(c => {
             // convert raw contraint configs to Constraint objects.
             let cc = new Constraint(c);
@@ -371,14 +390,14 @@ class Template {
                 return a.path.length - b.path.length;
             })
             .forEach(function(c){
-                 var n = t.addPath(c.path, model);
-                 var cls = model.classes[c.type];
+                 var n = t.addPath(c.path);
+                 var cls = self.model.classes[c.type];
                  if (!cls) throw "Could not find class " + c.type;
                  n.subclassConstraint = cls;
             });
         //
         t.where && t.where.forEach(function(c){
-            var n = t.addPath(c.path, model);
+            let n = t.addPath(c.path);
             if (n.constraints)
                 n.constraints.push(c)
             else
@@ -387,17 +406,17 @@ class Template {
 
         //
         t.select && t.select.forEach(function(p,i){
-            var n = t.addPath(p, model);
+            let n = t.addPath(p);
             n.select();
         })
         t.joins && t.joins.forEach(function(j){
-            var n = t.addPath(j, model);
+            let n = t.addPath(j);
             n.join = "outer";
         })
         t.orderBy && t.orderBy.forEach(function(o, i){
-            var p = Object.keys(o)[0]
-            var dir = o[p]
-            var n = t.addPath(p, model);
+            let p = Object.keys(o)[0]
+            let dir = o[p]
+            let n = t.addPath(p);
             n.sort = { dir: dir, level: i };
         });
         if (!t.qtree) {
@@ -417,7 +436,7 @@ class Template {
             description: tmplt.description,
             comment: tmplt.comment,
             rank: tmplt.rank,
-            model: deepc(tmplt.model),
+            model: { name: tmplt.model.name },
             tags: deepc(tmplt.tags),
             select : tmplt.select.concat(),
             where : [],
@@ -470,16 +489,15 @@ class Template {
     // Adds a path to the qtree for this template. Path is specified as a dotted list of names.
     // Args:
     //   path (string) the path to add. 
-    //   model object Compiled data model.
     // Returns:
     //   last path component created. 
     // Side effects:
     //   Creates new nodes as needed and adds them to the qtree.
-    addPath (path, model){
+    addPath (path){
         let template = this;
         if (typeof(path) === "string")
             path = path.split(".");
-        let classes = model.classes;
+        let classes = this.model.classes;
         let lastt = null;
         let n = this.qtree;  // current node pointer
         function find(list, n){
@@ -611,6 +629,46 @@ class Template {
 
         return lex;
     }
+ 
+    // 
+    getXml (qonly) {
+        let t = this;
+        var so = (t.orderBy || []).reduce(function(s,x){ 
+            var k = Object.keys(x)[0];
+            var v = x[k]
+            return s + `${k} ${v} `;
+        }, "");
+
+        // Converts an outer join path to xml.
+        function oj2xml(oj){
+            return `<join path="${oj}" style="OUTER" />`;
+        }
+
+        // the query part
+        let qpart = 
+    `<query
+      name="${t.name || ''}"
+      model="${(t.model && t.model.name) || ''}"
+      view="${t.select.join(' ')}"
+      longDescription="${esc(t.description || '')}"
+      sortOrder="${so || ''}"
+      ${t.constraintLogic && 'constraintLogic="'+t.constraintLogic+'"' || ''}
+    >
+      ${(t.joins || []).map(oj2xml).join(" ")}
+      ${(t.where || []).map(c => c.c2xml(qonly)).join(" ")}
+    </query>`;
+        // the whole template
+        var tmplt = 
+    `<template
+      name="${t.name || ''}"
+      title="${esc(t.title || '')}"
+      comment="${esc(t.comment || '')}">
+     ${qpart}
+    </template>
+    `;
+        return qonly ? qpart : tmplt
+    }
+
 
     // TODO: Keep moving functions into methods
     // FIXME: Not all templates are Temaplates !! (some are still plain objects created elsewise)
