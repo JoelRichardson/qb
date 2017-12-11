@@ -3,8 +3,8 @@
     
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link type="text/css" rel="stylesheet" href="./resources/css/style.css">
-    <script type="text/javascript" src="./resources/js/d3.v3.js"></script>
-    <script type="text/javascript" src="./resources/js/d3.layout.js"></script>
+    <script type="text/javascript" src="./resources/js/d3/d3.v3.js"></script>
+    <script type="text/javascript" src="./resources/js/d3/d3.layout.js"></script>
 
 
 </head>
@@ -27,11 +27,53 @@
 
         </div> <!-- end of titleBar -->
 
+        <div id="tooltray" class="flexrow">
+
+            <div class="flexrow">
+                <img id="mineLogo" src=""></img>
+
+                <div id="runatmine" title="Click to run. Alt-click to open in editor.">
+                    Run this query at
+                    <br /><span name="minename"></span>
+                </div>
+
+                <div id="querycount" class="flexrow syncoff">
+                    <i class="material-icons button sync" title="Count autosync is OFF. Click to turn it ON.">sync_disabled</i>
+                    <label>Count:</label>
+                    <span></span>
+                    <i class="material-icons error">error</i>
+                </div>
+            </div>
+
+            <div class="spacer5"></div>
+
+            <div name="undoRedoButtons" class="flexrow">
+                <i id="undoButton" title="Undo" class="material-icons button undo">undo</i>
+                <i id="redoButton" title="Redo" class="material-icons button redo">redo</i>
+            </div>
+
+            <div class="spacer8"></div>
+
+            <div class="flexrow">
+                <div id="editView" class="flexrow">
+                    <label>View</label>
+                    <select>
+                        <option value="queryMain">Query (main)</option>
+                        <option value="columnOrder">Column order</option>
+                        <option value="sortOrder">Sort order</option>
+                        <option value="constraintLogic">Constraint logic</option>
+                    </select>
+                </div>
+                <i class="material-icons button" name="openclose"></i>
+            </div>
+
+            <div class="spacer1"></div>
+
+        </div> <!-- end of tooltray -->
+
         <!-- Template info section. Shows template's name, description, etc. -->
-        <div id="tInfoBar" class="flexcolumn">
-
-            <div id="drawer" >
-
+        <div id="tInfoBar" class="flexrow">
+            <div class="flexcolumn">
                 <!-- Here live the controls for starting a new query. -->
                 <div name="editTarget" class="flexrow">
                     <div id="editSourceSelector" class="flexcolumn">
@@ -66,48 +108,45 @@
                         <textarea  id="jsontextarea" name="in" cols=40 rows=2 ></textarea>
                     </div>
 
+                </div> <!-- end of editTarget -->
+
+                <div id="tInfo" class="flexcolumn">
+                    <div class="flexrow">
+                        <!-- Name of current template -->
+                        <div name="name" class="flexcolumn">
+                            <label>Name</label>
+                            <input type="text" ></input>
+                        </div>
+                        <!-- Title of current template -->
+                        <div name="title" class="flexcolumn">
+                            <label>Title</label>
+                            <input type="text" ></input>
+                        </div>
+                    </div>
+                    <div class="flexrow">
+                        <!-- Description text -->
+                        <div name="description" class="flexcolumn">
+                            <label>Description</label>
+                            <textarea cols="40" rows="4"></textarea>
+                        </div>
+                        <!-- Comment text -->
+                        <div name="comment" class="flexcolumn">
+                            <label>Comment</label>
+                            <textarea cols="40" rows="4"></textarea>
+                        </div>
+                    </div>    
+                </div> <!-- end of tInfo -->
+            </div>
+
+            <!-- Where the query text is dumped with every update. -->
+            <div id="ttext" class="flexcolumn xml">
+                <label>Query text:  
+                    <span name="xml">XML</span>
+                    <span name="json">JSON</span>
+                </label>
+                <div id="ttextdiv" tabindex="-1"> <!-- tabindex makes it focusable-->
                 </div>
-
-                <!-- Details of the current query, e.g. name, description, etc. -->
-                <div name="details" class="flexrow">
-                    <div id="tInfo" class="flexcolumn">
-                        <div class="flexrow">
-                            <!-- Name of current template -->
-                            <div name="name" class="flexcolumn">
-                                <label>Name</label>
-                                <input type="text" ></input>
-                            </div>
-                            <!-- Title of current template -->
-                            <div name="title" class="flexcolumn">
-                                <label>Title</label>
-                                <input type="text" ></input>
-                            </div>
-                        </div>
-                        <div class="flexrow">
-                            <!-- Description text -->
-                            <div name="description" class="flexcolumn">
-                                <label>Description</label>
-                                <textarea cols="40" rows="4"></textarea>
-                            </div>
-                            <!-- Comment text -->
-                            <div name="comment" class="flexcolumn">
-                                <label>Comment</label>
-                                <textarea cols="40" rows="4"></textarea>
-                            </div>
-                        </div>    
-                    </div> <!-- end of tInfo -->
-
-                    <!-- Where the query text is dumped with every update. -->
-                    <div id="ttext" class="flexcolumn xml">
-                        <label>Query text:  
-                            <span name="xml">XML</span>
-                            <span name="json">JSON</span>
-                        </label>
-                        <div id="ttextdiv" tabindex="-1"> <!-- tabindex makes it focusable-->
-                        </div>
-                    </div> <!-- end of ttext -->
-                </div> <!-- end of details -->
-            </div> <!-- end of drawer -->
+            </div> <!-- end of ttext -->
 
         </div> <!-- end of tInfoBar -->
 
@@ -118,49 +157,6 @@
                 <input size="40" type="text" ></input>
             </div>
             <svg></svg>
-            <div id="tooltray" class="flexrow">
-
-                <div class="flexrow">
-                    <img id="mineLogo" src=""></img>
-
-                    <div id="runatmine" title="Click to run. Alt-click to open in editor.">
-                        Run this query at
-                        <br /><span name="minename"></span>
-                    </div>
-
-                    <div id="querycount" class="flexrow syncoff">
-                        <i class="material-icons button sync" title="Count autosync is OFF. Click to turn it ON.">sync_disabled</i>
-                        <label>Count:</label>
-                        <span></span>
-                        <i class="material-icons error">error</i>
-                    </div>
-                </div>
-
-                <div class="spacer5"></div>
-
-                <div name="undoRedoButtons" class="flexrow">
-                    <i id="undoButton" title="Undo" class="material-icons button undo">undo</i>
-                    <i id="redoButton" title="Redo" class="material-icons button redo">redo</i>
-                </div>
-
-                <div class="spacer8"></div>
-
-                <div class="flexrow">
-                    <div id="editView" class="flexrow">
-                        <label>View</label>
-                        <select>
-                            <option value="queryMain">Query (main)</option>
-                            <option value="columnOrder">Column order</option>
-                            <option value="sortOrder">Sort order</option>
-                            <option value="constraintLogic">Constraint logic</option>
-                        </select>
-                    </div>
-                    <i class="material-icons button" name="openclose"></i>
-                </div>
-
-                <div class="spacer1"></div>
-
-            </div> <!-- end of tooltray -->
         </div> <!-- end of svgContainer -->
 
 

@@ -96,13 +96,13 @@ class QBEditor {
                 let t = d3.select("#tInfoBar");
                 let wasClosed = t.classed("closed");
                 let isClosed = !wasClosed;
-                let d = d3.select('#drawer')[0][0]
+                let d = d3.select('#tInfoBar')[0][0]
                 if (isClosed)
                     // save the current height just before closing
                     d.__saved_height = d.getBoundingClientRect().height;
                 else if (d.__saved_height)
                    // on open, restore the saved height
-                   d3.select('#drawer').style("height", d.__saved_height);
+                   d3.select('#tInfoBar').style("height", d.__saved_height);
                     
                 t.classed("closed", isClosed);
                 d3.select(this).classed("closed", isClosed);
@@ -777,11 +777,11 @@ class QBEditor {
       d3.select("#ttextdiv") 
           .text(txt)
           .on("focus", function(){
-              d3.select("#drawer").classed("expanded", true);
+              d3.select("#tInfoBar").classed("expanded", true);
               selectText("ttextdiv");
           })
           .on("blur", function() {
-              d3.select("#drawer").classed("expanded", false);
+              d3.select("#tInfoBar").classed("expanded", false);
           });
       //
       if (d3.select('#querycount .button.sync').text() === "sync")
