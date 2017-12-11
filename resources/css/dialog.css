@@ -71,16 +71,23 @@
 #dialog.simple [name="select-ctrl"].selected .swatch i {
     display: block;
 }
+
+#dialog.simple [name="select-ctrl"].selected .swatch {
+    background-color: green;
+}
+
+#dialog.simple [name="sort-ctrl"].disabled {
+    opacity: 0.2;
+}
+#dialog.simple [name="sort-ctrl"].disabled .swatch {
+    cursor: default;
+}
+
 #dialog.simple [name="sort-ctrl"].sortasc i.arrow_upward {
     display: block;
 }
 #dialog.simple [name="sort-ctrl"].sortdesc i.arrow_downward {
     display: block;
-}
-
-
-#dialog.simple [name="select-ctrl"].selected .swatch {
-    background-color: green;
 }
 
 #dialog.simple [name="sort-ctrl"].sortasc .swatch,

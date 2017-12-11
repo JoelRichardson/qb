@@ -133,6 +133,8 @@ class Node {
         this.constraints = [];// all constraints
         this.view = null;    // If selected for return, this is its column#.
         parent && parent.children.push(this);
+
+        this.join = null; // if true, then the link between my parent and me is an outer join
         
         this.id = this.path;
     }
@@ -211,6 +213,19 @@ class Node {
         }
         this.view = null;
     }
+
+    // returns true iff this node can be sorted on, which is true iff the node is an
+    // attribute, and there are no outer joins between it and the root
+    canSort () {
+        if (this.pcomp.kind !== "attribute") return false;
+        let n = this;
+        while (n) {
+            if (n.join) return false;
+            n = n.parent;
+        }
+        return true;
+    }
+
     setSort(newdir){
         let olddir = this.sort ? this.sort.dir : "none";
         let oldlev = this.sort ? this.sort.level : -1;
@@ -355,7 +370,11 @@ class Template {
         this.description = t.description || "";
         this.comment = t.comment || "";
         this.select = t.select ? deepc(t.select) : [];
-        this.where = t.where ? t.where.map( c => c.clone ? c.clone() : new Constraint(c) ) : [];
+        this.where = t.where ? t.where.map( c => {
+            let cc = new Constraint(c) ;
+            cc.node = null;
+            return cc;
+        }) : [];
         this.constraintLogic = t.constraintLogic || "";
         this.joins = t.joins ? deepc(t.joins) : [];
         this.tags = t.tags ? deepc(t.tags) : [];
@@ -632,7 +651,7 @@ class Template {
  
     // 
     getXml (qonly) {
-        let t = this;
+        let t = this.uncompileTemplate();
         var so = (t.orderBy || []).reduce(function(s,x){ 
             var k = Object.keys(x)[0];
             var v = x[k]
@@ -669,9 +688,11 @@ class Template {
         return qonly ? qpart : tmplt
     }
 
+    getJson () {
+        let t = this.uncompileTemplate();
+        return JSON.stringify(t, null, 2);
+    }
 
-    // TODO: Keep moving functions into methods
-    // FIXME: Not all templates are Temaplates !! (some are still plain objects created elsewise)
 } // end of class Template
 
 class Constraint {
@@ -706,31 +727,6 @@ class Constraint {
         if (this.ctype === "null")
             c.value = "";
     }
-    // Returns an unregistered clone. (means: no node pointer)
-    clone () {
-        let c = new Constraint(this);
-        c.node = null;
-        return c;
-    }
-    /*
-    get json () { 
-        let j = {
-            ctype: this.ctype,
-            path: this.path
-        }
-        if (this.ctype !== "subclass"){
-            j.op = this.op;
-            j.code = this.code;
-            if (this.ctype === "lookup" && this.extraValue) {
-                j.extraValue = this.extraValue;
-            }
-        }
-        else {
-            j.type = this.type;
-        }
-       
-    }
-    */
     //
     setOp (o, quietly) {
         let op = OPINDEX[o];

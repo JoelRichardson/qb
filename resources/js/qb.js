@@ -212,7 +212,8 @@ function initMines(j_mines) {
     d3.select('#dialog [name="sort-ctrl"] .swatch')
         .on("click", function() {
             let cc = d3.select('#dialog [name="sort-ctrl"]');
-            let currSort = cc.classed
+            if (cc.classed("disabled"))
+                return;
             let oldsort = cc.classed("sortasc") ? "asc" : cc.classed("sortdesc") ? "desc" : "none";
             let newsort = oldsort === "asc" ? "desc" : oldsort === "desc" ? "none" : "asc";
             cc.classed("sortasc", newsort === "asc");
@@ -643,6 +644,7 @@ function showDialog(n, elt, refreshOnly){
           .classed("selected", function(n){ return n.isSelected });
       // 
       dialog.select('[name="sort-ctrl"]')
+          .classed("disabled", n => !n.canSort())
           .classed("sortasc", n => n.sort && n.sort.dir.toLowerCase() === "asc")
           .classed("sortdesc", n => n.sort && n.sort.dir.toLowerCase() === "desc")
   }
@@ -1027,6 +1029,14 @@ function updateLinks(links, source) {
               l.target.join = (l.target.join ? null : "outer");
               // re-set the tooltip
               d3.select(this).select("title").text(linkTitle);
+              // if outer join, remove any sort orders in n or descendants
+              if (l.target.join) {
+                  let rso = function(m) { // remove sort order
+                      m.setSort("none");
+                      m.children.forEach(rso);
+                  }
+                  rso(l.target);
+              }
               update(l.source);
               saveState(l.source);
           }
@@ -1057,8 +1067,6 @@ function updateLinks(links, source) {
 }
 //
 function updateTtext(t){
-  let uct = t.uncompileTemplate();
-  let txt;
   //
   let title = vis.selectAll("#qtitle")
       .data([root.template.title]);
@@ -1079,10 +1087,8 @@ function updateTtext(t){
   });
 
   //
-  if( d3.select("#ttext").classed("json") )
-      txt = JSON.stringify(uct, null, 2);
-  else
-      txt = t.getXml();
+  let txt = d3.select("#ttext").classed("json") ? t.getJson() : t.getXml();
+  //
   //
   d3.select("#ttextdiv") 
       .text(txt)
