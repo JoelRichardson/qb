@@ -40,6 +40,29 @@ class UndoManager {
         this.pointer += 1;
         return this.history[this.pointer];
     }
+
+    //-----------------------------------------------------------
+
+    saveState (n) {
+        let s = JSON.stringify(n.template.uncompileTemplate());
+        if (!this.hasState || this.currentState !== s)
+            // only save state if it has changed
+            this.add(s);
+    }
+    undoState () {
+        try { return JSON.parse(this.undo()); }
+        catch (err) { console.log(err); }
+    }
+    redoState () {
+        try { return JSON.parse(this.redo()); }
+        catch (err) { console.log(err); }
+    }
+}
+
+//
+function undo() { undoredo("undo") }
+function redo() { undoredo("redo") }
+function undoredo(which){
 }
 
 export default UndoManager;

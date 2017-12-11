@@ -25,11 +25,11 @@ function d3jsonPromise(url) {
 //   https://stackoverflow.com/questions/31677451/how-to-select-div-text-on-button-click
 function selectText(containerid) {
     if (document.selection) {
-        var range = document.body.createTextRange();
+        let range = document.body.createTextRange();
         range.moveToElementText(document.getElementById(containerid));
         range.select();
     } else if (window.getSelection) {
-        var range = document.createRange();
+        let range = document.createRange();
         range.selectNode(document.getElementById(containerid));
         window.getSelection().empty();
         window.getSelection().addRange(range);
@@ -185,7 +185,7 @@ function clearLocal() {
 // Return:
 //    list containing the item values from o
 function obj2array(o, nameAttr){
-    var ks = Object.keys(o);
+    let ks = Object.keys(o);
     ks.sort();
     return ks.map(function (k) {
         if (nameAttr) o[k].name = k;
@@ -210,8 +210,8 @@ function initOptionList (selector, data, cfg) {
     
     cfg = cfg || {};
 
-    var ident = (x=>x);
-    var opts;
+    let ident = (x=>x);
+    let opts;
     if(data && data.length > 0){
         opts = d3.select(selector)
             .selectAll("option")
@@ -253,6 +253,13 @@ function initOptionList (selector, data, cfg) {
     return opts;
 }
 
+// Returns  the DOM element corresponding to the given data object.
+//
+function findDomByDataObj(d){
+    let x = d3.selectAll(".nodegroup .node").filter(function(dd){ return dd === d; });
+    return x[0][0];
+}
+
 //
 export {
     esc,
@@ -265,5 +272,6 @@ export {
     clearLocal,
     parsePathQuery,
     obj2array,
-    initOptionList
+    initOptionList,
+    findDomByDataObj
 }

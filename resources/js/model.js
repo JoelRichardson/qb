@@ -29,10 +29,10 @@ class Model {
         });
         //
         this.allClasses = obj2array(this.classes)
-        var cns = Object.keys(this.classes);
+        let cns = Object.keys(this.classes);
         cns.sort()
         cns.forEach(function(cn){
-            var cls = model.classes[cn];
+            let cls = model.classes[cn];
             cls.allAttributes = obj2array(cls.attributes)
             cls.allReferences = obj2array(cls.references)
             cls.allCollections = obj2array(cls.collections)
@@ -44,7 +44,7 @@ class Model {
             model.allClasses.push(cls);
             //
             cls["extends"] = cls["extends"].map(function(e){
-                var bc = model.classes[e];
+                let bc = model.classes[e];
                 if (bc.extendedBy) {
                     bc.extendedBy.push(cls);
                 }
@@ -55,12 +55,12 @@ class Model {
             });
             //
             Object.keys(cls.references).forEach(function(rn){
-                var r = cls.references[rn];
+                let r = cls.references[rn];
                 r.type = model.classes[r.referencedType]
             });
             //
             Object.keys(cls.collections).forEach(function(cn){
-                var c = cls.collections[cn];
+                let c = cls.collections[cn];
                 c.type = model.classes[c.referencedType]
             });
         });
@@ -80,9 +80,9 @@ class Class {
 //    list of class objects, sorted by class name
 function getSuperclasses(cls){
     if (typeof(cls) === "string" || !cls["extends"] || cls["extends"].length == 0) return [];
-    var anc = cls["extends"].map(function(sc){ return getSuperclasses(sc); });
-    var all = cls["extends"].concat(anc.reduce(function(acc, elt){ return acc.concat(elt); }, []));
-    var ans = all.reduce(function(acc,elt){ acc[elt.name] = elt; return acc; }, {});
+    let anc = cls["extends"].map(function(sc){ return getSuperclasses(sc); });
+    let all = cls["extends"].concat(anc.reduce(function(acc, elt){ return acc.concat(elt); }, []));
+    let ans = all.reduce(function(acc,elt){ acc[elt.name] = elt; return acc; }, {});
     return obj2array(ans);
 }
 
@@ -94,9 +94,9 @@ function getSuperclasses(cls){
 //    list of class objects, sorted by class name
 function getSubclasses(cls){
     if (typeof(cls) === "string" || !cls.extendedBy || cls.extendedBy.length == 0) return [];
-    var desc = cls.extendedBy.map(function(sc){ return getSubclasses(sc); });
-    var all = cls.extendedBy.concat(desc.reduce(function(acc, elt){ return acc.concat(elt); }, []));
-    var ans = all.reduce(function(acc,elt){ acc[elt.name] = elt; return acc; }, {});
+    let desc = cls.extendedBy.map(function(sc){ return getSubclasses(sc); });
+    let all = cls.extendedBy.concat(desc.reduce(function(acc, elt){ return acc.concat(elt); }, []));
+    let ans = all.reduce(function(acc,elt){ acc[elt.name] = elt; return acc; }, {});
     return obj2array(ans);
 }
 
@@ -104,7 +104,7 @@ function getSubclasses(cls){
 function isSubclass(sub,sup) {
     if (sub === sup) return true;
     if (typeof(sub) === "string" || !sub["extends"] || sub["extends"].length == 0) return false;
-    var r = sub["extends"].filter(function(x){ return x===sup || isSubclass(x, sup); });
+    let r = sub["extends"].filter(function(x){ return x===sup || isSubclass(x, sup); });
     return r.length > 0;
 }
 
@@ -162,9 +162,9 @@ class Node {
     //       elements in the list that are not compatible with the node's type
     //       are automatically filtered out.
     listValid (list){
-        var nt = this.subtypeConstraint || this.ptype;
+        let nt = this.subtypeConstraint || this.ptype;
         if (typeof(nt) === "string" ) return false;
-        var lt = this.template.model.classes[list.type];
+        let lt = this.template.model.classes[list.type];
         return isSubclass(lt, nt) || isSubclass(nt, lt);
     }
 
@@ -180,8 +180,12 @@ class Node {
     //
     get isBioEntity () {
         function ck(cls) {
+            // simple attribute - nope
+            if (typeof(cls) === "string") return false;
+            // BioEntity - yup
             if (cls.name === "BioEntity") return true;
-            for (let i = 0; i < cls.extends; i++) {
+            // neither - check ancestors
+            for (let i = 0; i < cls.extends.length; i++) {
                 if (ck(cls.extends[i])) return true;
             }
             return false;
@@ -409,8 +413,8 @@ class Template {
                 return a.path.length - b.path.length;
             })
             .forEach(function(c){
-                 var n = t.addPath(c.path);
-                 var cls = self.model.classes[c.type];
+                 let n = t.addPath(c.path);
+                 let cls = self.model.classes[c.type];
                  if (!cls) throw "Could not find class " + c.type;
                  n.subclassConstraint = cls;
             });
@@ -524,6 +528,7 @@ class Template {
         }
 
         path.forEach(function(p, i){
+            let cls;
             if (i === 0) {
                 if (template.qtree) {
                     // If root already exists, make sure new path has same root.
@@ -541,7 +546,7 @@ class Template {
             }
             else {
                 // n is pointing to the parent, and p is the next name in the path.
-                var nn = find(n.children, p);
+                let nn = find(n.children, p);
                 if (nn) {
                     // p is already a child
                     n = nn;
@@ -549,8 +554,8 @@ class Template {
                 else {
                     // need to add a new node for p
                     // First, lookup p
-                    var x;
-                    var cls = n.subclassConstraint || n.ptype;
+                    let x;
+                    cls = n.subclassConstraint || n.ptype;
                     if (cls.attributes[p]) {
                         x = cls.attributes[p];
                         cls = x.type // <-- A string!
@@ -578,8 +583,8 @@ class Template {
     // used in the given template.
     //
     nextAvailableCode (){
-        for(var i= "A".charCodeAt(0); i <= "Z".charCodeAt(0); i++){
-            var c = String.fromCharCode(i);
+        for(let i= "A".charCodeAt(0); i <= "Z".charCodeAt(0); i++){
+            let c = String.fromCharCode(i);
             if (! (c in this.code2c))
                 return c;
         }
@@ -605,9 +610,9 @@ class Template {
     //   
     setLogicExpression (ex) {
         ex = ex ? ex : (this.constraintLogic || "")
-        var ast; // abstract syntax tree
-        var seen = [];
-        var tmplt = this;
+        let ast; // abstract syntax tree
+        let seen = [];
+        let tmplt = this;
         function reach(n,lev){
             if (typeof(n) === "string" ){
                 // check that n is a constraint code in the template. 
@@ -616,8 +621,8 @@ class Template {
                 seen.push(n);
                 return (n in tmplt.code2c && tmplt.code2c[n].ctype !== "subclass") ? n : "";
             }
-            var cms = n.children.map(function(c){return reach(c, lev+1);}).filter(function(x){return x;});;
-            var cmss = cms.join(" "+n.op+" ");
+            let cms = n.children.map(function(c){return reach(c, lev+1);}).filter(function(x){return x;});;
+            let cmss = cms.join(" "+n.op+" ");
             return cms.length === 0 ? "" : lev === 0 || cms.length === 1 ? cmss : "(" + cmss + ")"
         }
         try {
@@ -628,10 +633,10 @@ class Template {
             return this.constraintLogic;
         }
         //
-        var lex = ast ? reach(ast,0) : "";
+        let lex = ast ? reach(ast,0) : "";
         // if any constraint codes in the template were not seen in the expression,
         // AND them into the expression (except ISA constraints).
-        var toAdd = Object.keys(this.code2c).filter(function(c){
+        let toAdd = Object.keys(this.code2c).filter(function(c){
             return seen.indexOf(c) === -1 && c.op !== "ISA";
             });
         if (toAdd.length > 0) {
@@ -652,9 +657,9 @@ class Template {
     // 
     getXml (qonly) {
         let t = this.uncompileTemplate();
-        var so = (t.orderBy || []).reduce(function(s,x){ 
-            var k = Object.keys(x)[0];
-            var v = x[k]
+        let so = (t.orderBy || []).reduce(function(s,x){ 
+            let k = Object.keys(x)[0];
+            let v = x[k]
             return s + `${k} ${v} `;
         }, "");
 
@@ -677,7 +682,7 @@ class Template {
       ${(t.where || []).map(c => c.c2xml(qonly)).join(" ")}
     </query>`;
         // the whole template
-        var tmplt = 
+        let tmplt = 
     `<template
       name="${t.name || ''}"
       title="${esc(t.title || '')}"

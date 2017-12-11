@@ -9,19 +9,11 @@ function initRegistry (cb) {
       .catch(() => {
           alert(`Could not access registry at ${registryUrl}. Trying ${registryFileUrl}.`);
           d3jsonPromise(registryFileUrl)
-              .then(initMines)
+              .then(cb)
               .catch(() => {
                   alert("Cannot access registry file. This is not your lucky day.");
                   });
       });
-}
-
-
-class RegistryEntry {
-    constructor () {
-        this.name = "";
-        this.url = null;
-    }
 }
 
 export { initRegistry };

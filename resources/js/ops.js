@@ -23,7 +23,7 @@
 // - loop (TODO)
 
 // all the base types that are numeric
-var NUMERICTYPES= [
+let NUMERICTYPES= [
     "int", "java.lang.Integer",
     "short", "java.lang.Short",
     "long", "java.lang.Long",
@@ -34,7 +34,7 @@ var NUMERICTYPES= [
 ];
 
 // all the base types that can have null values
-var NULLABLETYPES= [
+let NULLABLETYPES= [
     "java.lang.Integer",
     "java.lang.Short",
     "java.lang.Long",
@@ -47,7 +47,7 @@ var NULLABLETYPES= [
 ];
 
 // all the base types that an attribute can have
-var LEAFTYPES= [
+let LEAFTYPES= [
     "int", "java.lang.Integer",
     "short", "java.lang.Short",
     "long", "java.lang.Long",
@@ -62,7 +62,7 @@ var LEAFTYPES= [
 ]
 
 
-var OPS = [
+let OPS = [
 
     // Valid for any attribute
     // Also the operators for loop constraints (not yet implemented).
@@ -220,7 +220,7 @@ var OPS = [
     validForRoot: false
     }];
 //
-var OPINDEX = OPS.reduce(function(x,o){
+let OPINDEX = OPS.reduce(function(x,o){
     x[o.op] = o;
     return x;
 }, {});
