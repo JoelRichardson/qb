@@ -121,7 +121,7 @@ class Dialog {
             .on("click", function(){
                 let c = n.addConstraint();
                 self.undoMgr.saveState(n);
-                self.update(n);
+                self.editor.update(n);
                 self.show(n, null, true);
                 self.constraintEditor.open(c, n);
             });

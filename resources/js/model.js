@@ -138,6 +138,9 @@ class Node {
         
         this.id = this.path;
     }
+    get isRoot () {
+        return ! this.parent;
+    }
     //
     get rootNode () {
         return this.template.qtree;

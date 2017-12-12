@@ -291,7 +291,7 @@ class QBEditor {
             .style("color", txc);
         d3.select("#mineLogo")
             .attr("src", logo);
-        d3.selectAll('#svgContainer [name="minename"]')
+        d3.selectAll('#tooltray [name="minename"]')
             .text(cm.name);
         // populate class list 
         let clist = Object.keys(cm.model.classes).filter(cn => ! cm.model.classes[cn].isLeafType);
@@ -434,7 +434,8 @@ class QBEditor {
       //
       if (this.editView.layoutStyle === "tree") {
           // d3 layout arranges nodes top-to-bottom, but we want left-to-right.
-          // So...reverse width and height, and do the layout. Then, reverse the x,y coords in the results.
+          // So...do the layout, reversing width and height. 
+          // Then reverse the x,y coords in the results.
           this.layout = d3.layout.tree().size([this.h, this.w]);
           // Save nodes in global.
           this.nodes = this.layout.nodes(this.root).reverse();
@@ -466,28 +467,40 @@ class QBEditor {
               n.y0 = pos[i].y0;
           });
           // At this point, leaves have been rearranged, but the interior nodes haven't.
-          // Her we move interior nodes toward their "center of gravity" as defined
-          // by the positions of their children. Apply this recursively up the tree.
+          // Here we move interior nodes up or down toward their "center of gravity" as defined
+          // by the Y-positions of their children. Apply this recursively up the tree.
           // 
-          // NOTE that x and y coordinates are opposite at this point!
-          //
           // Maintain a map of occupied positions:
           let occupied = {} ;  // occupied[x position] == [list of nodes]
           function cog (n) {
               if (n.children.length > 0) {
-                  // compute my c.o.g. as the average of my kids' positions
+                  // compute my c.o.g. as the average of my kids' y-positions
                   let myCog = (n.children.map(cog).reduce((t,c) => t+c, 0))/n.children.length;
-                  if(n.parent) n.y = myCog;
+                  n.y = myCog;
               }
-              let dd = occupied[n.y] = (occupied[n.y] || []);
-              dd.push(n.y);
+              let dd = occupied[n.x] = (occupied[n.x] || []);
+              dd.push(n);
               return n.y;
           }
           cog(root);
 
-          // TODO: Final adjustments
-          // 1. If we extend off the right edge, compress.
-          // 2. If items at same x overlap, spread them out in y.
+          // If intermediate nodes at the same x overlap, spread them out in y.
+          for(let x in occupied) {
+              // get the nodes at this x-rank, and sort by y position
+              let nodes = occupied[x];
+              nodes.sort( (a,b) => a.y - b.y );
+              // Now make a pass and ensure that each node is separated from the
+              // previous node by at least MINSEP
+              let prev = null;
+              let MINSEP = 30;
+              nodes.forEach( n => {
+                  if (prev && (n.y - prev.y < MINSEP))
+                      n.y = prev.y + MINSEP;
+                  prev = n;
+              });
+              
+          }
+
           // ------------------------------------------------------
       }
 
