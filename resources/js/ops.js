@@ -58,6 +58,7 @@ let LEAFTYPES= [
     "java.lang.String",
     "java.lang.Boolean",
     "java.lang.Object",
+    "org.intermine.objectstore.query.ClobAccess",
     "Object"
 ]
 

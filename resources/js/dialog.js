@@ -109,8 +109,8 @@ class Dialog {
       // Show the full path
       dialog.select('[name="header"] [name="fullPath"] div')
           .text(n.path);
-      // Type at this node
-      let tp = n.ptype.name || n.ptype;
+      // Type name at this node
+      let tp = n.ptype.name;
       let stp = (n.subclassConstraint && n.subclassConstraint.name) || null;
       let tstring = stp && `<span style="color: purple;">${stp}</span> (${tp})` || tp
       dialog.select('[name="header"] [name="type"] div')
@@ -183,7 +183,7 @@ class Dialog {
 
       //
       let typ = n.pcomp.type;
-      if (typeof(typ) === "string") {
+      if (typ.isLeafType) {
           // dialog for simple attributes.
           dialog
               .classed("simple",true);

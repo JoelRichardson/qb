@@ -261,6 +261,14 @@ function findDomByDataObj(d){
 }
 
 //
+function copyObj(tgt, src, dir) {
+    dir = dir || tgt;
+    for( let n in dir )
+        tgt[n] = (n in src) ? src[n] : dir[n];
+    return tgt;
+}
+
+//
 export {
     esc,
     d3jsonPromise,
@@ -273,5 +281,6 @@ export {
     parsePathQuery,
     obj2array,
     initOptionList,
-    findDomByDataObj
+    findDomByDataObj,
+    copyObj
 }

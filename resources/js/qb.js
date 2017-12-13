@@ -20,7 +20,8 @@ import {
     deepc,
     parsePathQuery,
     obj2array,
-    initOptionList
+    initOptionList,
+    copyObj
 } from './utils.js';
 import {codepoints} from './material_icon_codepoints.js';
 import UndoManager from './undoManager.js';
@@ -44,10 +45,14 @@ class QBEditor {
         this.currTemplate = null;
 
         this.name2mine = null;
-        this.m = [20, 120, 20, 120];
-        this.w = 1280 - this.m[1] - this.m[3];
-        this.h = 800 - this.m[0] - this.m[2];;
-        this.i = 0;
+        this.svg = {
+            width:      1280,
+            height:     800,
+            mleft:      120,
+            mright:     120,
+            mtop:       20,
+            mbottom:    20
+        };
         this.root = null;
         this.diagonal = null;
         this.vis = null;
@@ -77,19 +82,9 @@ class QBEditor {
         d3.select('#footer [name="version"]')
             .text(`QB v${VERSION}`);
 
-        // thanks to: https://stackoverflow.com/questions/15007877/how-to-use-the-d3-diagonal-function-to-draw-curved-lines
-        this.diagonal = d3.svg.diagonal()
-            .source(function(d) { return {"x":d.source.y, "y":d.source.x}; })     
-            .target(function(d) { return {"x":d.target.y, "y":d.target.x}; })
-            .projection(function(d) { return [d.y, d.x]; });
-        
-        // create the SVG container
-        this.vis = d3.select("#svgContainer svg")
-            .attr("width", this.w + this.m[1] + this.m[3])
-            .attr("height", this.h + this.m[0] + this.m[2])
-            .on("click", () => this.dialog.hide())
-          .append("svg:g")
-            .attr("transform", "translate(" + this.m[3] + "," + this.m[0] + ")");
+        //
+        this.initSvg();
+
         //
         d3.select('.button[name="openclose"]')
             .on("click", function(){ 
@@ -293,7 +288,7 @@ class QBEditor {
             .attr("src", logo);
         d3.selectAll('#tooltray [name="minename"]')
             .text(cm.name);
-        // populate class list 
+        // populate class list. Exclude the simple attribute types.
         let clist = Object.keys(cm.model.classes).filter(cn => ! cm.model.classes[cn].isLeafType);
         clist.sort();
         initOptionList("#newqclist select", clist);
@@ -363,7 +358,7 @@ class QBEditor {
         //
         this.root = ct.qtree
         this.root.x0 = 0;
-        this.root.y0 = this.h / 2;
+        this.root.y0 = this.svg.height / 2;
         //
         ct.setLogicExpression();
 
@@ -421,7 +416,59 @@ class QBEditor {
         this.update(this.root);
     }
 
-    doLayout (root) {
+    // Grows or shrinks the size of the SVG drawing area and redraws the diagram.
+    // Args:
+    //   pctX (number) A percentage to grow or shrink in the X dimension. If >0,
+    //                 grows by that percentage. If <0, shrinks by that percentage.
+    //                 If 0, remains unchanged.
+    //   pctY (number) A percentage to grow or shrink in the Y dimension. If not
+    //                 specified, uses pctX.
+    // Note that the percentages apply to the margins as well.
+    //
+    growSvg (pctX, pctY) {
+        pctY = pctY === undefined ? pctX : pctY;
+        let mx = 1 + pctX / 100.0;
+        let my = 1 + pctY / 100.0;
+        let sz = {
+            width:      mx * this.svg.width,
+            mleft:      mx * this.svg.mleft,
+            mright:     mx * this.svg.mright,
+            height:     my * this.svg.height,
+            mtop:       my * this.svg.mtop,
+            mbottom:    my * this.svg.mbottom
+        };
+        this.setSvgSize(sz);
+    }
+
+    // Sets the size of the SVG drawing area and redraws the diagram.
+    // Args:
+    //   sz (obj) An object defining any/all of the values in this.svg, to wit:
+    //            width, height, mleft, mright, mtop, mbottom
+    setSvgSize (sz) {
+        copyObj(this.svg, sz);
+        this.initSvg();
+        this.update(this.root);
+    }
+
+    // Initializes the SVG drawing area
+    initSvg () {
+        // init the SVG container
+        this.vis = d3.select("#svgContainer svg")
+            .attr("width", this.svg.width + this.svg.mleft + this.svg.mright)
+            .attr("height", this.svg.height + this.svg.mtop + this.svg.mbottom)
+            .on("click", () => this.dialog.hide())
+          .select("g")
+            .attr("transform", "translate(" + this.svg.mleft + "," + this.svg.mtop + ")");
+ 
+        // https://stackoverflow.com/questions/15007877/how-to-use-the-d3-diagonal-function-to-draw-curved-lines
+        this.diagonal = d3.svg.diagonal()
+            .source(function(d) { return {"x":d.source.y, "y":d.source.x}; })     
+            .target(function(d) { return {"x":d.target.y, "y":d.target.x}; })
+            .projection(function(d) { return [d.y, d.x]; });
+    }
+
+    // Calculates positions for nodes and paths for links.
+    doLayout () {
       let layout;
       //
       let leaves = [];
@@ -429,20 +476,20 @@ class QBEditor {
           if (n.children.length === 0) leaves.push(n);
           return 1 + (n.children.length ? Math.max.apply(null, n.children.map(md)) : 0);
       };
-      let maxd = md(root); // max depth, 1-based
+      let maxd = md(this.root); // max depth, 1-based
 
       //
       if (this.editView.layoutStyle === "tree") {
           // d3 layout arranges nodes top-to-bottom, but we want left-to-right.
           // So...do the layout, reversing width and height. 
           // Then reverse the x,y coords in the results.
-          this.layout = d3.layout.tree().size([this.h, this.w]);
+          this.layout = d3.layout.tree().size([this.svg.height, this.svg.width]);
           // Save nodes in global.
           this.nodes = this.layout.nodes(this.root).reverse();
           // Reverse x and y. Also, normalize x for fixed-depth.
           this.nodes.forEach(function(d) {
               let tmp = d.x; d.x = d.y; d.y = tmp;
-              let dx = Math.min(180, this.w / Math.max(1,maxd-1))
+              let dx = Math.min(180, this.svg.width / Math.max(1,maxd-1))
               d.x = d.depth * dx 
           }, this);
       }
@@ -450,7 +497,7 @@ class QBEditor {
           // dendrogram
           this.layout = d3.layout.cluster()
               .separation((a,b) => 1)
-              .size([this.h, Math.min(this.w, maxd * 180)]);
+              .size([this.svg.height, Math.min(this.svg.width, maxd * 180)]);
           // Save nodes in global.
           this.nodes = this.layout.nodes(this.root).reverse();
           this.nodes.forEach( d => { let tmp = d.x; d.x = d.y; d.y = tmp; });
@@ -482,7 +529,7 @@ class QBEditor {
               dd.push(n);
               return n.y;
           }
-          cog(root);
+          cog(this.root);
 
           // If intermediate nodes at the same x overlap, spread them out in y.
           for(let x in occupied) {
@@ -530,7 +577,7 @@ class QBEditor {
               this.undoMgr.canRedo && this.editTemplate(this.undoMgr.redoState(), true);
           });
       //
-      this.doLayout(this.root);
+      this.doLayout();
       this.updateNodes(this.nodes, source);
       this.updateLinks(this.links, source);
       this.updateTtext(this.currTemplate);

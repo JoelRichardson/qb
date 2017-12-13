@@ -2,10 +2,8 @@ import { NUMERICTYPES, NULLABLETYPES, LEAFTYPES, OPS, OPINDEX } from './ops.js';
 import { esc, deepc, obj2array } from './utils.js';
 import parser from './parser.js';
 
-// Add direct cross references to named types. (E.g., where the
-// model says that Gene.alleles is a collection whose referencedType
-// is the string "Allele", add a direct reference to the Allele class)
-// Also adds arrays for convenience for accessing all classes or all attributes of a class.
+// A Model represents the data model of a mine. It is a class-ified and expanded
+// version of the data structure returned by the /model service call.
 //
 class Model {
     constructor (cfg, mine) {
@@ -31,8 +29,9 @@ class Model {
         this.allClasses = obj2array(this.classes)
         let cns = Object.keys(this.classes);
         cns.sort()
-        cns.forEach(function(cn){
+        cns.forEach(function(cn){ // for each class name
             let cls = model.classes[cn];
+            // generate arrays for convenient access
             cls.allAttributes = obj2array(cls.attributes)
             cls.allReferences = obj2array(cls.references)
             cls.allCollections = obj2array(cls.collections)
@@ -42,9 +41,11 @@ class Model {
             cls.allParts = cls.allAttributes.concat(cls.allReferences).concat(cls.allCollections);
             cls.allParts.sort(function(a,b){ return a.name < b.name ? -1 : a.name > b.name ? 1 : 0; });
             model.allClasses.push(cls);
-            //
+            // Convert extends from a list of names to a list of class objects.
+            // Also add the inverse list, extendedBy.
             cls["extends"] = cls["extends"].map(function(e){
                 let bc = model.classes[e];
+                if (!bc) throw "No class named: " + e;
                 if (bc.extendedBy) {
                     bc.extendedBy.push(cls);
                 }
@@ -53,12 +54,19 @@ class Model {
                 }
                 return bc;
             });
-            //
+            // Attributes: store class obj of referencedType
+            Object.keys(cls.attributes).forEach(function(an){
+                let a = cls.attributes[an];
+                let t = model.classes[a.type];
+                if (!t) throw "No class named: " + a.type;
+                a.type = t;
+            });
+            // References: store class obj of referencedType
             Object.keys(cls.references).forEach(function(rn){
                 let r = cls.references[rn];
                 r.type = model.classes[r.referencedType]
             });
-            //
+            // Collections: store class obj of referencedType
             Object.keys(cls.collections).forEach(function(cn){
                 let c = cls.collections[cn];
                 c.type = model.classes[c.referencedType]
@@ -67,9 +75,6 @@ class Model {
     }
 } // end of class Model
 
-//
-class Class {
-} // end of class Class
 
 // Returns a list of all the superclasses of the given class.
 // (
@@ -79,7 +84,7 @@ class Class {
 // Returns:
 //    list of class objects, sorted by class name
 function getSuperclasses(cls){
-    if (typeof(cls) === "string" || !cls["extends"] || cls["extends"].length == 0) return [];
+    if (cls.isLeafType || !cls["extends"] || cls["extends"].length == 0) return [];
     let anc = cls["extends"].map(function(sc){ return getSuperclasses(sc); });
     let all = cls["extends"].concat(anc.reduce(function(acc, elt){ return acc.concat(elt); }, []));
     let ans = all.reduce(function(acc,elt){ acc[elt.name] = elt; return acc; }, {});
@@ -93,7 +98,7 @@ function getSuperclasses(cls){
 // Returns:
 //    list of class objects, sorted by class name
 function getSubclasses(cls){
-    if (typeof(cls) === "string" || !cls.extendedBy || cls.extendedBy.length == 0) return [];
+    if (cls.isLeafType || !cls.extendedBy || cls.extendedBy.length == 0) return [];
     let desc = cls.extendedBy.map(function(sc){ return getSubclasses(sc); });
     let all = cls.extendedBy.concat(desc.reduce(function(acc, elt){ return acc.concat(elt); }, []));
     let ans = all.reduce(function(acc,elt){ acc[elt.name] = elt; return acc; }, {});
@@ -103,7 +108,7 @@ function getSubclasses(cls){
 // Returns true iff sub is a subclass of sup.
 function isSubclass(sub,sup) {
     if (sub === sup) return true;
-    if (typeof(sub) === "string" || !sub["extends"] || sub["extends"].length == 0) return false;
+    if (sub.isLeafType || !sub["extends"] || sub["extends"].length == 0) return false;
     let r = sub["extends"].filter(function(x){ return x===sup || isSubclass(x, sup); });
     return r.length > 0;
 }
@@ -116,7 +121,7 @@ class Node {
     //   name (string) Name for the node
     //   pcomp (object) Path component for the root, this is a class. For other nodes, an attribute, 
     //                  reference, or collection decriptor.
-    //   ptype (object or string) Type of pcomp.
+    //   ptype (object) Type of pcomp.
     constructor (template, parent, name, pcomp, ptype) {
         this.template = template; // the template I belong to.
         this.name = name;     // display name
@@ -126,8 +131,8 @@ class Node {
                               // the starting class. Otherwise, points to an attribute (simple, 
                               // reference, or collection).
         this.ptype  = ptype;  // path type. The type of the path at this node, i.e. the type of pcomp. 
-                              // For simple attributes, this is a string. Otherwise,
-                              // points to a class in the model. May be overriden by subclass constraint.
+                              // Points to a class in the model or a "leaf" class (eg java.lang.String). 
+                              // May be overriden by subclass constraint.
         this.subclassConstraint = null; // subclass constraint (if any). Points to a class in the model
                               // If specified, overrides ptype as the type of the node.
         this.constraints = [];// all constraints
@@ -148,14 +153,20 @@ class Node {
 
     // Returns true iff the given operator is valid for this node.
     opValid (op){
-        if(!this.parent && !op.validForRoot) return false;
-        if(typeof(this.ptype) === "string")
+        if (this.isRoot && !op.validForRoot)
+            return false;
+        else if (this.ptype.isLeafType) {
             if(! op.validForAttr)
                 return false;
-            else if( op.validTypes && op.validTypes.indexOf(this.ptype) == -1)
+            else if( op.validTypes && op.validTypes.indexOf(this.ptype.name) == -1)
                 return false;
-        if(this.ptype.name && ! op.validForClass) return false;
-        return true;
+            else
+                return true;
+        }
+        else if(! op.validForClass)
+            return false;
+        else
+            return true;
     }
 
     // Returns true iff the given list is valid as a list constraint option for
@@ -166,7 +177,7 @@ class Node {
     //       are automatically filtered out.
     listValid (list){
         let nt = this.subtypeConstraint || this.ptype;
-        if (typeof(nt) === "string" ) return false;
+        if (nt.isLeafType) return false;
         let lt = this.template.model.classes[list.type];
         return isSubclass(lt, nt) || isSubclass(nt, lt);
     }
@@ -184,7 +195,7 @@ class Node {
     get isBioEntity () {
         function ck(cls) {
             // simple attribute - nope
-            if (typeof(cls) === "string") return false;
+            if (cls.isLeafType) return false;
             // BioEntity - yup
             if (cls.name === "BioEntity") return true;
             // neither - check ancestors
@@ -451,8 +462,7 @@ class Template {
         return t;
     }
 
-
-    // Turns a qtree structure back into a "raw" template. 
+    // Returns the template as a simple json object.
     //
     uncompileTemplate (){
         let tmplt = this;
@@ -497,6 +507,8 @@ class Template {
         return t
     }
 
+    // Returns the Node at path p, or null if the path does not exist in the current qtree.
+    //
     getNodeByPath (p) {
         p = p.trim();
         if (!p) return null;
@@ -561,11 +573,11 @@ class Template {
                     cls = n.subclassConstraint || n.ptype;
                     if (cls.attributes[p]) {
                         x = cls.attributes[p];
-                        cls = x.type // <-- A string!
+                        cls = x.type 
                     } 
                     else if (cls.references[p] || cls.collections[p]) {
                         x = cls.references[p] || cls.collections[p];
-                        cls = classes[x.referencedType] // <--
+                        cls = classes[x.referencedType] 
                         if (!cls) throw "Could not find class: " + p;
                     } 
                     else {
