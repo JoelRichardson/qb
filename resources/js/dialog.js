@@ -182,7 +182,7 @@ class Dialog {
           .style("transform","scale(1.0)");
 
       //
-      let typ = n.pcomp.type;
+      let typ = n.pcomp.type || n.pcomp; // type of the node. Case for if root node.
       if (typ.isLeafType) {
           // dialog for simple attributes.
           dialog
