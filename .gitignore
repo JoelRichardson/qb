@@ -1,2 +1,4 @@
 .gitignore
 *.swp
+.DS_Store
+doc/*

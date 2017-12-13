@@ -1,0 +1,27 @@
+{
+    "name": "qb",
+    "version": "0.0.1",
+    "description": "QB is a query builder for InterMine.",
+    "author": "Joel Richardson <joel.richardson@jax.org>",
+    "scripts": {
+        "watch": "webpack --watch",
+        "build": "webpack"
+        },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/JoelRichardson/qb"
+        },
+    "bugs": {
+        "url": "https://github.com/JoelRichardson/qb/issues"
+        },
+    "keywords": [
+        "intermine",
+        "query",
+        "editor"
+        ],
+    "dependencies": {
+        "d3": "3.2.4"
+    },
+    "devDependencies": { },
+    "license": "MIT"
+}
