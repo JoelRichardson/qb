@@ -84,6 +84,13 @@ class QBEditor {
                 d3.select(this).classed("closed", isClosed);
             });
 
+        d3.select('.button[name="ttextExpand"]')
+            .on("click", function(){ 
+                let t = d3.select(this);
+                t.classed("closed", ! t.classed("closed"));
+                d3.select("#tInfoBar").classed("expanded", ! t.classed("closed"));
+            });
+
         initRegistry(this.initMines.bind(this));
 
         d3.selectAll("#ttext label span")
@@ -818,11 +825,7 @@ class QBEditor {
       d3.select("#ttextdiv") 
           .text(txt)
           .on("focus", function(){
-              d3.select("#tInfoBar").classed("expanded", true);
               selectText("ttextdiv");
-          })
-          .on("blur", function() {
-              d3.select("#tInfoBar").classed("expanded", false);
           });
       //
       if (d3.select('#querycount .button.sync').text() === "sync")

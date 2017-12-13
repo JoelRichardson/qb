@@ -197,6 +197,19 @@
     content: "arrow_downward";
 }
 
+.button[name="ttextExpand"] {
+    position: relative;
+    top: 6px;
+}
+
+.button[name="ttextExpand"]::before {
+    content: "expand_less";
+}
+
+.button[name="ttextExpand"].closed::before {
+    content: "expand_more";
+}
+
 #editView {
     width: auto;
     padding-left: 20px;
