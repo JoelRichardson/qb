@@ -23,15 +23,10 @@ import {
     initOptionList,
     copyObj
 } from './utils.js';
-import {codepoints} from './material_icon_codepoints.js';
-import UndoManager from './undoManager.js';
-import {
-    Model,
-    getSubclasses,
-    Node,
-    Template,
-    Constraint
-} from './model.js';
+import { codepoints } from './material_icon_codepoints.js';
+import { UndoManager } from './undoManager.js';
+import { Model } from './model.js';
+import { Template } from './template.js';
 import { initRegistry } from './registry.js';
 import { editViews } from './editViews.js';
 import { Dialog } from './dialog.js';

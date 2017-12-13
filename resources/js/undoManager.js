@@ -65,4 +65,4 @@ function redo() { undoredo("redo") }
 function undoredo(which){
 }
 
-export default UndoManager;
+export { UndoManager };
