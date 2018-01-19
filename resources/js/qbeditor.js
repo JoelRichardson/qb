@@ -48,7 +48,7 @@ class QBEditor {
         this.editViews = editViews;
         this.editView = this.editViews.queryMain;
         //
-        this.constraintEditor = 
+        this.constraintEditor =
             new ConstraintEditor(n => {
                 this.dialog.show(n, null, true);
                 this.undoMgr.saveState(n);
@@ -68,7 +68,7 @@ class QBEditor {
 
         //
         d3.select('.button[name="openclose"]')
-            .on("click", function(){ 
+            .on("click", function(){
                 let t = d3.select("#tInfoBar");
                 let wasClosed = t.classed("closed");
                 let isClosed = !wasClosed;
@@ -79,13 +79,13 @@ class QBEditor {
                 else if (d.__saved_height)
                    // on open, restore the saved height
                    d3.select('#tInfoBar').style("height", d.__saved_height);
-                    
+
                 t.classed("closed", isClosed);
                 d3.select(this).classed("closed", isClosed);
             });
 
         d3.select('.button[name="ttextExpand"]')
-            .on("click", function(){ 
+            .on("click", function(){
                 let t = d3.select(this);
                 t.classed("closed", ! t.classed("closed"));
                 d3.select("#tInfoBar").classed("expanded", ! t.classed("closed"));
@@ -100,6 +100,8 @@ class QBEditor {
             });
         d3.select('#runatmine')
             .on('click', () => self.runatmine(self.currTemplate));
+        d3.select('#runatqb')
+            .on('click', () => self.runatqb(self.currTemplate));
         d3.select('#querycount .button.sync')
             .on('click', function(){
                 let t = d3.select(this);
@@ -174,8 +176,8 @@ class QBEditor {
                 // reminder: this===the list input element; self===the editor instance
                 self.selectedMine(this.value);
             });
-     
-        // 
+
+        //
         //
         d3.select("#editView select")
             .on("change", function () {
@@ -196,7 +198,7 @@ class QBEditor {
         this.undoMgr.clear();
         let url = this.currMine.url;
         let turl, murl, lurl, burl, surl, ourl;
-        if (mname === "test") { 
+        if (mname === "test") {
             turl = url + "/templates.json";
             murl = url + "/model.json";
             lurl = url + "/lists.json";
@@ -247,7 +249,7 @@ class QBEditor {
         cm.organismList = j_organisms.results.map(o => o.shortName);
         //
         cm.tlist = obj2array(cm.templates)
-        cm.tlist.sort(function(a,b){ 
+        cm.tlist.sort(function(a,b){
             return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
         });
         cm.tnames = Object.keys( cm.templates );
@@ -290,6 +292,8 @@ class QBEditor {
 
     // Begins an edit, based on user controls.
     startEdit () {
+        // first, clear out the div within with the im-table query was generated
+        d3.select('#imTablesQuery').html(null);
         // selector for choosing edit input source, and the current selection
         let srcSelector = d3.selectAll('[name="editTarget"] [name="in"]');
         // the chosen edit source
@@ -319,7 +323,7 @@ class QBEditor {
             throw "Unknown edit source."
     }
 
-    // 
+    //
     selectedEditSource (show) {
         d3.selectAll('[name="editTarget"] > div.option')
             .style("display", function(){ return this.id === show ? null : "none"; });
@@ -368,7 +372,7 @@ class QBEditor {
         ti.select('[name="description"] textarea')
             .text(ct.description)
             .on("change", function(){ xfer("description", this) });
-        // Comment - for whatever, I guess. 
+        // Comment - for whatever, I guess.
         ti.select('[name="comment"] textarea')
             .text(ct.comment)
             .on("change", function(){ xfer("comment", this) });
@@ -447,10 +451,10 @@ class QBEditor {
             .on("click", () => this.dialog.hide())
           .select("g")
             .attr("transform", "translate(" + this.svg.mleft + "," + this.svg.mtop + ")");
- 
+
         // https://stackoverflow.com/questions/15007877/how-to-use-the-d3-diagonal-function-to-draw-curved-lines
         this.diagonal = d3.svg.diagonal()
-            .source(function(d) { return {"x":d.source.y, "y":d.source.x}; })     
+            .source(function(d) { return {"x":d.source.y, "y":d.source.x}; })
             .target(function(d) { return {"x":d.target.y, "y":d.target.x}; })
             .projection(function(d) { return [d.y, d.x]; });
     }
@@ -469,7 +473,7 @@ class QBEditor {
       //
       if (this.editView.layoutStyle === "tree") {
           // d3 layout arranges nodes top-to-bottom, but we want left-to-right.
-          // So...do the layout, reversing width and height. 
+          // So...do the layout, reversing width and height.
           // Then reverse the x,y coords in the results.
           this.layout = d3.layout.tree().size([this.svg.height, this.svg.width]);
           // Save nodes in global.
@@ -478,7 +482,7 @@ class QBEditor {
           this.nodes.forEach(function(d) {
               let tmp = d.x; d.x = d.y; d.y = tmp;
               let dx = Math.min(180, this.svg.width / Math.max(1,maxd-1))
-              d.x = d.depth * dx 
+              d.x = d.depth * dx
           }, this);
       }
       else {
@@ -491,7 +495,7 @@ class QBEditor {
           this.nodes.forEach( d => { let tmp = d.x; d.x = d.y; d.y = tmp; });
 
           // ------------------------------------------------------
-          // Rearrange y-positions of leaf nodes. 
+          // Rearrange y-positions of leaf nodes.
           let pos = leaves.map(function(n){ return { y: n.y, y0: n.y0 }; });
 
           leaves.sort(this.editView.nodeComp);
@@ -504,7 +508,7 @@ class QBEditor {
           // At this point, leaves have been rearranged, but the interior nodes haven't.
           // Here we move interior nodes up or down toward their "center of gravity" as defined
           // by the Y-positions of their children. Apply this recursively up the tree.
-          // 
+          //
           // Maintain a map of occupied positions:
           let occupied = {} ;  // occupied[x position] == [list of nodes]
           function cog (n) {
@@ -533,7 +537,7 @@ class QBEditor {
                       n.y = prev.y + MINSEP;
                   prev = n;
               });
-              
+
           }
 
           // ------------------------------------------------------
@@ -546,8 +550,8 @@ class QBEditor {
     }
 
     // --------------------------------------------------------------------------
-    // update(source) 
-    // The main drawing routine. 
+    // update(source)
+    // The main drawing routine.
     // Updates the SVG, using source (a Node) as the focus of any entering/exiting animations.
     //
     update (source) {
@@ -587,7 +591,7 @@ class QBEditor {
           ;
 
       let clickNode = function(n) {
-          if (d3.event.defaultPrevented) return; 
+          if (d3.event.defaultPrevented) return;
           if (self.dialog.currNode !== n) self.dialog.show(n, this);
           d3.event.stopPropagation();
       };
@@ -643,12 +647,12 @@ class QBEditor {
 
       nodeUpdate.select("text.handle")
           .attr('font-family', this.editView.handleIcon.fontFamily || null)
-          .text(this.editView.handleIcon.text || "") 
+          .text(this.editView.handleIcon.text || "")
           .attr("stroke", this.editView.handleIcon.stroke || null)
           .attr("fill", this.editView.handleIcon.fill || null);
       nodeUpdate.select("text.nodeIcon")
           .attr('font-family', this.editView.nodeIcon.fontFamily || null)
-          .text(this.editView.nodeIcon.text || "") 
+          .text(this.editView.nodeIcon.text || "")
           ;
 
       d3.selectAll(".nodeIcon")
@@ -662,7 +666,7 @@ class QBEditor {
       // Clear out all exiting drag handlers
       d3.selectAll("g.nodegroup")
           .classed("draggable", false)
-          .on(".drag", null); 
+          .on(".drag", null);
       // Now make everything draggable that should be
       if (this.editView.draggable)
           d3.selectAll(this.editView.draggable)
@@ -748,7 +752,7 @@ class QBEditor {
             return self.diagonal({source: o, target: o});
           })
           .classed("attribute", function(l) { return l.target.pcomp.kind === "attribute"; })
-          .on("click", function(l){ 
+          .on("click", function(l){
               if (d3.event.altKey) {
                   // a shift-click cuts the tree at this edge
                   self.removeNode(l.target)
@@ -756,7 +760,7 @@ class QBEditor {
               else {
                   if (l.target.pcomp.kind == "attribute") return;
                   // regular click on a relationship edge inverts whether
-                  // the join is inner or outer. 
+                  // the join is inner or outer.
                   l.target.join = (l.target.join ? null : "outer");
                   // re-set the tooltip
                   d3.select(this).select("title").text(linkTitle);
@@ -776,8 +780,8 @@ class QBEditor {
             .duration(this.animationDuration)
             .attr("d", this.diagonal)
           ;
-     
-      
+
+
       // Transition links to their new position.
       link.classed("outer", function(n) { return n.target.join === "outer"; })
           .transition()
@@ -811,7 +815,7 @@ class QBEditor {
       title.html(t => {
           let parts = t.split(/(-->)/);
           return parts.map((p,i) => {
-              if (p === "-->") 
+              if (p === "-->")
                   return `<tspan y=10 font-family="Material Icons">${codepoints['forward']}</tspan>`
               else
                   return `<tspan y=4>${p}</tspan>`
@@ -822,7 +826,7 @@ class QBEditor {
       let txt = d3.select("#ttext").classed("json") ? t.getJson() : t.getXml();
       //
       //
-      d3.select("#ttextdiv") 
+      d3.select("#ttextdiv")
           .text(txt)
           .on("focus", function(){
               selectText("ttextdiv");
@@ -857,6 +861,24 @@ class QBEditor {
               d3.select('#querycount').classed("error", true).classed("running", false);
               console.log("ERROR::", qtxt)
           });
+    }
+
+    runatqb (t) {
+      let qjson = t.getJson(true);
+      let service = { root: this.currMine.url + '/service' };
+
+      imtables.configure('DefaultPageSize', 10);
+      imtables.configure('TableResults.CacheFactor', 20);
+      imtables.configure('TableCell.IndicateOffHostLinks', false);
+
+      imtables.loadTable(
+        '#imTablesQuery',
+        {start: 0, size: 10},
+        {service: service, query: qjson}
+      ).then(
+        function (table) { console.log('Table loaded', table); },
+        function (error) { console.error('Could not load table', error); }
+      );
     }
 }
 
