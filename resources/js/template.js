@@ -112,9 +112,7 @@ class Template {
                     throw "Anomaly detected in select list.";
             }
             (n.constraints || []).forEach(function(c){
-                 let cc = new Constraint(c);
-                 cc.node = null;
-                 t.where.push(cc)
+                 t.where.push(c.getJson())
             })
             if (n.join === "outer") {
                 t.joins.push(p);
@@ -318,7 +316,7 @@ class Template {
       ${t.constraintLogic && 'constraintLogic="'+t.constraintLogic+'"' || ''}
     >
       ${(t.joins || []).map(oj2xml).join(" ")}
-      ${(t.where || []).map(c => c.c2xml(qonly)).join(" ")}
+      ${(t.where || []).map(c => (new Constraint(c)).c2xml(qonly)).join(" ")}
     </query>`;
         // the whole template
         let tmplt =

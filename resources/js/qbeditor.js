@@ -835,7 +835,6 @@ class QBEditor {
     }
 
     updateCount (t) {
-      let uct = t.uncompileTemplate();
       let qtxt = t.getXml(true);
       let urlTxt = encodeURIComponent(qtxt);
       let countUrl = this.currMine.url + `/service/query/results?query=${urlTxt}&format=count`;
@@ -852,7 +851,6 @@ class QBEditor {
     }
 
     runquery (t) {
-        console.log("here!!!");
       if (d3.event.altKey || d3.event.shiftKey) 
           this.runatmine(t);
       else
@@ -860,7 +858,6 @@ class QBEditor {
     }
 
     runatmine (t) {
-      let uct = t.uncompileTemplate();
       let txt = t.getXml();
       let urlTxt = encodeURIComponent(txt);
       let linkurl = this.currMine.url + "/loadQuery.do?trail=%7Cquery&method=xml";
@@ -882,9 +879,13 @@ class QBEditor {
         {start: 0, size: 10},
         {service: service, query: qjson}
       ).then(
-        function (table) { console.log('Table loaded', table); },
+        function (table) { 
+            //console.log('Table loaded', table);
+            d3.select('#imTablesQueryAfter')[0][0].scrollIntoView();
+        },
         function (error) { console.error('Could not load table', error); }
       );
+
     }
 }
 

@@ -17,7 +17,7 @@ class Constraint {
         // used by value, list
         this.value = c.value || "";
         // used by LOOKUP on BioEntity and subclasses
-        this.extraValue = this.ctype === "lookup" && c.extraValue || null;
+        this.extraValue = this.ctype === "lookup" && c.extraValue || undefined;
         // used by multivalue and range constraints
         this.values = c.values && deepc(c.values) || null;
         // used by subclass contraints
@@ -74,6 +74,49 @@ class Constraint {
        }
 
        return (this.ctype !== "subclass" ? "("+this.code+") " : "") + t;
+    }
+
+    //
+    getJson () {
+        let jc = {};
+        if (this.ctype === "value" || this.ctype === "list"){
+            return {
+                path:  this.path,
+                op:    this.op,
+                value: this.value,
+                code:  this.code
+            }
+        }
+        else if (this.ctype === "lookup"){
+            return {
+                path:  this.path,
+                op:    this.op,
+                value: this.value,
+                code:  this.code,
+                extraValue: this.extraValue
+            }
+        }
+        else if (this.ctype === "multivalue"){
+            return {
+                path:  this.path,
+                op:    this.op,
+                values: this.values.concate([]),
+                code:  this.code
+            }
+        }
+        else if (this.ctype === "subclass"){
+            return {
+                path:  this.path,
+                type:  this.type
+            }
+        }
+        else if (this.ctype === "null"){
+            return {
+                path:  this.path,
+                op:    this.op,
+                code:  this.code
+            }
+        }
     }
 
     // formats this constraint as xml
