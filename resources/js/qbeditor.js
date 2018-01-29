@@ -98,10 +98,8 @@ class QBEditor {
                 d3.select('#ttext').attr('class', 'flexcolumn '+this.innerText.toLowerCase());
                 self.updateTtext(self.currTemplate);
             });
-        d3.select('#runatmine')
-            .on('click', () => self.runatmine(self.currTemplate));
-        d3.select('#runatqb')
-            .on('click', () => self.runatqb(self.currTemplate));
+        d3.select('#runquery')
+            .on('click', () => self.runquery(self.currTemplate));
         d3.select('#querycount .button.sync')
             .on('click', function(){
                 let t = d3.select(this);
@@ -836,16 +834,6 @@ class QBEditor {
           self.updateCount(t);
     }
 
-    runatmine (t) {
-      let uct = t.uncompileTemplate();
-      let txt = t.getXml();
-      let urlTxt = encodeURIComponent(txt);
-      let linkurl = this.currMine.url + "/loadQuery.do?trail=%7Cquery&method=xml";
-      let editurl = linkurl + "&query=" + urlTxt;
-      let runurl = linkurl + "&skipBuilder=true&query=" + urlTxt;
-      window.open( d3.event.altKey ? editurl : runurl, '_blank' );
-    }
-
     updateCount (t) {
       let uct = t.uncompileTemplate();
       let qtxt = t.getXml(true);
@@ -861,6 +849,24 @@ class QBEditor {
               d3.select('#querycount').classed("error", true).classed("running", false);
               console.log("ERROR::", qtxt)
           });
+    }
+
+    runquery (t) {
+        console.log("here!!!");
+      if (d3.event.altKey || d3.event.shiftKey) 
+          this.runatmine(t);
+      else
+          this.runatqb(t);
+    }
+
+    runatmine (t) {
+      let uct = t.uncompileTemplate();
+      let txt = t.getXml();
+      let urlTxt = encodeURIComponent(txt);
+      let linkurl = this.currMine.url + "/loadQuery.do?trail=%7Cquery&method=xml";
+      let editurl = linkurl + "&query=" + urlTxt;
+      let runurl = linkurl + "&skipBuilder=true&query=" + urlTxt;
+      window.open( d3.event.altKey ? editurl : runurl, '_blank' );
     }
 
     runatqb (t) {

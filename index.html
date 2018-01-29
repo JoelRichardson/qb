@@ -7,7 +7,7 @@
 
     <script type="text/javascript" src="./resources/js/d3/d3.v3.js"></script>
     <script type="text/javascript" src="./resources/js/d3/d3.layout.js"></script>
-    <script type="text/javascript" src="./resources/js/im-tables/imtables.js"></script>
+    <script type="text/javascript" src="./resources/js/im-tables/imtables.min.js"></script>
 
 
 </head>
@@ -35,16 +35,8 @@
             <div class="flexrow">
                 <img id="mineLogo" src=""></img>
 
-                <div id="runatmine" title="Click to run. Alt-click to open in editor.">
-                    Run this query at
-                    <br /><span name="minename"></span>
-                </div>
-
-                <img id="qbLogo" src="./resources/images/QB-logo.png"></img>
-
-                <div id="runatqb" title="Click to run query here.">
-                    Run this query at
-                    <br />QB
+                <div id="runquery" title="Click to run. Shift-click to run at the mine. Alt-click to edit at the mine.">
+                    Run this query
                 </div>
 
                 <div id="querycount" class="flexrow syncoff">
