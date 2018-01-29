@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    
+
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link type="text/css" rel="stylesheet" href="./resources/css/style.css">
+    <link type="text/css" rel="stylesheet" href="./resources/css/im-tables/main.sandboxed.css">
+
     <script type="text/javascript" src="./resources/js/d3/d3.v3.js"></script>
     <script type="text/javascript" src="./resources/js/d3/d3.layout.js"></script>
+    <script type="text/javascript" src="./resources/js/im-tables/imtables.min.js"></script>
 
 
 </head>
@@ -32,9 +35,8 @@
             <div class="flexrow">
                 <img id="mineLogo" src=""></img>
 
-                <div id="runatmine" title="Click to run. Alt-click to open in editor.">
-                    Run this query at
-                    <br /><span name="minename"></span>
+                <div id="runquery" title="Click to run. Shift-click to run at the mine. Alt-click to edit at the mine.">
+                    Run this query
                 </div>
 
                 <div id="querycount" class="flexrow syncoff">
@@ -134,7 +136,7 @@
                             <label>Comment</label>
                             <textarea cols="40" rows="7"></textarea>
                         </div>
-                    </div>    
+                    </div>
                 </div> <!-- end of tInfo -->
             </div>
 
@@ -142,7 +144,7 @@
             <div id="ttext" class="flexcolumn xml">
                 <label>
                     <i name="ttextExpand" class="material-icons button closed"></i>
-                    Query text:  
+                    Query text:
                     <span name="xml">XML</span>
                     <span name="json">JSON</span>
                 </label>
@@ -161,6 +163,10 @@
             <svg><g></g></svg>
         </div> <!-- end of svgContainer -->
 
+        <!-- The container where the query is executed and displayed using im-tables -->
+        <div id="queryContainer" class="flexrow">
+            <div id="imTablesQuery"></div>
+        </div>
 
         <!-- The dropdown dialog you get when you click on a node. -->
         <div id="dialog">
@@ -180,7 +186,7 @@
                 </div>
             </div>
 
-            <!-- Where the user gets to select/unselect an attribute to return. 
+            <!-- Where the user gets to select/unselect an attribute to return.
                  Only display for attributes (not for refs/colls) -->
             <div name="selsort-ctrls" class="flexrow">
                 <div name="select-ctrl"class="flexcolumn">
@@ -220,7 +226,7 @@
             <div class="footer">
               <i class="material-icons button remove" title="Remove this node">delete_forever</i>
               <i class="material-icons button close" title="Close dialog">close</i>
-            </div>  
+            </div>
         </div>
 
         <!-- Constraint editor. The little popup you get when you edit a constraint at a node. -->
@@ -251,7 +257,7 @@
         </div>
 
 
-    </div>  
+    </div>
 
     <script type="text/javascript" src="./dist/qb.bundle.js"> </script>
 

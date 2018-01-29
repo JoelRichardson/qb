@@ -150,9 +150,9 @@ class Template {
 
     // Adds a path to the qtree for this template. Path is specified as a dotted list of names.
     // Args:
-    //   path (string) the path to add. 
+    //   path (string) the path to add.
     // Returns:
-    //   last path component created. 
+    //   last path component created.
     // Side effects:
     //   Creates new nodes as needed and adds them to the qtree.
     addPath (path){
@@ -197,13 +197,13 @@ class Template {
                     cls = n.subclassConstraint || n.ptype;
                     if (cls.attributes[p]) {
                         x = cls.attributes[p];
-                        cls = x.type 
-                    } 
+                        cls = x.type
+                    }
                     else if (cls.references[p] || cls.collections[p]) {
                         x = cls.references[p] || cls.collections[p];
-                        cls = classes[x.referencedType] 
+                        cls = classes[x.referencedType]
                         if (!cls) throw "Could not find class: " + p;
-                    } 
+                    }
                     else {
                         throw "Could not find member named " + p + " in class " + cls.name + ".";
                     }
@@ -217,7 +217,7 @@ class Template {
         // return the last node in the path
         return n;
     }
- 
+
     // Returns a single character constraint code in the range A-Z that is not already
     // used in the given template.
     //
@@ -241,12 +241,12 @@ class Template {
     //      are ANDed to the end.
     // For example, if the current template has codes A, B, and C, and
     // the expression is "(A or D) and B", the D drops out and C is
-    // added, resulting in "A and B and C". 
+    // added, resulting in "A and B and C".
     // Args:
     //   ex (string) the expression
     // Returns:
     //   the "corrected" expression
-    //   
+    //
     setLogicExpression (ex) {
         ex = ex ? ex : (this.constraintLogic || "")
         let ast; // abstract syntax tree
@@ -254,7 +254,7 @@ class Template {
         let tmplt = this;
         function reach(n,lev){
             if (typeof(n) === "string" ){
-                // check that n is a constraint code in the template. 
+                // check that n is a constraint code in the template.
                 // If not, remove it from the expr.
                 // Also remove it if it's the code for a subclass constraint
                 seen.push(n);
@@ -292,11 +292,11 @@ class Template {
 
         return lex;
     }
- 
-    // 
+
+    //
     getXml (qonly) {
         let t = this.uncompileTemplate();
-        let so = (t.orderBy || []).reduce(function(s,x){ 
+        let so = (t.orderBy || []).reduce(function(s,x){
             let k = Object.keys(x)[0];
             let v = x[k]
             return s + `${k} ${v} `;
@@ -308,7 +308,7 @@ class Template {
         }
 
         // the query part
-        let qpart = 
+        let qpart =
     `<query
       name="${t.name || ''}"
       model="${(t.model && t.model.name) || ''}"
@@ -321,7 +321,7 @@ class Template {
       ${(t.where || []).map(c => c.c2xml(qonly)).join(" ")}
     </query>`;
         // the whole template
-        let tmplt = 
+        let tmplt =
     `<template
       name="${t.name || ''}"
       title="${esc(t.title || '')}"
@@ -332,9 +332,9 @@ class Template {
         return qonly ? qpart : tmplt
     }
 
-    getJson () {
+    getJson (asjson) {
         let t = this.uncompileTemplate();
-        return JSON.stringify(t, null, 2);
+        return asjson ? t : JSON.stringify(t, null, 2);
     }
 
 } // end of class Template
