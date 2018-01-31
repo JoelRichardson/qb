@@ -191,6 +191,7 @@ class QBEditor {
     // Loads that mine's data model and all its templates.
     // Then initializes display to show the first termplate's query.
     selectedMine (mname) {
+        let self = this;
         if(!this.name2mine[mname]) throw "No mine named: " + mname;
         this.currMine = this.name2mine[mname];
         this.undoMgr.clear();
@@ -224,7 +225,7 @@ class QBEditor {
         ]).then(
             this.initMineData.bind(this),
             function(error){
-            alert(`Could not access ${cm.name}. Status=${error.status}. Error=${error.statusText}. (If there is no error message, then its probably a CORS issue.)`);
+            alert(`Could not access ${self.currMine.name}. Status=${error.status}. Error=${error.statusText}.`);
         });
     }
 
