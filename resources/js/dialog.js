@@ -260,7 +260,7 @@ class Dialog {
     // Extends the path from currNode to p
     // Args:
     //   currNode (node) Node to extend from
-    //   mode (string) one of "select", "constrain" or "open"
+    //   mode (string) one of "summaryfields", "select", "constrain" or "open"
     //   p (string) Name of an attribute, ref, or collection
     // Returns:
     //   nothing

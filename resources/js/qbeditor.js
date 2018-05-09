@@ -307,7 +307,8 @@ class QBEditor {
         }
         else if (inputId === "newqclist") {
             // a new query from a selected starting class
-            let nt = new Template({ select: [val+".id"]}, this.currMine.model);
+            let sfs = this.currMine.summaryFields[val] || [val+".id"];
+            let nt = new Template({ select: sfs}, this.currMine.model);
             this.editTemplate(nt);
         }
         else if (inputId === "importxml") {

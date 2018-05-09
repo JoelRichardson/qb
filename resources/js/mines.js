@@ -1,7 +1,7 @@
-// Would be best to populate this list by accessing the InterMine
-// registry at: http://registry.intermine.org/service/instances
-// Unfortunately, we get a 'Access-Control-Allow-Origin' CORS error.
+// For testing purposes only.
 //
+// For production, populate this list by accessing the InterMine
+// registry at: http://registry.intermine.org/service/instances
 
 module.exports = { mines: [{
     "name" : "test",
